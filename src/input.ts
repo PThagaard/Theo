@@ -56,3 +56,49 @@ export function attachInput(element: HTMLElement, handlers: InputHandlers): void
   // Stops rubber-band scrolling of the whole page on iOS.
   document.addEventListener('touchmove', block, { passive: false });
 }
+
+/**
+ * Calls `onShake` when the phone is shaken. Uses the motion sensor through the standard
+ * DeviceMotion API (works in the Android app and in browsers; iOS asks for permission on
+ * the first touch).
+ */
+export function attachShake(onShake: () => void): void {
+  if (typeof window.DeviceMotionEvent === 'undefined') return;
+  const THRESHOLD = 24; // m/s² change between two readings, summed over the axes
+  const COOLDOWN_MS = 700;
+  let previous: { x: number; y: number; z: number } | null = null;
+  let lastShake = 0;
+
+  const listen = () => {
+    window.addEventListener('devicemotion', (event) => {
+      const a = event.accelerationIncludingGravity ?? event.acceleration;
+      if (!a || a.x === null || a.y === null || a.z === null) return;
+      if (previous) {
+        const delta = Math.abs(a.x - previous.x) + Math.abs(a.y - previous.y) + Math.abs(a.z - previous.z);
+        const now = performance.now();
+        if (delta > THRESHOLD && now - lastShake > COOLDOWN_MS) {
+          lastShake = now;
+          onShake();
+        }
+      }
+      previous = { x: a.x, y: a.y, z: a.z };
+    });
+  };
+
+  const motion = window.DeviceMotionEvent as unknown as { requestPermission?: () => Promise<'granted' | 'denied'> };
+  if (typeof motion.requestPermission === 'function') {
+    // iOS: permission can only be requested from a user gesture.
+    const ask = () => {
+      window.removeEventListener('pointerdown', ask);
+      motion
+        .requestPermission?.()
+        .then((state) => {
+          if (state === 'granted') listen();
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener('pointerdown', ask);
+  } else {
+    listen();
+  }
+}

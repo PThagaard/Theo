@@ -44,10 +44,19 @@
           <input type="checkbox" id="opt-sfx" />
           <span class="switch" aria-hidden="true"></span>
         </label>
+        <div id="lock-section" hidden>
+          <button id="lock-button" type="button">🔒 Lås appen fast på skærmen</button>
+          <p id="lock-status" class="lock-status"></p>
+          <label class="row">
+            <span class="row-label">🔐 Lås automatisk ved start</span>
+            <input type="checkbox" id="opt-autolock" />
+            <span class="switch" aria-hidden="true"></span>
+          </label>
+        </div>
         <button id="parent-close" type="button">Tilbage til ballonerne</button>
         <p class="hint">
-          Tip: Slå <b>Guidet adgang</b> (iPhone) eller <b>Fastgør app</b> (Android) til, så små fingre ikke kan
-          forlade appen.
+          Låst app: Hjem, Tilbage og notifikationer virker ikke, før den låses op. På iPhone bruges
+          <b>Guidet adgang</b> i stedet.
         </p>
       </div>
     </div>

@@ -48,15 +48,19 @@ Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og 
 Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under fanen **Actions** på GitHub
 (knappen *Run workflow*).
 
-**Tip til Samsung:** Slå *Fastgør vinduer* til (Indstillinger → Sikkerhed og privatliv → Flere sikkerhedsindstillinger),
-og fastgør appen fra oversigten over åbne apps. Så kan små fingre ikke forlade den.
+**Lås:** brug knappen *Lås appen fast på skærmen* i forældremenuen (se nedenfor), så kan små fingre ikke forlade den.
 
 ## Sådan virker spillet
 
 - **Tryk på en ballon** – den popper med konfetti, en ring og et sjovt "pop". Store balloner har en dybere lyd end små,
   og hvert pop spiller en tone fra en pentatonisk skala, så det lyder som musik når der trykkes meget.
 - **Tryk på himlen** – der kommer gnister, og en ny ballon pustes op lige under fingeren.
-- **Swipe hen over skærmen** – alle balloner fingeren rammer popper (og der drysser små gnister efter fingeren).
+- **Swipe hen over skærmen** – fingeren maler et lysende regnbuespor, og hvert stykke af turen spiller en harpetone
+  (lysere toner højere oppe på skærmen). Balloner fingeren rammer popper; balloner og skyer i nærheden blæses til
+  side af "vinden" og svæver på plads igen.
+- **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
+  drypper regn med små plip-lyde.
+- **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.
@@ -65,10 +69,18 @@ og fastgør appen fra oversigten over åbne apps. Så kan små fingre ikke forla
   *Ro, ro, ro din båd*, *Mester Jakob*, *Jens Hansen havde en bondegård* og den originale *Ballonvalsen*.
 - Telefonen vibrerer let ved hvert pop (hvis telefonen kan).
 
-## Forældremenu
+## Forældremenu og lås
 
-Hold den lille lås i øverste venstre hjørne nede i **2 sekunder**. Så åbner en menu, hvor musik og lyde kan slås
-fra og til. Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på låsen gør ingenting.
+Hold den lille lås i øverste venstre hjørne nede i **2 sekunder** med én finger. Så åbner en menu, hvor musik og lyde
+kan slås fra og til. Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på låsen gør ingenting, og en hel
+hånd på skærmen åbner den heller ikke.
+
+**Lås appen fast (Android):** tryk på **Lås appen fast på skærmen** i menuen. Telefonen spørger "Fastgør?" én gang;
+tryk OK. Derefter virker Hjem, Tilbage, Seneste apps og notifikationspanelet ikke, før appen låses op igen: hold
+den grønne knap i menuen nede i 2 sekunder, eller brug Androids egen gestus (swipe op fra bunden og hold). Med
+**Lås automatisk ved start** spørger telefonen, hver gang appen åbnes. Det er Androids indbyggede "Fastgør vinduer";
+vil du også have PIN-kode ved oplåsning, så slå *Bed om PIN før frigørelse* til under Indstillinger → Sikkerhed →
+Fastgør vinduer.
 
 **Tips til leg uden afbrydelser:**
 
@@ -93,7 +105,8 @@ src/
   audio.ts    lydeffekter + musikafspiller (Web Audio)
   music.ts    sange og musik-hjælpere
   input.ts    touch/mus → spil, og blokering af zoom/scroll/langt-tryk-menuer
-  parent.ts   forældremenu og indstillinger
+  parent.ts   forældremenu, indstillinger og lås-knappen
+  kidlock.ts  bro til Androids "fastgør app" (KidLockPlugin.java i android/)
 ```
 
 ## Kom i gang

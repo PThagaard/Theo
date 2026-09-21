@@ -440,4 +440,53 @@ export class AudioEngine {
       this.synth.musicBox(this.sfxBus, midi, when + i * 0.055, 0.5, 0.22);
     });
   }
+
+  /** Harp-like pluck while swiping. `note` 0 (bottom of the screen) .. 7 (top). */
+  glide(note: number, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const midi = POP_NOTES[clamp(Math.round(note), 0, POP_NOTES.length - 1)];
+    this.synth.tone(this.sfxBus, 'triangle', midiToFreq(midi), when, 0.16, 0.004, 0.35, { filter: 2600 });
+  }
+
+  /** A happy "wiii!" when the sun is touched. */
+  wee(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const ctx = this.ctx;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, when);
+    osc.frequency.exponentialRampToValueAtTime(980, when + 0.32);
+    const vibrato = ctx.createOscillator();
+    vibrato.type = 'sine';
+    vibrato.frequency.value = 7;
+    const vibratoDepth = ctx.createGain();
+    vibratoDepth.gain.value = 25;
+    vibrato.connect(vibratoDepth).connect(osc.frequency);
+    const gain = ctx.createGain();
+    envelope(gain.gain, when, 0.22, 0.02, 0.45);
+    osc.connect(gain).connect(this.sfxBus);
+    osc.start(when);
+    vibrato.start(when);
+    osc.stop(when + 0.5);
+    vibrato.stop(when + 0.5);
+    this.sparkle(when + 0.12);
+  }
+
+  /** Maraca-like rattle with a little bell when the phone is shaken. */
+  rattle(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    for (let i = 0; i < 4; i++) {
+      this.synth.noiseBurst(this.sfxBus, when + i * 0.085, 0.35, 0.07, 'highpass', 3800);
+    }
+    [96, 100, 103].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.05 + i * 0.09, 0.5, 0.25));
+  }
+
+  /** Soft raindrops ("plip plip") when a cloud is touched. */
+  rain(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    [96, 93, 98, 91, 100, 95].forEach((midi, i) => {
+      const f = midiToFreq(midi);
+      this.synth.tone(this.sfxBus, 'sine', f * 1.25, when + i * 0.07, 0.12, 0.003, 0.22, { to: f, glide: 0.06 });
+    });
+  }
 }

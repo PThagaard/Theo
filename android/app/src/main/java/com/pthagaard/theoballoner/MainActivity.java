@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(KidLockPlugin.class);
         super.onCreate(savedInstanceState);
         // Small children play for a while without "touching" in the way the OS expects,
         // so never let the screen dim or lock while the app is open.

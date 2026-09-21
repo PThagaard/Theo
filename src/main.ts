@@ -3,7 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { AudioEngine } from './audio';
 import { Game } from './game';
-import { attachInput } from './input';
+import { attachInput, attachShake } from './input';
+import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
 import { Renderer } from './render';
 
@@ -12,6 +13,9 @@ const game = new Game();
 const renderer = new Renderer(canvas);
 const settings = loadSettings();
 let audio: AudioEngine | null = null;
+
+// Lets the stylesheet make small per-platform adjustments (e.g. camera cut-outs on Android).
+document.documentElement.classList.add(`platform-${Capacitor.getPlatform()}`);
 
 // ---- Sound -----------------------------------------------------------------
 
@@ -35,8 +39,6 @@ for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'])
 }
 // In the native app there is no such restriction, so the music can start right away.
 if (Capacitor.isNativePlatform()) ensureAudio();
-// Lets the stylesheet make small per-platform adjustments (e.g. camera cut-outs on Android).
-document.documentElement.classList.add(`platform-${Capacitor.getPlatform()}`);
 
 let lastHaptic = 0;
 function haptic(style: ImpactStyle): void {
@@ -61,6 +63,21 @@ game.onEvent((event) => {
       audio?.sparkle();
       haptic(ImpactStyle.Light);
       break;
+    case 'glide':
+      audio?.glide(event.note);
+      break;
+    case 'sun':
+      audio?.wee();
+      haptic(ImpactStyle.Light);
+      break;
+    case 'cloud':
+      audio?.rain();
+      haptic(ImpactStyle.Light);
+      break;
+    case 'shake':
+      audio?.rattle();
+      haptic(ImpactStyle.Heavy);
+      break;
     case 'celebrate':
       audio?.fanfare();
       haptic(ImpactStyle.Heavy);
@@ -68,15 +85,23 @@ game.onEvent((event) => {
   }
 });
 
-// ---- Parent menu -----------------------------------------------------------
+// ---- Parent menu and kid lock ----------------------------------------------
 
-const panel = new ParentPanel(settings, (updated) => {
-  saveSettings(updated);
-  audio?.setSfxEnabled(updated.sfx);
-  audio?.setMusicEnabled(updated.music);
+const panel = new ParentPanel(settings, {
+  onChange: (updated) => {
+    saveSettings(updated);
+    audio?.setSfxEnabled(updated.sfx);
+    audio?.setMusicEnabled(updated.music);
+  },
+  lock: kidLock,
 });
 
-// ---- Touch -----------------------------------------------------------------
+// Ask to pin the app right away if the parent wants that (the phone shows a confirm dialog).
+if (kidLock.available && settings.autoLock) {
+  window.setTimeout(() => void kidLock.lock(), 1000);
+}
+
+// ---- Touch and motion ------------------------------------------------------
 
 attachInput(canvas, {
   down: (id, x, y) => {
@@ -88,6 +113,11 @@ attachInput(canvas, {
   },
   move: (id, x, y) => game.drag(id, x, y),
   up: (id) => game.release(id),
+});
+
+attachShake(() => {
+  if (panel.isOpen) return;
+  game.shake();
 });
 
 // ---- Screen ----------------------------------------------------------------

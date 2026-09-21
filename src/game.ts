@@ -1,9 +1,9 @@
 import { BALLOON_COLORS, GOLD, RAINBOW, RAINBOW_COLOR, SPARKLE_COLORS } from './palette';
 import { Rng, TAU, clamp, easeOutBack } from './rng';
-import type { Balloon, BalloonKind, Face, GameEvent, Particle, ParticleShape } from './types';
+import type { Balloon, BalloonKind, Cloud, Face, GameEvent, Particle, ParticleShape, Trail } from './types';
 
 /**
- * Pure game logic: balloons, touches, pops and particles.
+ * Pure game logic: balloons, clouds, the sun, touches, swipes, pops and particles.
  * No DOM or canvas access here, so it can be unit tested in Node.
  */
 
@@ -35,6 +35,20 @@ export const DRAG_HIT_FACTOR = 1.15;
 /** A balloon that was just made by a touch can't be popped by the same sliding finger for this long. */
 const DRAG_MIN_AGE = 0.4;
 const INFLATE_TIME = 0.45;
+/** Seconds a finger ribbon stays visible. */
+export const TRAIL_LIFE = 0.75;
+const TRAIL_MAX_POINTS = 160;
+/** Finger travel (times unit) between two harp notes while swiping. */
+const GLIDE_STEP = 34;
+const GLIDE_MIN_INTERVAL = 0.045;
+/** The sky is divided into this many harp notes, from bottom (0) to top. */
+export const GLIDE_NOTES = 8;
+/** Number of cloud shapes the renderer knows. */
+const CLOUD_SHAPES = 3;
+/** Balloons this many radii from a swiping finger feel its wind. */
+const WIND_REACH = 2.6;
+const SUN_HIT_FACTOR = 1.3;
+const SUN_POKE_INTERVAL = 0.6;
 
 const KINDS: Array<{ kind: BalloonKind; weight: number }> = [
   { kind: 'plain', weight: 40 },
@@ -45,11 +59,16 @@ const KINDS: Array<{ kind: BalloonKind; weight: number }> = [
 ];
 
 const FACES: Face[] = ['happy', 'happy', 'happy', 'surprised', 'sleepy', 'wink'];
+const RAIN_COLORS = ['#6fc3ff', '#a6d8ff', '#4d96ff'];
+const SUN_COLORS = ['#fff3a6', '#ffd93d', '#ffffff', '#ffb703'];
 
 interface PointerState {
   x: number;
   y: number;
   travelled: number;
+  glideTravelled: number;
+  lastGlide: number;
+  trail: Trail;
 }
 
 export interface SpawnOptions {
@@ -64,13 +83,17 @@ export class Game {
   width = 0;
   height = 0;
   balloons: Balloon[] = [];
+  clouds: Cloud[] = [];
   particles: Particle[] = [];
+  trails: Trail[] = [];
   /** Seconds since the game started. */
   time = 0;
   /** Total balloons popped. */
   pops = 0;
   /** Seconds since the last celebration (a very long time before the first one). */
   sinceCelebration = 1e9;
+  /** Seconds since the sun was last touched (the renderer spins it for a moment). */
+  sunHit = 1e9;
 
   private nextId = 1;
   private spawnTimer = 0.4;
@@ -87,6 +110,12 @@ export class Game {
   /** Size factor: about 1 on a phone, about 2 on a tablet. */
   get unit(): number {
     return Math.max(0.5, Math.min(this.width, this.height) / 400);
+  }
+
+  /** Where the sun is drawn (top right corner). */
+  get sun(): { x: number; y: number; r: number } {
+    const u = this.unit;
+    return { x: this.width - 72 * u, y: 78 * u, r: 40 * u };
   }
 
   onEvent(listener: (event: GameEvent) => void): void {
@@ -108,19 +137,43 @@ export class Game {
         const balloon = this.spawnBalloon();
         if (balloon) balloon.y = this.rng.range(height * 0.25, height * 1.05);
       }
+      const u = this.unit;
+      const cloudCount = 4 + Math.round(width / 300);
+      for (let i = 0; i < cloudCount; i++) {
+        this.clouds.push({
+          x: this.rng.range(-100, width),
+          y: this.rng.range(height * 0.06, height * 0.5),
+          scale: u * this.rng.range(0.7, 1.3),
+          speed: u * this.rng.range(5, 14),
+          shape: this.rng.int(0, CLOUD_SHAPES - 1),
+          vx: 0,
+          wobble: 0,
+        });
+      }
       return;
     }
-    for (const b of this.balloons) {
-      b.baseX = clamp(b.baseX, b.r, width - b.r);
-    }
+    for (const b of this.balloons) b.baseX = clamp(b.baseX, b.r, width - b.r);
+    for (const c of this.clouds) c.y = clamp(c.y, height * 0.06, height * 0.5);
   }
 
   /** A finger (or mouse) touched the screen. */
   press(id: number, x: number, y: number): void {
-    this.pointers.set(id, { x, y, travelled: 0 });
+    const trail: Trail = { id, hue: this.rng.range(0, 360), points: [{ x, y, t: this.time }], active: true };
+    this.trails.push(trail);
+    this.pointers.set(id, { x, y, travelled: 0, glideTravelled: 0, lastGlide: -1, trail });
+
     const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
     if (balloon) {
       this.pop(balloon);
+      return;
+    }
+    if (this.isOnSun(x, y)) {
+      this.pokeSun(x, y);
+      return;
+    }
+    const cloud = this.findCloudAt(x, y);
+    if (cloud) {
+      this.pokeCloud(cloud, x, y);
       return;
     }
     // Touching empty sky is rewarded too: sparkles, and a brand new balloon inflates under the finger.
@@ -132,22 +185,87 @@ export class Game {
     }
   }
 
-  /** A finger moved while touching. Sliding over balloons pops them. */
+  /**
+   * A finger moved while touching. The finger paints a ribbon, plays harp notes as it
+   * travels, blows nearby balloons and clouds around, and pops the balloons it touches.
+   */
   drag(id: number, x: number, y: number): void {
     const pointer = this.pointers.get(id);
     if (!pointer) return;
-    pointer.travelled += Math.hypot(x - pointer.x, y - pointer.y);
+    const u = this.unit;
+    const dx = x - pointer.x;
+    const dy = y - pointer.y;
+    const moved = Math.hypot(dx, dy);
+    pointer.travelled += moved;
+    pointer.glideTravelled += moved;
     pointer.x = x;
     pointer.y = y;
-    if (pointer.travelled > 26 * this.unit) {
+
+    const points = pointer.trail.points;
+    const last = points[points.length - 1];
+    if (!last || Math.hypot(x - last.x, y - last.y) >= 3) {
+      points.push({ x, y, t: this.time });
+      if (points.length > TRAIL_MAX_POINTS) points.shift();
+    }
+
+    if (pointer.travelled > 26 * u) {
       pointer.travelled = 0;
       this.sparkleBurst(x, y, 1);
     }
+
+    if (pointer.glideTravelled >= GLIDE_STEP * u && this.time - pointer.lastGlide >= GLIDE_MIN_INTERVAL) {
+      pointer.glideTravelled = 0;
+      pointer.lastGlide = this.time;
+      const note = Math.round((1 - clamp(y / this.height, 0, 1)) * (GLIDE_NOTES - 1));
+      this.emit({ type: 'glide', x, y, note });
+    }
+
+    this.wind(x, y, dx, dy);
+
     const balloon = this.findBalloonAt(x, y, DRAG_HIT_FACTOR, DRAG_MIN_AGE);
-    if (balloon) this.pop(balloon);
+    if (balloon) {
+      this.pop(balloon);
+      return;
+    }
+    if (this.isOnSun(x, y) && this.sunHit > SUN_POKE_INTERVAL) this.pokeSun(x, y);
+  }
+
+  /** The phone was shaken: everything jumps, the sun gets dizzy and confetti flies. */
+  shake(): void {
+    const u = this.unit;
+    for (const b of this.balloons) {
+      b.vx = clamp(b.vx + u * this.rng.range(-260, 260), -500 * u, 500 * u);
+      b.vyImpulse = clamp(b.vyImpulse - u * this.rng.range(140, 320), -500 * u, 500 * u);
+    }
+    for (const c of this.clouds) {
+      c.wobble = 1;
+      c.vx = clamp(c.vx + u * this.rng.range(-160, 160), -220 * u, 220 * u);
+    }
+    this.sunHit = 0;
+    for (let i = 0; i < 24; i++) {
+      const life = this.rng.range(0.9, 1.6);
+      this.addParticle({
+        x: this.rng.range(0, this.width),
+        y: this.rng.range(this.height * 0.1, this.height * 0.9),
+        vx: u * this.rng.range(-220, 220),
+        vy: u * this.rng.range(-260, -60),
+        life,
+        maxLife: life,
+        size: u * this.rng.range(6, 12),
+        color: this.rng.pick(RAINBOW),
+        shape: this.rng.chance(0.5) ? 'rect' : 'star',
+        rot: this.rng.range(0, TAU),
+        spin: this.rng.range(-12, 12),
+        gravity: u * 500,
+        drag: 1.2,
+      });
+    }
+    this.emit({ type: 'shake' });
   }
 
   release(id: number): void {
+    const pointer = this.pointers.get(id);
+    if (pointer) pointer.trail.active = false;
     this.pointers.delete(id);
   }
 
@@ -170,6 +288,20 @@ export class Game {
       }
     }
     return best;
+  }
+
+  isOnSun(x: number, y: number): boolean {
+    const sun = this.sun;
+    return Math.hypot(x - sun.x, y - sun.y) <= sun.r * SUN_HIT_FACTOR;
+  }
+
+  findCloudAt(x: number, y: number): Cloud | null {
+    for (const c of this.clouds) {
+      const dx = (x - c.x) / (72 * c.scale);
+      const dy = (y - c.y) / (44 * c.scale);
+      if (dx * dx + dy * dy <= 1) return c;
+    }
+    return null;
   }
 
   spawnBalloon(options: SpawnOptions = {}): Balloon | null {
@@ -202,6 +334,8 @@ export class Game {
       blinkTimer: this.rng.range(1.5, 5),
       blink: 0,
       tapped: !!options.inflate,
+      vx: 0,
+      vyImpulse: 0,
     };
     this.balloons.push(balloon);
     return balloon;
@@ -210,6 +344,7 @@ export class Game {
   update(dt: number): void {
     this.time += dt;
     this.sinceCelebration += dt;
+    this.sunHit += dt;
 
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
@@ -219,6 +354,7 @@ export class Game {
       if (this.balloons.length < this.config.targetBalloons) this.spawnBalloon();
     }
 
+    const damping = Math.max(0, 1 - 2.5 * dt);
     for (let i = this.balloons.length - 1; i >= 0; i--) {
       const b = this.balloons[i];
       b.age += dt;
@@ -229,6 +365,18 @@ export class Game {
         b.scale = 1;
       }
       b.y -= b.vy * dt * (0.3 + 0.7 * b.inflate);
+      // Pushes from swipes: drift sideways/vertically and settle again.
+      b.baseX += b.vx * dt;
+      b.y += b.vyImpulse * dt;
+      b.vx *= damping;
+      b.vyImpulse *= damping;
+      if (b.baseX < b.r) {
+        b.baseX = b.r;
+        b.vx = Math.abs(b.vx) * 0.5;
+      } else if (b.baseX > this.width - b.r) {
+        b.baseX = this.width - b.r;
+        b.vx = -Math.abs(b.vx) * 0.5;
+      }
       b.x = b.baseX + b.swayAmp * Math.sin(TAU * b.swayFreq * b.age + b.swayPhase);
       if (b.blink > 0) {
         b.blink -= dt;
@@ -242,6 +390,25 @@ export class Game {
       if (b.y < -b.r * 2.5) this.balloons.splice(i, 1);
     }
 
+    for (const c of this.clouds) {
+      c.x += (c.speed + c.vx) * dt;
+      c.vx *= Math.max(0, 1 - 2 * dt);
+      c.wobble = Math.max(0, c.wobble - dt * 1.2);
+      const w = 80 * c.scale;
+      if (c.x - w > this.width) {
+        c.x = -w;
+        c.y = this.rng.range(this.height * 0.06, this.height * 0.5);
+      } else if (c.x + w < -w) {
+        c.x = this.width + w;
+      }
+    }
+
+    for (let i = this.trails.length - 1; i >= 0; i--) {
+      const trail = this.trails[i];
+      while (trail.points.length && this.time - trail.points[0].t > TRAIL_LIFE) trail.points.shift();
+      if (!trail.active && trail.points.length === 0) this.trails.splice(i, 1);
+    }
+
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.life -= dt;
@@ -250,13 +417,72 @@ export class Game {
         continue;
       }
       p.vy += p.gravity * dt;
-      const damping = Math.max(0, 1 - p.drag * dt);
-      p.vx *= damping;
-      p.vy *= damping;
+      const drag = Math.max(0, 1 - p.drag * dt);
+      p.vx *= drag;
+      p.vy *= drag;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.rot += p.spin * dt;
     }
+  }
+
+  /** A moving finger blows nearby balloons and clouds along with it. */
+  private wind(x: number, y: number, dx: number, dy: number): void {
+    const moved = Math.hypot(dx, dy);
+    if (moved < 0.5) return;
+    const u = this.unit;
+    const push = Math.min(moved, 40 * u) * 1.2;
+    const dirX = dx / moved;
+    const dirY = dy / moved;
+    for (const b of this.balloons) {
+      const reach = b.r * WIND_REACH;
+      const offX = b.x - x;
+      const offY = b.y - y;
+      const distance = Math.hypot(offX, offY);
+      if (distance > reach || distance < 1) continue;
+      const strength = (1 - distance / reach) * push;
+      b.vx = clamp(b.vx + dirX * strength * 6 + (offX / distance) * strength * 3, -500 * u, 500 * u);
+      b.vyImpulse = clamp(b.vyImpulse + dirY * strength * 6 + (offY / distance) * strength * 3, -500 * u, 500 * u);
+    }
+    for (const c of this.clouds) {
+      const reach = 110 * c.scale;
+      const distance = Math.hypot(c.x - x, c.y - y);
+      if (distance > reach) continue;
+      const strength = (1 - distance / reach) * push;
+      c.vx = clamp(c.vx + dirX * strength * 3, -220 * u, 220 * u);
+    }
+  }
+
+  private pokeSun(x: number, y: number): void {
+    this.sunHit = 0;
+    const sun = this.sun;
+    this.sparkleBurst(sun.x, sun.y, 14, SUN_COLORS, sun.r);
+    this.emit({ type: 'sun', x, y });
+  }
+
+  /** Touching a cloud makes it wobble and rain a few drops. */
+  private pokeCloud(cloud: Cloud, x: number, y: number): void {
+    cloud.wobble = 1;
+    const u = this.unit;
+    for (let i = 0; i < 12; i++) {
+      const life = this.rng.range(0.9, 1.4);
+      this.addParticle({
+        x: cloud.x + this.rng.range(-60, 60) * cloud.scale,
+        y: cloud.y + this.rng.range(10, 24) * cloud.scale,
+        vx: u * this.rng.range(-15, 15),
+        vy: u * this.rng.range(60, 160),
+        life,
+        maxLife: life,
+        size: u * this.rng.range(5, 8),
+        color: this.rng.pick(RAIN_COLORS),
+        shape: 'drop',
+        rot: 0,
+        spin: 0,
+        gravity: u * 500,
+        drag: 0.3,
+      });
+    }
+    this.emit({ type: 'cloud', x, y });
   }
 
   private pickKind(): BalloonKind {
@@ -377,21 +603,21 @@ export class Game {
     this.emit({ type: 'celebrate', pops: this.pops });
   }
 
-  private sparkleBurst(x: number, y: number, count: number): void {
+  private sparkleBurst(x: number, y: number, count: number, colors: readonly string[] = SPARKLE_COLORS, spread = 0): void {
     const u = this.unit;
     for (let i = 0; i < count; i++) {
       const angle = this.rng.range(0, TAU);
       const speed = u * this.rng.range(40, 160);
       const life = this.rng.range(0.35, 0.7);
       this.addParticle({
-        x,
-        y,
+        x: x + Math.cos(angle) * spread * this.rng.next(),
+        y: y + Math.sin(angle) * spread * this.rng.next(),
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - u * 40,
         life,
         maxLife: life,
         size: u * this.rng.range(4, 9),
-        color: this.rng.pick(SPARKLE_COLORS),
+        color: this.rng.pick(colors),
         shape: 'sparkle',
         rot: this.rng.range(0, TAU),
         spin: this.rng.range(-6, 6),

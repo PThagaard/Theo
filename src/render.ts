@@ -1,20 +1,13 @@
 import type { Game } from './game';
+import { TRAIL_LIFE } from './game';
 import { FLOWER_COLORS, HILLS, RAINBOW, SKY } from './palette';
 import { Rng, TAU, clamp } from './rng';
-import type { Balloon, Particle } from './types';
+import type { Balloon, Cloud, Particle, Trail } from './types';
 
 /**
  * Draws the world on a 2D canvas: sky, smiling sun, rainbow, clouds, flowery
- * hills, the balloons with their faces, and all the confetti.
+ * hills, the balloons with their faces, the finger ribbons and all the confetti.
  */
-
-interface Cloud {
-  x: number;
-  y: number;
-  scale: number;
-  speed: number;
-  shape: number;
-}
 
 interface Flower {
   /** Horizontal position as a fraction of the width. */
@@ -25,7 +18,7 @@ interface Flower {
   petals: number;
 }
 
-/** Puff circles that make up each cloud: [dx, dy, radius]. */
+/** Puff circles that make up each cloud: [dx, dy, radius]. The game picks a shape index. */
 const CLOUD_SHAPES: ReadonlyArray<ReadonlyArray<readonly [number, number, number]>> = [
   [
     [0, 0, 30],
@@ -55,7 +48,6 @@ export class Renderer {
   private readonly ctx: CanvasRenderingContext2D;
   private W = 1;
   private H = 1;
-  private clouds: Cloud[] = [];
   private flowers: Flower[] = [];
   private sunAngle = 0;
   private sky: CanvasGradient | null = null;
@@ -84,17 +76,6 @@ export class Renderer {
   private buildScenery(): void {
     const u = this.u;
     const rng = this.rng;
-    this.clouds = [];
-    const cloudCount = 4 + Math.round(this.W / 300);
-    for (let i = 0; i < cloudCount; i++) {
-      this.clouds.push({
-        x: rng.range(-100, this.W),
-        y: rng.range(this.H * 0.06, this.H * 0.5),
-        scale: u * rng.range(0.7, 1.3),
-        speed: u * rng.range(5, 14),
-        shape: rng.int(0, CLOUD_SHAPES.length - 1),
-      });
-    }
     this.flowers = [];
     const flowerCount = 6 + Math.round(this.W / 70);
     for (let i = 0; i < flowerCount; i++) {
@@ -120,10 +101,11 @@ export class Renderer {
     ctx.fillRect(0, 0, this.W, this.H);
     this.drawSun(game, dt);
     this.drawRainbow();
-    this.drawClouds(dt);
+    for (const cloud of game.clouds) this.drawCloud(cloud);
     this.drawHills();
     for (const b of game.balloons) this.drawString(b);
     for (const b of game.balloons) this.drawBalloon(b);
+    for (const trail of game.trails) this.drawTrail(trail, game.time);
     for (const p of game.particles) this.drawParticle(p);
   }
 
@@ -131,17 +113,19 @@ export class Renderer {
 
   private drawSun(game: Game, dt: number): void {
     const ctx = this.ctx;
-    const u = this.u;
-    const cx = this.W - 72 * u;
-    const cy = 78 * u;
-    // The sun spins and bounces for a moment after every celebration.
-    const party = game.sinceCelebration < 1.6 ? 1 - game.sinceCelebration / 1.6 : 0;
+    const sun = game.sun;
+    // The sun spins and bounces for a moment after every celebration and whenever it is touched.
+    const party = Math.max(
+      game.sinceCelebration < 1.6 ? 1 - game.sinceCelebration / 1.6 : 0,
+      game.sunHit < 1.2 ? 1 - game.sunHit / 1.2 : 0,
+    );
     this.sunAngle += dt * (0.12 + party * 5);
-    const pulse = party > 0 ? 1 + party * 0.12 * Math.sin(game.sinceCelebration * 14) : 1;
-    const r = 40 * u * pulse;
+    const wobbleClock = Math.min(game.sinceCelebration, game.sunHit);
+    const pulse = party > 0 ? 1 + party * 0.12 * Math.sin(wobbleClock * 14) : 1;
+    const r = sun.r * pulse;
 
     ctx.save();
-    ctx.translate(cx, cy);
+    ctx.translate(sun.x, sun.y);
     ctx.fillStyle = 'rgba(255, 196, 40, 0.85)';
     for (let i = 0; i < 12; i++) {
       const a = this.sunAngle + (i * TAU) / 12;
@@ -161,17 +145,26 @@ export class Renderer {
     ctx.arc(0, 0, r, 0, TAU);
     ctx.fill();
 
+    // A touched sun squeezes its eyes shut with joy.
+    const gleeful = game.sunHit < 0.9;
     ctx.fillStyle = '#5a3d1e';
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.ellipse(side * r * 0.32, -r * 0.12, r * 0.08, r * 0.12, 0, 0, TAU);
-      ctx.fill();
-    }
     ctx.strokeStyle = '#5a3d1e';
-    ctx.lineWidth = r * 0.07;
     ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      if (gleeful) {
+        ctx.lineWidth = r * 0.07;
+        ctx.beginPath();
+        ctx.arc(side * r * 0.32, -r * 0.06, r * 0.12, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(side * r * 0.32, -r * 0.12, r * 0.08, r * 0.12, 0, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.lineWidth = r * 0.07;
     ctx.beginPath();
-    ctx.arc(0, r * 0.12, r * 0.38, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.arc(0, r * 0.12, r * (gleeful ? 0.44 : 0.38), 0.15 * Math.PI, 0.85 * Math.PI);
     ctx.stroke();
     ctx.fillStyle = 'rgba(255, 120, 120, 0.45)';
     for (const side of [-1, 1]) {
@@ -201,27 +194,20 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawClouds(dt: number): void {
+  private drawCloud(cloud: Cloud): void {
     const ctx = this.ctx;
+    const wobble = cloud.wobble > 0 ? 1 + 0.1 * cloud.wobble * Math.sin(cloud.wobble * 22) : 1;
+    ctx.save();
+    ctx.translate(cloud.x, cloud.y);
+    ctx.scale(cloud.scale * wobble, cloud.scale / wobble);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.93)';
-    for (const cloud of this.clouds) {
-      cloud.x += cloud.speed * dt;
-      const width = 80 * cloud.scale;
-      if (cloud.x - width > this.W) {
-        cloud.x = -width;
-        cloud.y = this.rng.range(this.H * 0.06, this.H * 0.5);
-      }
-      ctx.save();
-      ctx.translate(cloud.x, cloud.y);
-      ctx.scale(cloud.scale, cloud.scale);
-      ctx.beginPath();
-      for (const [dx, dy, r] of CLOUD_SHAPES[cloud.shape]) {
-        ctx.moveTo(dx + r, dy);
-        ctx.arc(dx, dy, r, 0, TAU);
-      }
-      ctx.fill();
-      ctx.restore();
+    ctx.beginPath();
+    for (const [dx, dy, r] of CLOUD_SHAPES[cloud.shape % CLOUD_SHAPES.length]) {
+      ctx.moveTo(dx + r, dy);
+      ctx.arc(dx, dy, r, 0, TAU);
     }
+    ctx.fill();
+    ctx.restore();
   }
 
   private hillY(x: number, layer: 0 | 1): number {
@@ -279,11 +265,43 @@ export class Renderer {
     }
   }
 
+  // ---- Finger ribbons ------------------------------------------------------
+
+  /** A glowing rainbow ribbon that follows the finger and fades away behind it. */
+  private drawTrail(trail: Trail, now: number): void {
+    const points = trail.points;
+    if (points.length < 2) return;
+    const ctx = this.ctx;
+    const u = this.u;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Two passes: a wide soft glow, then the bright core.
+    for (const pass of [0, 1] as const) {
+      for (let i = 1; i < points.length; i++) {
+        const p0 = points[i - 1];
+        const p1 = points[i];
+        const life = clamp(1 - (now - p1.t) / TRAIL_LIFE, 0, 1);
+        if (life <= 0) continue;
+        const hue = (trail.hue + i * 7) % 360;
+        ctx.strokeStyle = `hsl(${hue}, 95%, ${pass === 0 ? 70 : 62}%)`;
+        ctx.globalAlpha = pass === 0 ? life * 0.3 : life * 0.95;
+        ctx.lineWidth = (pass === 0 ? 30 : 13) * u * (0.35 + 0.65 * life);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   // ---- Balloons ------------------------------------------------------------
 
-  /** Balloons lean into the direction they are swaying. */
+  /** Balloons lean into the direction they are swaying (and into a push). */
   private tilt(b: Balloon): number {
-    return Math.cos(TAU * b.swayFreq * b.age + b.swayPhase) * 0.13;
+    const push = clamp(b.vx / (400 * this.u), -1, 1) * 0.35;
+    return Math.cos(TAU * b.swayFreq * b.age + b.swayPhase) * 0.13 + push;
   }
 
   private drawString(b: Balloon): void {
@@ -296,7 +314,7 @@ export class Renderer {
     const kx = b.x - Math.sin(tilt) * knotDistance;
     const ky = b.y + Math.cos(tilt) * knotDistance;
     const length = 62 * u * s;
-    const wobble = Math.sin(this.time * 2.4 + b.swayPhase) * 9 * u;
+    const wobble = Math.sin(this.time * 2.4 + b.swayPhase) * 9 * u - clamp(b.vx / 20, -14 * u, 14 * u);
     ctx.strokeStyle = 'rgba(70, 50, 90, 0.55)';
     ctx.lineWidth = 2.2 * u;
     ctx.lineCap = 'round';
@@ -521,6 +539,11 @@ export class Renderer {
         break;
       case 'heart':
         this.heartPath(0, 0, s);
+        ctx.fill();
+        break;
+      case 'drop':
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s * 0.32, s * 0.5, 0, 0, TAU);
         ctx.fill();
         break;
     }

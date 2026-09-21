@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, Game, TAP_HIT_FACTOR } from '../src/game';
+import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE } from '../src/game';
 import type { GameEvent } from '../src/types';
 
 const W = 390;
@@ -13,11 +13,11 @@ function makeGame(seed = 42): { game: Game; events: GameEvent[] } {
   return { game, events };
 }
 
-/** Finds a point on screen that is not near any balloon. */
+/** Finds a point on screen that is not near any balloon, the sun or a cloud. */
 function emptySpot(game: Game): [number, number] {
   for (let y = 80; y < H - 80; y += 12) {
     for (let x = 40; x < W - 40; x += 12) {
-      if (!game.findBalloonAt(x, y, TAP_HIT_FACTOR)) return [x, y];
+      if (!game.findBalloonAt(x, y, TAP_HIT_FACTOR) && !game.isOnSun(x, y) && !game.findCloudAt(x, y)) return [x, y];
     }
   }
   throw new Error('Ingen ledig plads på skærmen');
@@ -27,10 +27,21 @@ function advance(game: Game, seconds: number, step = 1 / 60): void {
   for (let t = 0; t < seconds; t += step) game.update(step);
 }
 
+/** Slides a finger from one point to another in small steps. */
+function swipe(game: Game, id: number, from: [number, number], to: [number, number], steps = 40): void {
+  game.press(id, from[0], from[1]);
+  for (let i = 1; i <= steps; i++) {
+    game.drag(id, from[0] + ((to[0] - from[0]) * i) / steps, from[1] + ((to[1] - from[1]) * i) / steps);
+    game.update(1 / 120);
+  }
+  game.release(id);
+}
+
 describe('Game', () => {
-  it('starts with balloons already on screen', () => {
+  it('starts with balloons and clouds already on screen', () => {
     const { game } = makeGame();
     expect(game.balloons.length).toBeGreaterThanOrEqual(4);
+    expect(game.clouds.length).toBeGreaterThanOrEqual(4);
     for (const b of game.balloons) {
       expect(b.x).toBeGreaterThan(0);
       expect(b.x).toBeLessThan(W);
@@ -85,13 +96,7 @@ describe('Game', () => {
     advance(game, 0.5);
     const balloon = game.balloons[0];
     const [x, y] = emptySpot(game);
-    game.press(1, x, y);
-    // Slide across the screen in small steps to the balloon.
-    const steps = 40;
-    for (let i = 1; i <= steps; i++) {
-      game.drag(1, x + ((balloon.x - x) * i) / steps, y + ((balloon.y - y) * i) / steps);
-    }
-    game.release(1);
+    swipe(game, 1, [x, y], [balloon.x, balloon.y]);
     expect(game.balloons).not.toContain(balloon);
     expect(events.some((e) => e.type === 'pop')).toBe(true);
   });
@@ -104,6 +109,100 @@ describe('Game', () => {
     game.drag(1, x + 2, y + 1);
     game.drag(1, x - 2, y - 1);
     expect(game.balloons).toContain(created);
+  });
+
+  it('paints a ribbon behind a swiping finger that fades after the finger lifts', () => {
+    const { game } = makeGame();
+    game.balloons = [];
+    swipe(game, 1, [40, 400], [350, 420]);
+    expect(game.trails).toHaveLength(1);
+    expect(game.trails[0].points.length).toBeGreaterThan(10);
+    expect(game.trails[0].active).toBe(false);
+    advance(game, TRAIL_LIFE + 0.2);
+    expect(game.trails).toHaveLength(0);
+  });
+
+  it('plays harp notes along a swipe, higher notes higher up on the screen', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    swipe(game, 1, [30, H - 120], [W - 30, H - 120]);
+    const low = events.filter((e): e is Extract<GameEvent, { type: 'glide' }> => e.type === 'glide');
+    expect(low.length).toBeGreaterThanOrEqual(5);
+    events.length = 0;
+    swipe(game, 2, [30, 120], [W - 30, 120]);
+    const high = events.filter((e): e is Extract<GameEvent, { type: 'glide' }> => e.type === 'glide');
+    expect(high.length).toBeGreaterThanOrEqual(5);
+    const average = (notes: Array<{ note: number }>) => notes.reduce((sum, n) => sum + n.note, 0) / notes.length;
+    expect(average(high)).toBeGreaterThan(average(low));
+    for (const e of [...low, ...high]) {
+      expect(e.note).toBeGreaterThanOrEqual(0);
+      expect(e.note).toBeLessThan(GLIDE_NOTES);
+    }
+  });
+
+  it('blows balloons near a swiping finger without popping them', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    const balloon = game.spawnBalloon({ x: 200, y: 400 })!;
+    advance(game, 0.5);
+    const startX = balloon.baseX;
+    // Swipe upwards, passing to the left of the balloon just outside its hit area.
+    const gap = balloon.r * 1.6;
+    swipe(game, 1, [balloon.x - gap, 600], [balloon.x - gap, 200]);
+    expect(events.some((e) => e.type === 'pop')).toBe(false);
+    expect(game.balloons).toContain(balloon);
+    expect(Math.abs(balloon.vx) + Math.abs(balloon.vyImpulse)).toBeGreaterThan(20);
+    advance(game, 0.5);
+    expect(balloon.baseX).not.toBeCloseTo(startX, 0);
+    // Pushes fade out again.
+    advance(game, 3);
+    expect(Math.abs(balloon.vx)).toBeLessThan(5);
+  });
+
+  it('keeps pushed balloons on the screen', () => {
+    const { game } = makeGame();
+    game.balloons = [];
+    const balloon = game.spawnBalloon({ x: 60, y: 400 })!;
+    advance(game, 0.5);
+    balloon.vx = -2000;
+    advance(game, 1);
+    expect(balloon.baseX).toBeGreaterThanOrEqual(balloon.r);
+    balloon.vx = 2000;
+    advance(game, 1);
+    expect(balloon.baseX).toBeLessThanOrEqual(W - balloon.r);
+  });
+
+  it('makes the sun spin and sparkle when touched', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    const sun = game.sun;
+    game.press(1, sun.x, sun.y);
+    expect(events.some((e) => e.type === 'sun')).toBe(true);
+    expect(game.sunHit).toBe(0);
+    expect(game.particles.length).toBeGreaterThan(5);
+  });
+
+  it('makes a cloud wobble and rain when touched', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    const cloud = game.clouds[0];
+    cloud.x = W / 2;
+    cloud.y = 300;
+    game.press(1, cloud.x, cloud.y);
+    expect(events.some((e) => e.type === 'cloud')).toBe(true);
+    expect(cloud.wobble).toBe(1);
+    expect(game.particles.filter((p) => p.shape === 'drop').length).toBeGreaterThan(5);
+  });
+
+  it('throws everything about when the phone is shaken', () => {
+    const { game, events } = makeGame();
+    advance(game, 0.5);
+    const impulses = () => game.balloons.reduce((sum, b) => sum + Math.abs(b.vx) + Math.abs(b.vyImpulse), 0);
+    expect(impulses()).toBe(0);
+    game.shake();
+    expect(impulses()).toBeGreaterThan(100);
+    expect(events.some((e) => e.type === 'shake')).toBe(true);
+    expect(game.sunHit).toBe(0);
   });
 
   it('celebrates every tenth pop', () => {
