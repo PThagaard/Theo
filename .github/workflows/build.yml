@@ -43,6 +43,41 @@ jobs:
           name: theos-balloner-web
           path: dist
 
+  e2e:
+    name: Røgtest i Chromium
+    needs: web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent koden
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Hent den byggede webapp
+        uses: actions/download-artifact@v4
+        with:
+          name: theos-balloner-web
+          path: dist
+
+      - name: Playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Røgtest (tryk, swipe, ryst, menu, lyd, offline)
+        run: npm run test:e2e
+
+      - name: Gem skærmbilleder
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skaermbilleder
+          path: test-results
+
   pages:
     name: Webapp på GitHub Pages
     # GitHub Pages er gratis for offentlige repos. Jobbet springes over, så længe repoet er privat,

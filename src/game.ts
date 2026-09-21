@@ -162,18 +162,19 @@ export class Game {
     this.trails.push(trail);
     this.pointers.set(id, { x, y, travelled: 0, glideTravelled: 0, lastGlide: -1, trail });
 
+    // Same order as the drawing: balloons are in front of clouds, clouds in front of the sun.
     const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
     if (balloon) {
       this.pop(balloon);
       return;
     }
-    if (this.isOnSun(x, y)) {
-      this.pokeSun(x, y);
-      return;
-    }
     const cloud = this.findCloudAt(x, y);
     if (cloud) {
       this.pokeCloud(cloud, x, y);
+      return;
+    }
+    if (this.isOnSun(x, y)) {
+      this.pokeSun(x, y);
       return;
     }
     // Touching empty sky is rewarded too: sparkles, and a brand new balloon inflates under the finger.
@@ -439,10 +440,12 @@ export class Game {
       const offX = b.x - x;
       const offY = b.y - y;
       const distance = Math.hypot(offX, offY);
-      if (distance > reach || distance < 1) continue;
+      // Balloons right in the finger's path are about to be popped; wind only touches the ones beside it,
+      // and pushes mostly along the swipe so a balloon never dodges the finger that is about to hit it.
+      if (distance > reach || distance < b.r * 1.3) continue;
       const strength = (1 - distance / reach) * push;
-      b.vx = clamp(b.vx + dirX * strength * 6 + (offX / distance) * strength * 3, -500 * u, 500 * u);
-      b.vyImpulse = clamp(b.vyImpulse + dirY * strength * 6 + (offY / distance) * strength * 3, -500 * u, 500 * u);
+      b.vx = clamp(b.vx + dirX * strength * 6 + (offX / distance) * strength * 1.5, -420 * u, 420 * u);
+      b.vyImpulse = clamp(b.vyImpulse + dirY * strength * 6 + (offY / distance) * strength * 1.5, -420 * u, 420 * u);
     }
     for (const c of this.clouds) {
       const reach = 110 * c.scale;

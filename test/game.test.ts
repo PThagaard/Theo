@@ -101,6 +101,17 @@ describe('Game', () => {
     expect(events.some((e) => e.type === 'pop')).toBe(true);
   });
 
+  it('pops a balloon a fast swipe crosses on a tablet, even though the wind pushes it', () => {
+    const game = new Game({}, 7);
+    game.resize(1024, 768);
+    game.balloons = [];
+    const balloon = game.spawnBalloon({ x: 600, y: 380 })!;
+    advance(game, 0.5);
+    // Big steps like a quick hand across a tablet: 25 px per sample at 120 Hz.
+    swipe(game, 1, [10, balloon.y + balloon.r * 0.5], [1014, balloon.y + balloon.r * 0.5], 40);
+    expect(game.balloons).not.toContain(balloon);
+  });
+
   it('does not let the same touch pop the balloon it just created', () => {
     const { game } = makeGame();
     const [x, y] = emptySpot(game);
@@ -175,6 +186,8 @@ describe('Game', () => {
   it('makes the sun spin and sparkle when touched', () => {
     const { game, events } = makeGame();
     game.balloons = [];
+    // Clouds drift in front of the sun now and then; move them away so the touch reaches the sun.
+    for (const c of game.clouds) c.y = H * 0.45;
     const sun = game.sun;
     game.press(1, sun.x, sun.y);
     expect(events.some((e) => e.type === 'sun')).toBe(true);

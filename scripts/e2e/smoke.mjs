@@ -1,0 +1,241 @@
+// Smoke test: serves dist/, drives the game in headless Chromium, takes screenshots,
+// and renders the synthesised audio offline to check every sound actually makes sound.
+// Usage: node scripts/e2e/smoke.mjs [phone|tablet]
+import { OUT, VIEWPORTS, check, openPhone, serveDist, waitForGame } from './lib.mjs';
+
+const server = await serveDist();
+const url = server.url;
+const tag = process.argv[2] === 'tablet' ? 'tablet' : 'phone';
+const viewport = VIEWPORTS[tag];
+const { browser, page, problems } = await openPhone(viewport);
+
+await page.goto(url);
+await waitForGame(page);
+await page.waitForTimeout(1200);
+await page.screenshot({ path: `${OUT}/${tag}-01-start.png` });
+
+const state = () => page.evaluate(() => {
+  const g = window.__theo.game;
+  return { balloons: g.balloons.map((b) => ({ x: b.x, y: b.y, r: b.r, kind: b.kind, scale: b.scale })), pops: g.pops, particles: g.particles.length, size: [g.width, g.height], unit: g.unit };
+});
+
+let s = await state();
+console.log('start:', s.balloons.length, 'balloons, unit', s.unit.toFixed(2), 'size', s.size);
+
+// Tap a balloon (only ones fully on screen).
+const target = s.balloons.find((b) => b.y > 100 && b.y < viewport.height - 100 && b.scale > 0.9);
+check(target, 'no balloon on screen to tap');
+await page.touchscreen.tap(target.x, target.y);
+await page.waitForTimeout(140);
+s = await state();
+console.log('after tap: pops', s.pops, 'particles', s.particles);
+if (s.pops !== 1) throw new Error('tap did not pop');
+await page.screenshot({ path: `${OUT}/${tag}-02-pop.png` });
+
+// Touch empty sky -> a balloon inflates there.
+const empty = await page.evaluate((f) => {
+  const g = window.__theo.game;
+  for (let y = 120; y < g.height - 120; y += 10) {
+    for (let x = 60; x < g.width - 60; x += 10) {
+      if (!g.findBalloonAt(x, y, f) && !g.findCloudAt(x, y) && !g.isOnSun(x, y)) return [x, y];
+    }
+  }
+  return null;
+}, 1.6);
+const before = s.balloons.length;
+await page.touchscreen.tap(empty[0], empty[1]);
+await page.waitForTimeout(220);
+s = await state();
+console.log('after empty tap: balloons', before, '->', s.balloons.length);
+const spawned = await page.evaluate(([x, y]) => {
+  const g = window.__theo.game;
+  // The new balloon has already started rising and swaying, more so on big screens.
+  return g.balloons.some((b) => b.tapped && Math.hypot(b.x - x, b.y - y) < 60 * g.unit);
+}, empty);
+if (!spawned) throw new Error('empty tap did not spawn a balloon under the finger');
+await page.screenshot({ path: `${OUT}/${tag}-03-inflate.png` });
+
+// Swipe with the mouse (pointer events) straight through a balloon that is on screen.
+await page.waitForTimeout(600);
+s = await state();
+const popsBefore = s.pops;
+const swipeTarget = s.balloons.find((b) => b.y > 100 && b.y < viewport.height - 100 && b.scale > 0.9) ?? { y: viewport.height / 2 };
+await page.mouse.move(10, swipeTarget.y);
+await page.mouse.down();
+await page.mouse.move(viewport.width - 10, swipeTarget.y, { steps: 40 });
+await page.mouse.up();
+s = await state();
+console.log('after swipe: pops', popsBefore, '->', s.pops);
+if (s.pops <= popsBefore) throw new Error('swipe did not pop the balloon it crossed');
+
+// A slow swipe, photographed midway so the ribbon is visible.
+await page.mouse.move(40, viewport.height * 0.35);
+await page.mouse.down();
+await page.mouse.move(viewport.width * 0.6, viewport.height * 0.3, { steps: 25 });
+await page.screenshot({ path: `${OUT}/${tag}-03b-ribbon.png` });
+await page.mouse.move(viewport.width - 40, viewport.height * 0.5, { steps: 25 });
+await page.mouse.up();
+const glideCount = await page.evaluate(() => new Promise((resolve) => {
+  // Count harp notes produced by a scripted swipe straight through the game API.
+  const g = window.__theo.game; let n = 0; const off = g.onEvent((e) => { if (e.type === 'glide') n++; });
+  g.press(77, 30, g.height - 150); for (let i = 1; i <= 40; i++) { g.drag(77, 30 + ((g.width - 60) * i) / 40, g.height - 150); g.update(1 / 120); } g.release(77);
+  resolve(n);
+}));
+console.log('harp notes from a scripted swipe:', glideCount);
+if (glideCount < 5) throw new Error('no harp notes from swiping');
+
+// Touch the sun and a cloud.
+const sun = await page.evaluate(() => {
+  const g = window.__theo.game;
+  // Balloons and clouds in front of the sun would (correctly) be hit first; move them out of the way.
+  for (const b of g.balloons) if (Math.hypot(b.x - g.sun.x, b.y - g.sun.y) < g.sun.r * 2 + b.r * 2) { b.baseX = g.width / 2; b.y += 320; }
+  for (const c of g.clouds) if (Math.abs(c.y - g.sun.y) < 200) c.y = g.sun.y + 260;
+  g.update(1 / 60);
+  return g.sun;
+});
+await page.touchscreen.tap(sun.x, sun.y);
+await page.waitForTimeout(120);
+const sunHit = await page.evaluate(() => window.__theo.game.sunHit);
+console.log('sun touched, sunHit =', sunHit.toFixed(2));
+if (!(sunHit < 0.5)) throw new Error('sun did not react');
+await page.screenshot({ path: `${OUT}/${tag}-03c-sun.png`, clip: { x: viewport.width - 160, y: 0, width: 160, height: 160 } });
+const cloud = await page.evaluate(() => {
+  const g = window.__theo.game;
+  const c = g.clouds.find((c) => c.x > 60 && c.x < g.width - 60 && c.y > 60 && !g.findBalloonAt(c.x, c.y, 1.6));
+  return c ? [c.x, c.y] : null;
+});
+if (cloud) {
+  await page.touchscreen.tap(cloud[0], cloud[1]);
+  await page.waitForTimeout(150);
+  const drops = await page.evaluate(() => window.__theo.game.particles.filter((p) => p.shape === 'drop').length);
+  console.log('cloud touched, raindrops:', drops);
+  if (drops < 3) throw new Error('cloud did not rain');
+  await page.screenshot({ path: `${OUT}/${tag}-03d-cloud.png` });
+} else console.log('no reachable cloud to tap (skipped)');
+
+// Shake: synthetic motion events through the real DeviceMotion path.
+const shook = await page.evaluate(() => {
+  const g = window.__theo.game; const before = g.particles.length; g.sunHit = 5;
+  const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));
+  fire(0, 9.8, 0); fire(18, -12, 6);
+  return { reacted: g.sunHit === 0, particles: g.particles.length - before };
+});
+console.log('shake via DeviceMotion:', JSON.stringify(shook));
+if (!shook.reacted) throw new Error('shake was not detected');
+
+// Pop until a celebration happens.
+let guard = 0;
+while (s.pops < 10 && guard++ < 200) {
+  const b = s.balloons.find((b) => b.y > 60 && b.y < viewport.height - 60 && b.scale > 0.9);
+  if (b) await page.touchscreen.tap(b.x, b.y);
+  await page.waitForTimeout(150);
+  s = await state();
+}
+console.log('pops now', s.pops);
+await page.waitForTimeout(350);
+await page.screenshot({ path: `${OUT}/${tag}-04-celebration.png` });
+const since = await page.evaluate(() => window.__theo.game.sinceCelebration);
+if (!(since < 5)) throw new Error('no celebration after 10 pops: ' + since);
+
+// Frame rate over 2 seconds.
+const fps = await page.evaluate(() => new Promise((resolve) => {
+  let frames = 0; const start = performance.now();
+  const tick = () => { frames++; if (performance.now() - start < 2000) requestAnimationFrame(tick); else resolve(frames / 2); };
+  requestAnimationFrame(tick);
+}));
+console.log('fps', fps.toFixed(1));
+
+// Parent menu: hold the corner button for 2.2 s.
+const btn = await page.locator('#parent-button').boundingBox();
+await page.mouse.move(btn.x + btn.width / 2, btn.y + btn.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(1000);
+await page.screenshot({ path: `${OUT}/${tag}-05-hold.png`, clip: { x: 0, y: 0, width: 120, height: 120 } });
+await page.waitForTimeout(1300);
+await page.mouse.up();
+const open = await page.evaluate(() => !document.getElementById('parent-panel').hidden);
+console.log('parent panel open after hold:', open);
+if (!open) throw new Error('parent panel did not open');
+await page.screenshot({ path: `${OUT}/${tag}-06-parent.png` });
+await page.click('label:has(#opt-music)');
+const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
+console.log('stored settings:', stored);
+await page.click('#parent-close');
+const closed = await page.evaluate(() => document.getElementById('parent-panel').hidden);
+console.log('closed:', closed);
+
+// A short tap must not open the menu.
+await page.mouse.move(btn.x + btn.width / 2, btn.y + btn.height / 2);
+await page.mouse.down(); await page.waitForTimeout(300); await page.mouse.up();
+const openAfterShort = await page.evaluate(() => !document.getElementById('parent-panel').hidden);
+console.log('open after short tap (should be false):', openAfterShort);
+
+// Live audio state.
+const audioState = await page.evaluate(() => { const a = window.__theo.audio(); return a ? { state: a.state, song: a.currentSongName } : null; });
+console.log('live audio:', audioState);
+
+// Offline render of every sound + a bit of music.
+const audio = await page.evaluate(async () => {
+  const { AudioEngine } = window.__theo;
+  const sr = 44100;
+  const ctx = new OfflineAudioContext(1, sr * 12, sr);
+  const engine = new AudioEngine(ctx);
+  const marks = [
+    ['pop big', 0.2, () => engine.pop(1, 0.2)],
+    ['pop small', 0.8, () => engine.pop(0, 0.8)],
+    ['sparkle', 1.4, () => engine.sparkle(1.4)],
+    ['inflate', 2.0, () => engine.inflate(2.0)],
+    ['fanfare', 2.6, () => engine.fanfare(2.6)],
+    ['boing', 4.2, () => engine.boing(4.2)],
+    ['chime', 5.0, () => engine.chime(5.0)],
+    ['glide', 5.6, () => { engine.glide(0, 5.6); engine.glide(4, 5.7); engine.glide(7, 5.8); }],
+    ['wee', 6.0, () => engine.wee(6.0)],
+    ['rain', 6.6, () => engine.rain(6.6)],
+    ['rattle', 7.2, () => engine.rattle(7.2)],
+    ['music', 7.8, () => engine.renderMusic(7.8, 4.2)],
+  ];
+  for (const [, , fn] of marks) fn();
+  const buffer = await ctx.startRendering();
+  const data = buffer.getChannelData(0);
+  const stats = (from, to) => {
+    let peak = 0, sum = 0, n = 0, nan = 0;
+    for (let i = Math.floor(from * sr); i < Math.min(data.length, Math.floor(to * sr)); i++) {
+      const v = data[i]; if (Number.isNaN(v)) { nan++; continue; }
+      peak = Math.max(peak, Math.abs(v)); sum += v * v; n++;
+    }
+    return { peak: +peak.toFixed(3), rms: +Math.sqrt(sum / n).toFixed(4), nan };
+  };
+  const out = {};
+  for (let i = 0; i < marks.length; i++) {
+    const [name, t] = marks[i];
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 12;
+    out[name] = stats(t, end);
+  }
+  out.silence_before = stats(0, 0.19);
+  out.total = stats(0, 12);
+  // WAV export for inspection
+  const wav = new DataView(new ArrayBuffer(44 + data.length * 2));
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) wav.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); wav.setUint32(4, 36 + data.length * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+  wav.setUint32(16, 16, true); wav.setUint16(20, 1, true); wav.setUint16(22, 1, true); wav.setUint32(24, sr, true);
+  wav.setUint32(28, sr * 2, true); wav.setUint16(32, 2, true); wav.setUint16(34, 16, true); str(36, 'data'); wav.setUint32(40, data.length * 2, true);
+  for (let i = 0; i < data.length; i++) wav.setInt16(44 + i * 2, Math.max(-1, Math.min(1, data[i])) * 32767, true);
+  out.wavBase64 = btoa(String.fromCharCode(...new Uint8Array(wav.buffer.slice(0, 44))));
+  return out;
+});
+console.log('audio stats:', JSON.stringify(audio, null, 1));
+for (const [name, v] of Object.entries(audio)) {
+  if (typeof v !== 'object' || name === 'silence_before' || name === 'total' || name === 'wavBase64') continue;
+  if (!(v.rms > 0.005)) throw new Error(`sound "${name}" is silent (rms ${v.rms})`);
+  if (v.nan) throw new Error(`sound "${name}" produced NaN`);
+  if (v.peak > 1.0) throw new Error(`sound "${name}" clips (peak ${v.peak})`);
+}
+
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${OUT}/${tag}-07-later.png` });
+
+console.log('console problems:', problems.length ? problems : 'none');
+await browser.close();
+server.close();
+if (problems.length) process.exitCode = 1;
+console.log('SMOKE OK');

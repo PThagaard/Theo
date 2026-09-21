@@ -11,7 +11,9 @@
     "test": "vitest run",
     "sync": "npm run build && cap sync",
     "ios": "npm run sync && cap open ios",
-    "android": "npm run sync && cap open android"
+    "android": "npm run sync && cap open android",
+    "test:e2e": "node scripts/e2e/smoke.mjs phone && node scripts/e2e/smoke.mjs tablet && node scripts/e2e/offline.mjs",
+    "test:live": "node scripts/e2e/live.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
     "@types/node": "^22.20.4",
+    "playwright": "^1.56.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
