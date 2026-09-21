@@ -3,6 +3,22 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – gården og traktoren
+
+- **En lille gård** til højre på den bagerste bakke: rød lade med hvid kant, stalddør, rundt vindue, et hegn og en
+  skorsten, der ryger stille og roligt hele tiden.
+- **Traktoren** kører af og til ud fra gården: en gammel rød traktor med stort baghjul, lille forhjul, en høj
+  skorsten, der putter røg, og et ansigt på kølergrillen. Den kører et stykke ud (hurtigere end hunden), holder et
+  øjeblik i tomgang og kører hjem igen. Tryk på den: "tut-tuuut", et hop og en ekstra røgsky. Lyn giver et hop og en
+  stor røgsky, regn får den til at dryppe, og en ballon lige over den løfter den op, hvor den dytter om hjælp, daler
+  ned i faldskærm og kører hjem.
+- Egne lydfiler til traktoren: `traktor.mp3` (dyt) og `traktor-motor.mp3` (motor), se `src/lyde/README.md`.
+- Tælles i Theos leg (… traktoren).
+
+**Test på telefonen:** (1) Gården står til højre med røg fra skorstenen. (2) Traktoren kommer inden for et par
+minutter: kører ud, holder, kører hjem, med røg fra skorstenen. (3) Tryk på den: dyt og hop. (4) Lav en ballon lige
+over den: den løftes og dytter om hjælp; pop ballonen, og den daler ned og kører hjem.
+
 ## 2026-09-21 – hold fingeren nede: uvejr, kæmpeballon og solskinsbrag
 
 - **Hold på en sky**, så bliver den mørkere og mørkere, og efter godt et sekund bliver den til uvejrsskyen lige

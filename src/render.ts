@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import { STRING_LENGTH, TRAIL_LIFE } from './game';
+import { FARM_CHIMNEY, STRING_LENGTH, TRAIL_LIFE } from './game';
 import { HILLS, RAINBOW, SKY } from './palette';
 import { TAU, clamp, easeOutBack } from './rng';
 import { hillY } from './terrain';
@@ -104,6 +104,7 @@ export class Renderer {
     for (const cloud of game.clouds) this.drawCloud(cloud);
     for (const v of game.visitors) if (v.kind === 'storm') this.drawStorm(v);
     this.drawHill(0);
+    this.drawFarm(game);
     // The elephant peeks up from between the hills, so it is drawn before the front hill (unless it is airborne).
     const airborne = (v: Visitor) => v.state === 'carried' || v.state === 'falling';
     for (const v of game.visitors) if (v.kind === 'elephant' && !airborne(v)) this.drawVisitor(v);
@@ -362,8 +363,137 @@ export class Renderer {
       case 'star':
         this.drawShootingStar(v);
         break;
+      case 'tractor':
+        this.drawTractor(v);
+        break;
       case 'storm':
         break;
+    }
+    ctx.restore();
+  }
+
+  /** The little farm on the back hill: a fence and a red barn with a smoking chimney. */
+  private drawFarm(game: Game): void {
+    const ctx = this.ctx;
+    const u = this.u;
+    const a = game.farmAnchor();
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    // Fence along the hill.
+    ctx.strokeStyle = '#a97142';
+    ctx.lineWidth = 2.2 * u;
+    ctx.lineCap = 'round';
+    for (let i = -6; i <= -2; i++) {
+      const x = i * 12 * u;
+      ctx.beginPath();
+      ctx.moveTo(x, 2 * u);
+      ctx.lineTo(x, -14 * u);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(-72 * u, -9 * u);
+    ctx.lineTo(-24 * u, -9 * u);
+    ctx.moveTo(-72 * u, -3 * u);
+    ctx.lineTo(-24 * u, -3 * u);
+    ctx.stroke();
+    // Barn: red walls with white trim, a chimney, a dark roof, a big door and a round gable window.
+    ctx.fillStyle = '#d9483b';
+    ctx.fillRect(-30 * u, -42 * u, 60 * u, 44 * u);
+    ctx.fillStyle = '#5a3d33';
+    ctx.fillRect((FARM_CHIMNEY.dx - 4) * u, FARM_CHIMNEY.dy * u, 8 * u, (-40 - FARM_CHIMNEY.dy) * u + 2 * u);
+    ctx.fillStyle = '#6b4a3a';
+    ctx.beginPath();
+    ctx.moveTo(-36 * u, -40 * u);
+    ctx.lineTo(0, -66 * u);
+    ctx.lineTo(36 * u, -40 * u);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f6efe6';
+    ctx.fillRect(-30 * u, -41 * u, 60 * u, 3 * u);
+    ctx.fillStyle = '#8a5a2b';
+    ctx.fillRect(-11 * u, -24 * u, 22 * u, 26 * u);
+    ctx.strokeStyle = '#f6efe6';
+    ctx.lineWidth = 1.5 * u;
+    ctx.strokeRect(-11 * u, -24 * u, 22 * u, 26 * u);
+    ctx.beginPath();
+    ctx.moveTo(-11 * u, -24 * u);
+    ctx.lineTo(11 * u, 2 * u);
+    ctx.moveTo(11 * u, -24 * u);
+    ctx.lineTo(-11 * u, 2 * u);
+    ctx.stroke();
+    ctx.fillStyle = '#f6efe6';
+    ctx.beginPath();
+    ctx.arc(0, -50 * u, 5 * u, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** An old red tractor: big back wheel, small front wheel, a tall chimney and a face on the grille. */
+  private drawTractor(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    const rolling = v.vx !== 0 ? v.age * 6 : Math.sin(v.age * 8) * 0.05;
+    this.wheel(-s * 0.55, -s * 0.55, s * 0.55, rolling);
+    this.wheel(s * 0.75, -s * 0.32, s * 0.32, rolling * 1.7);
+    // Engine hood and cab.
+    ctx.fillStyle = '#e0473b';
+    ctx.beginPath();
+    ctx.roundRect(-s * 0.3, -s * 1.0, s * 1.25, s * 0.5, s * 0.1);
+    ctx.fill();
+    ctx.fillStyle = '#c93a2f';
+    ctx.beginPath();
+    ctx.roundRect(-s * 0.85, -s * 1.5, s * 0.75, s * 1.0, s * 0.12);
+    ctx.fill();
+    // Seat, steering wheel and chimney.
+    ctx.fillStyle = '#3a2f2a';
+    ctx.fillRect(-s * 0.8, -s * 1.62, s * 0.4, s * 0.14);
+    ctx.strokeStyle = '#3a2f2a';
+    ctx.lineWidth = s * 0.06;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.2, -s * 1.5);
+    ctx.lineTo(-s * 0.05, -s * 1.3);
+    ctx.stroke();
+    ctx.fillRect(s * 0.3, -s * 1.75, s * 0.14, s * 0.75);
+    // A friendly face on the grille, and a headlight.
+    ctx.fillStyle = '#f6efe6';
+    ctx.beginPath();
+    ctx.roundRect(s * 0.62, -s * 0.95, s * 0.3, s * 0.4, s * 0.06);
+    ctx.fill();
+    this.eye(s * 0.72, -s * 0.85, s * 0.05);
+    this.eye(s * 0.84, -s * 0.85, s * 0.05);
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineWidth = s * 0.04;
+    ctx.beginPath();
+    ctx.arc(s * 0.78, -s * 0.7, s * 0.07, 0.1 * Math.PI, 0.9 * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath();
+    ctx.arc(s * 0.97, -s * 0.7, s * 0.07, 0, TAU);
+    ctx.fill();
+  }
+
+  private wheel(x: number, y: number, r: number, angle: number): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = '#2f2a2a';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.55, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#c9a227';
+    ctx.lineWidth = r * 0.12;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos((i * Math.PI) / 2) * r * 0.5, Math.sin((i * Math.PI) / 2) * r * 0.5);
+      ctx.stroke();
     }
     ctx.restore();
   }
@@ -1289,6 +1419,15 @@ export class Renderer {
         ctx.ellipse(0, 0, s * 0.32, s * 0.5, 0, 0, TAU);
         ctx.fill();
         break;
+      case 'smoke': {
+        // Grows and thins out as it rises.
+        const t = 1 - lifeRatio;
+        ctx.globalAlpha = lifeRatio * 0.55;
+        ctx.beginPath();
+        ctx.arc(0, 0, (s / 2) * (0.6 + 1.2 * t), 0, TAU);
+        ctx.fill();
+        break;
+      }
     }
     ctx.restore();
   }

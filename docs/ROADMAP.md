@@ -38,8 +38,9 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   det lander), omsorg ("hjælp den!").
 - ✅ **Rigtige dyrelyde** – hund og elefant med optagelser fra `src/lyde/`; alle dyr og vejret kan få en. Træner:
   dyrelyde til ordforråd (rigtige lyde genkendes fra bøger og virkeligheden).
-- 💡 **Gården** – et lille landbrug til højre med skorstensrøg og en gammel traktor, der kører ud og hjem, dytter ved
-  tryk og kan samles op af en ballon.
+- ✅ **Gården** – et lille landbrug til højre med skorstensrøg og en gammel traktor, der kører ud og hjem, dytter ved
+  tryk og kan samles op af en ballon. Træner: et fast sted, der lever (forventning: "kommer traktoren?"), køretøjer
+  og maskinlyde til ordforråd, tempo-forskelle (traktoren er hurtigere end hunden).
 - ✅ **Hold fingeren nede** – langt tryk på en sky gør den mørk og forvandler den til uvejrsskyen (far's idé);
   samme behov (Theo bestemmer selv, hvad der sker, ved at holde): hold på himlen, og ballonen vokser, til den
   sprænger; hold på solen, og den lader op til et solskinsbrag. Træner: en tredje bevægelse ud over tryk og swipe,

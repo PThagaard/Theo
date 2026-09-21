@@ -53,3 +53,6 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   sjældne skal kunne nydes og styres, ikke bare kigges på → skyen kan trækkes og flænges rundt og bliver 2½ minut.
 - Uvejrsskyen kom første gang efter ret lang tid → tallene forklaret (tidligst 1 minut, ~9 % pr. besøg); vægten
   hævet, og skyen kan nu fremkaldes ved at holde på en hvid sky.
+- "Burde vi have en lille farm/gård til højre med lidt liv i sig, en traktor der kører ud og tilbage" → behov: et
+  fast sted i verdenen, der lever af sig selv (noget at vente på og genkende), og køretøjer/maskiner, som babyer
+  elsker → gården med rygende skorsten som fast kulisse, traktoren som besøg med egen lyd, hop og røg.

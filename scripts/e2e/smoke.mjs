@@ -103,6 +103,8 @@ if (!(sunHit < 0.5)) throw new Error('sun did not react');
 await page.screenshot({ path: `${OUT}/${tag}-03c-sun.png`, clip: { x: viewport.width - 160, y: 0, width: 160, height: 160 } });
 const cloud = await page.evaluate(() => {
   const g = window.__theo.game;
+  // A visitor (bird, butterfly) flying in front of the cloud would take the touch instead; clear the sky first.
+  g.visitors = [];
   const c = g.clouds.find((c) => c.x > 60 && c.x < g.width - 60 && c.y > 60 && !g.findBalloonAt(c.x, c.y, 1.6));
   return c ? [c.x, c.y] : null;
 });
@@ -131,7 +133,7 @@ const visitors = await page.evaluate(() => {
   g.visitors = [];
   for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
   const made = {};
-  for (const kind of ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star']) made[kind] = g.spawnVisitor(kind).id;
+  for (const kind of ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star', 'tractor']) made[kind] = g.spawnVisitor(kind).id;
   const dog = g.visitors.find((v) => v.kind === 'dog'); dog.x = g.width * 0.22; dog.dir = 1; dog.vx = Math.abs(dog.vx);
   const elephant = g.visitors.find((v) => v.kind === 'elephant'); elephant.x = g.width * 0.62; elephant.y = g.ground(elephant.x);
   const snail = g.visitors.find((v) => v.kind === 'snail'); snail.x = g.width * 0.75;
@@ -144,7 +146,7 @@ await page.screenshot({ path: `${OUT}/${tag}-11-visitors.png` });
 const poked = await page.evaluate(() => new Promise((resolve) => {
   const g = window.__theo.game; const events = []; g.onEvent((e) => { if (e.type === 'visitor' && e.what === 'poke') events.push(e.kind); });
   const before = g.visitors.map((v) => `${v.kind}:${v.state}@${Math.round(v.x)},${Math.round(v.y)}`).join(' ');
-  for (const kind of ['dog', 'elephant']) {
+  for (const kind of ['dog', 'elephant', 'tractor']) {
     const v = g.visitors.find((v) => v.kind === kind);
     if (!v) { events.push(`${kind} missing`); continue; }
     const hit = g.visitorHit(v);
@@ -158,7 +160,7 @@ console.log('visitors before poke:', poked.before);
 console.log('visitors poked:', poked.events.join(', '));
 poked.splice?.(0);
 const pokedKinds = poked.events;
-check(pokedKinds.includes('dog') && pokedKinds.includes('elephant'), 'dog or elephant did not react to a touch');
+check(pokedKinds.includes('dog') && pokedKinds.includes('elephant') && pokedKinds.includes('tractor'), 'dog, elephant or tractor did not react to a touch');
 await page.waitForTimeout(250);
 await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
@@ -276,6 +278,9 @@ check(sunbursts > 0, 'holding the sun did not make a sunburst');
 // Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
 const flowerTap = await page.evaluate(() => {
   const g = window.__theo.game;
+  // A visitor on the ground (the tractor, the dog) takes a sliding finger before the flowers do; clear them.
+  g.visitors = [];
+  g.visitorTimer = 30;
   for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
   const f = g.flowers[Math.floor(g.flowers.length / 2)];
   return g.flowerHead(f);
@@ -469,6 +474,7 @@ const audio = await page.evaluate(async () => {
     ['twirl', 12.5, () => { engine.twirl(12.5); engine.pluck(12.9); }],
     ['thunder', 13.3, () => { engine.thunder(13.3); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
     ['help', 17.4, () => { engine.help('dog', 17.4); engine.help('elephant', 17.8); engine.land(18.5); }],
+    ['honk', 18.8, () => { engine.honk(18.8); engine.putter(19.3); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();

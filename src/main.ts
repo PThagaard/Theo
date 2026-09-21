@@ -200,6 +200,10 @@ function visitorSound(kind: VisitorKind, what: 'appear' | 'poke' | 'leave'): voi
     case 'snail':
       if (what === 'poke') audio.blub();
       break;
+    case 'tractor':
+      if (what === 'appear') audio.putter();
+      else if (what === 'poke') audio.honk();
+      break;
     case 'star':
       if (what === 'appear') audio.sparkle();
       else audio.chime();

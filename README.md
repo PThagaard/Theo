@@ -86,6 +86,8 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
   frem med hjerter og "ta-daa". Billeder valgt på telefonen bliver kun på telefonen; der ligger ingen billeder i
   appen eller i repoet.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
+- **Gården** til højre: en rød lade med rygende skorsten, og en gammel traktor, der af og til kører ud, holder
+  lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
 - **Hold fingeren stille** for en tredje slags leg: hold på en hvid sky, og den bliver mørk og til uvejrsskyen
   lige der; hold på tom himmel, og ballonen under fingeren vokser, til den sprænger (slip før, og kæmpeballonen
   flyver op); hold på solen, og den lader op til et solskinsbrag, hvor blomsterne skyder i vejret og ballonerne

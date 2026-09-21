@@ -569,6 +569,9 @@ export class AudioEngine {
       case 'snail':
         this.blub(when);
         break;
+      case 'tractor':
+        this.honk(when);
+        break;
       default:
         this.boing(when);
     }
@@ -765,6 +768,27 @@ export class AudioEngine {
     breath.connect(breathFilter).connect(breathGain).connect(this.sfxBus);
     breath.start(when);
     breath.stop(when + length + 0.05);
+  }
+
+  /** The tractor's horn: a cheerful two-note "tut-tuuut". */
+  honk(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('traktor', when)) return;
+    this.synth.tone(this.sfxBus, 'sawtooth', 370, when, 0.24, 0.01, 0.2, { filter: 1400 });
+    this.synth.tone(this.sfxBus, 'square', 370, when, 0.08, 0.01, 0.2, { filter: 900 });
+    this.synth.tone(this.sfxBus, 'sawtooth', 466, when + 0.24, 0.24, 0.01, 0.42, { filter: 1400 });
+    this.synth.tone(this.sfxBus, 'square', 466, when + 0.24, 0.08, 0.01, 0.42, { filter: 900 });
+  }
+
+  /** The old engine starting up: a short "put-put-put" as the tractor drives out. */
+  putter(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('traktor-motor', when)) return;
+    for (let i = 0; i < 7; i++) {
+      const t = when + i * 0.11;
+      this.synth.tone(this.sfxBus, 'sine', 95, t, 0.22, 0.004, 0.07, { to: 60, glide: 0.06 });
+      this.synth.noiseBurst(this.sfxBus, t, 0.14, 0.04, 'bandpass', 420, 1.2);
+    }
   }
 
   /** A friendly grumble when the elephant peeks up (kept above the range a phone speaker loses). */

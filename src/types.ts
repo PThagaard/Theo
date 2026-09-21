@@ -73,7 +73,7 @@ export interface Cloud {
   holding: boolean;
 }
 
-export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm';
+export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm' | 'tractor';
 
 /** What lightning can turn a visitor into for a little while. */
 export type VisitorForm = 'hotdog' | 'mouse' | 'puffed';
@@ -169,7 +169,7 @@ export interface Trail {
   active: boolean;
 }
 
-export type ParticleShape = 'rect' | 'circle' | 'star' | 'heart' | 'ring' | 'string' | 'sparkle' | 'drop' | 'photo';
+export type ParticleShape = 'rect' | 'circle' | 'star' | 'heart' | 'ring' | 'string' | 'sparkle' | 'drop' | 'photo' | 'smoke';
 
 export interface Particle {
   x: number;

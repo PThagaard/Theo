@@ -17,6 +17,8 @@ Ingen kode skal ændres: næste build samler filen op. Mangler filen, eller kan 
 | `snegl.mp3`           | sneglen siger blub                                                         |
 | `torden.mp3`          | torden, når uvejrsskyen lyner                                              |
 | `regn.mp3`            | regn, der loopes mens uvejrsskyen er på skærmen (skal kunne loope pænt)    |
+| `traktor.mp3`         | traktoren dytter, når man rører den                                        |
+| `traktor-motor.mp3`   | motoren putter, når traktoren kører ud fra gården                          |
 
 Listen vedligeholdes i `src/samples.ts` (`SAMPLE_NAMES`); en fil med et andet navn får enhedstesten til at fejle.
 

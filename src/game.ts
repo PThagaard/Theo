@@ -71,7 +71,14 @@ const VISITOR_WEIGHTS: Array<{ kind: VisitorKind; weight: number }> = [
   { kind: 'butterfly', weight: 18 },
   { kind: 'snail', weight: 12 },
   { kind: 'star', weight: 6 },
+  { kind: 'tractor', weight: 16 },
 ];
+/** The old tractor drives faster than the dog (px/s times unit) and idles this long before heading home. */
+const TRACTOR_SPEED = 75;
+const TRACTOR_PAUSE = 3.5;
+/** Where the little farm stands (fraction of the width) and where its chimney top is (units from the anchor). */
+const FARM_X = 0.85;
+export const FARM_CHIMNEY = { dx: 22, dy: -58 };
 const MAX_VISITORS = 2;
 /** The storm cloud is a rare treat: never in the first minute, and at least this long between storms. */
 const STORM_MIN_INTERVAL = 240;
@@ -235,6 +242,39 @@ export class Game {
   /** Ground level (top of the front hill) at horizontal position x. */
   ground(x: number): number {
     return hillY(x, this.width, this.height, this.unit, 1);
+  }
+
+  /** Where the little farm stands: on the back hill, at the right. */
+  farmAnchor(): { x: number; y: number } {
+    const x = this.width * FARM_X;
+    return { x, y: hillY(x, this.width, this.height, this.unit, 0) };
+  }
+
+  /** The top of the farmhouse chimney, where the smoke comes out. */
+  farmChimney(): { x: number; y: number } {
+    const a = this.farmAnchor();
+    return { x: a.x + FARM_CHIMNEY.dx * this.unit, y: a.y + FARM_CHIMNEY.dy * this.unit };
+  }
+
+  /** A soft puff of smoke that drifts up and fades (the farmhouse chimney, the tractor's exhaust). */
+  private puffSmoke(x: number, y: number, size: number, vx: number): void {
+    const u = this.unit;
+    const life = this.rng.range(1.5, 2.4);
+    this.addParticle({
+      x: x + this.rng.range(-3, 3) * u,
+      y,
+      vx: vx + this.rng.range(-6, 6) * u,
+      vy: -this.rng.range(18, 30) * u,
+      life,
+      maxLife: life,
+      size,
+      color: 'rgba(235, 235, 245, 0.9)',
+      shape: 'smoke',
+      rot: 0,
+      spin: 0,
+      gravity: -8 * u,
+      drag: 0.6,
+    });
   }
 
   /** Where the sun is drawn (top right corner). */
@@ -784,6 +824,8 @@ export class Game {
         return { x: v.x, y: v.y, r: s * 3.5 };
       case 'storm':
         return { x: v.x, y: v.y, r: s * 1.7 };
+      case 'tractor':
+        return { x: v.x, y: v.y - s * 0.75 - v.lift, r: s * 1.7 };
     }
   }
 
@@ -870,6 +912,16 @@ export class Game {
         v.y = this.ground(v.x);
         v.state = 'idle';
         break;
+      case 'tractor':
+        // Drives out from the farm at the right, a good way across, and back home again.
+        v.size = 30 * u;
+        v.dir = -1;
+        v.x = W + v.size * 2;
+        v.vx = -TRACTOR_SPEED * u;
+        v.y = this.ground(v.x);
+        v.targetX = W * this.rng.range(0.2, 0.55);
+        v.state = 'enter';
+        break;
       case 'elephant':
         v.size = 60 * u;
         v.x = this.rng.range(W * 0.25, W * 0.75);
@@ -933,6 +985,13 @@ export class Game {
       case 'dog':
         // Jump for joy (only from the ground, so quick taps don't stack).
         if (v.lift <= 0.01 && v.vy === 0) v.vy = -300 * u;
+        break;
+      case 'tractor':
+        // A honk, a little hop and an extra cloud of smoke from the chimney.
+        if (v.lift <= 0.01 && v.vy === 0) v.vy = -220 * u;
+        for (let i = 0; i < 3; i++) {
+          this.puffSmoke(v.x + v.dir * v.size * 0.37, v.y - v.size * 1.6, v.size * 0.6, this.rng.range(-20, 20) * u);
+        }
         break;
       case 'elephant':
         if (v.state === 'idle' || v.state === 'react') {
@@ -1024,6 +1083,13 @@ export class Game {
           v.state = 'react';
           v.stateAge = 0;
           this.newButterflyTarget(v);
+          break;
+        case 'tractor':
+          // Backfires a big cloud of smoke and hops.
+          if (v.lift <= 0.01 && v.vy === 0) v.vy = -260 * u;
+          for (let i = 0; i < 6; i++) {
+            this.puffSmoke(v.x + v.dir * v.size * 0.37, v.y - v.size * 1.6, v.size * 0.8, this.rng.range(-30, 30) * u);
+          }
           break;
         default:
           break;
@@ -1167,6 +1233,36 @@ export class Game {
       switch (v.kind) {
         case 'dog': {
           v.x += v.vx * dt * (v.form === 'hotdog' ? 0.6 : 1);
+          v.y = this.ground(v.x);
+          if (v.vy !== 0 || v.lift > 0) {
+            v.vy += 900 * u * dt;
+            v.lift = Math.max(0, v.lift - v.vy * dt);
+            if (v.lift === 0) v.vy = 0;
+          }
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'tractor': {
+          // Puffs from the chimney: a steady put-put while driving, lazier when parked.
+          if (this.rng.chance(dt * (v.state === 'idle' ? 2.5 : 7))) {
+            this.puffSmoke(v.x + v.dir * v.size * 0.37, v.y - v.size * 1.6 - v.lift, v.size * 0.45, -v.vx * 0.15);
+          }
+          if (v.state === 'enter') {
+            v.x += v.vx * dt;
+            if (v.x <= v.targetX) {
+              v.state = 'idle';
+              v.stateAge = 0;
+              v.vx = 0;
+            }
+          } else if (v.state === 'idle' && v.stateAge > TRACTOR_PAUSE) {
+            // Heads back home to the farm.
+            v.state = 'leave';
+            v.stateAge = 0;
+            v.dir = 1;
+            v.vx = TRACTOR_SPEED * u;
+          } else if (v.state === 'leave') {
+            v.x += v.vx * dt;
+          }
           v.y = this.ground(v.x);
           if (v.vy !== 0 || v.lift > 0) {
             v.vy += 900 * u * dt;
@@ -1413,6 +1509,12 @@ export class Game {
       pointer.moveDx = 0;
       pointer.moveDy = 0;
     }
+    // The farmhouse chimney smokes gently all day.
+    if (this.rng.chance(dt * 1.2)) {
+      const chimney = this.farmChimney();
+      this.puffSmoke(chimney.x, chimney.y, 9 * this.unit, 4 * this.unit);
+    }
+
     // Fingers held still: a cloud darkens, a new balloon keeps growing, the sun charges up.
     this.sunCharging = false;
     for (const c of this.clouds) c.holding = false;

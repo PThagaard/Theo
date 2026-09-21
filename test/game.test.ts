@@ -422,6 +422,84 @@ describe('Game', () => {
     });
   });
 
+  describe('the farm and its tractor', () => {
+    it('smokes from the farmhouse chimney now and then', () => {
+      const { game } = makeGame();
+      const chimney = game.farmChimney();
+      let seen = false;
+      for (let t = 0; t < 8 && !seen; t += 1 / 60) {
+        game.update(1 / 60);
+        seen = game.particles.some((p) => p.shape === 'smoke' && Math.abs(p.x - chimney.x) < 40 * game.unit && p.y <= chimney.y + 1);
+      }
+      expect(seen).toBe(true);
+    });
+
+    it('drives out from the farm, pauses, and drives back home puffing smoke', () => {
+      const { game, events } = makeGame();
+      game.visitors = [];
+      const tractor = game.spawnVisitor('tractor');
+      expect(tractor.x).toBeGreaterThan(W);
+      expect(tractor.dir).toBe(-1);
+      advance(game, 1);
+      expect(tractor.x).toBeLessThan(W);
+      expect(tractor.y).toBe(game.ground(tractor.x));
+      expect(game.particles.some((p) => p.shape === 'smoke' && Math.abs(p.x - tractor.x) < tractor.size * 3)).toBe(true);
+      advanceUntil(game, () => tractor.state === 'idle', 15);
+      expect(tractor.x).toBeLessThan(W * 0.6);
+      expect(tractor.vx).toBe(0);
+      advanceUntil(game, () => tractor.state === 'leave', 10);
+      expect(tractor.dir).toBe(1);
+      advanceUntil(game, () => tractor.state === 'gone', 20);
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'tractor' && e.what === 'appear')).toBe(true);
+    });
+
+    it('is faster than the dog', () => {
+      const { game } = makeGame();
+      game.visitors = [];
+      const tractor = game.spawnVisitor('tractor');
+      const dog = game.spawnVisitor('dog');
+      expect(Math.abs(tractor.vx)).toBeGreaterThan(Math.abs(dog.vx) * 1.5);
+    });
+
+    it('honks and hops when touched', () => {
+      const { game, events } = makeGame();
+      game.visitors = [];
+      game.balloons = [];
+      const tractor = game.spawnVisitor('tractor');
+      tractor.x = W / 2;
+      advance(game, 0.1);
+      const hit = game.visitorHit(tractor);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'tractor' && e.what === 'poke')).toBe(true);
+      advance(game, 0.15);
+      expect(tractor.lift).toBeGreaterThan(0);
+    });
+
+    it('can be lifted by a balloon and drives home after landing', () => {
+      const { game } = makeGame();
+      game.visitors = [];
+      game.balloons = [];
+      for (const c of game.clouds) c.y = -1000;
+      const tractor = game.spawnVisitor('tractor');
+      tractor.x = W / 2;
+      tractor.targetX = W / 2 - 1;
+      advance(game, 0.2);
+      const hit = game.visitorHit(tractor);
+      game.press(1, hit.x, hit.y - 100 * game.unit);
+      game.release(1);
+      expect(tractor.state).toBe('carried');
+      const balloon = game.balloons.find((b) => b.carrying === tractor.id)!;
+      expect(balloon).toBeDefined();
+      advanceUntil(game, () => tractor.y < game.ground(tractor.x) - 30 * game.unit, 10);
+      game.press(2, balloon.x, balloon.y);
+      expect(tractor.state).toBe('falling');
+      advanceUntil(game, () => tractor.state !== 'falling', 20);
+      expect(['idle', 'leave']).toContain(tractor.state);
+      advanceUntil(game, () => tractor.state === 'gone', 30);
+    });
+  });
+
   describe('holding a finger still', () => {
     /** Clears the sky so a held finger meets exactly what the test wants. */
     function clearSky(game: Game): void {
@@ -918,7 +996,8 @@ describe('Game', () => {
     game.press(1, balloon.x, balloon.y);
     expect(game.particles.length).toBeGreaterThan(0);
     advance(game, 5);
-    expect(game.particles.length).toBe(0);
+    // Only the farmhouse chimney keeps smoking; everything from the pop is gone.
+    expect(game.particles.filter((p) => p.shape !== 'smoke')).toHaveLength(0);
   });
 
   it('scales balloons with the screen size', () => {

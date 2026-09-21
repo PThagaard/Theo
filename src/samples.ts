@@ -27,6 +27,8 @@ export const SAMPLE_NAMES = {
   snegl: 'sneglen siger blub (tryk på sneglen)',
   torden: 'torden, når uvejrsskyen lyner',
   regn: 'regn, der loopes mens uvejrsskyen er på skærmen',
+  traktor: 'traktoren dytter (tryk på traktoren)',
+  'traktor-motor': 'motoren putter, når traktoren kører ud fra gården',
 } as const;
 
 export type SampleName = keyof typeof SAMPLE_NAMES;
