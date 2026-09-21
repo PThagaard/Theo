@@ -45,8 +45,10 @@ Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og 
    ikke internettet og beder ikke om nogen tilladelser.
 4. Nye versioner installeres bare oven i den gamle. Indstillinger bevares.
 
-**Opdatering inde fra appen:** åbn forældremenuen → *Opdatering* → **Søg efter ny version**. Er der en nyere, vises
-hvad der er nyt, og **Hent og installér** henter den og åbner Androids installationsvindue. Første gang spørger
+**Opdatering inde fra appen:** appen kigger selv efter nye versioner kort efter start (højst hver 12. time) og
+henter dem i baggrunden. En lille rød prik på låseknappen i hjørnet betyder, at en ny version er klar. Åbn
+forældremenuen → *Telefon*: der står, hvad der er nyt, og **Installér nu** åbner Androids installationsvindue med
+det samme. Menuen kigger også selv, når den åbnes, og *Søg efter ny version* gør det på et tryk. Første gang spørger
 telefonen, om Theos Balloner må installere apps; sig ja (det gælder kun denne app). Webappen opdaterer sig selv.
 
 Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **Actions** på GitHub

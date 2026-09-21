@@ -24,10 +24,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * In-app updates for the private phase: the parent menu asks GitHub Releases for the newest
- * build, downloads the APK into the app's cache and hands it to Android's installer.
- * This is the only network access in the app, it only happens when a parent taps the
- * button, and it only talks to the project's own GitHub Releases.
+ * In-app updates for the private phase: the app asks GitHub Releases for the newest build
+ * (when the parent menu opens, on "Søg", and once a day shortly after start), fetches the APK
+ * into the app's cache in the background, and hands it to Android's installer when a parent
+ * taps "Installér nu". This is the only network access in the app, only parents can trigger
+ * it, and it only talks to the project's own GitHub Releases.
  */
 @CapacitorPlugin(name = "AppUpdate")
 public class AppUpdatePlugin extends Plugin {
@@ -62,19 +63,40 @@ public class AppUpdatePlugin extends Plugin {
         }).start();
     }
 
+    /** Fetches the APK for a version into the cache (or finds it there already), so installing is instant. */
     @PluginMethod
-    public void install(PluginCall call) {
+    public void download(PluginCall call) {
         String url = call.getString("url", RELEASE_BASE + "TheosBalloner.apk");
+        String version = call.getString("version", "");
         if (url == null || !url.startsWith(RELEASE_BASE)) {
             call.reject("Kun opdateringer fra projektets egne udgivelser er tilladt");
             return;
         }
         new Thread(() -> {
             try {
-                File dir = new File(getContext().getCacheDir(), "updates");
-                if (!dir.exists() && !dir.mkdirs()) throw new IllegalStateException("Kunne ikke oprette mappe");
-                File apk = new File(dir, "TheosBalloner.apk");
-                download(url, apk);
+                boolean cached = isDownloaded(version);
+                File apk = ensureDownloaded(url, version);
+                JSObject result = new JSObject();
+                result.put("path", apk.getAbsolutePath());
+                result.put("cached", cached);
+                call.resolve(result);
+            } catch (Exception e) {
+                call.reject("Opdateringen kunne ikke hentes: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    @PluginMethod
+    public void install(PluginCall call) {
+        String url = call.getString("url", RELEASE_BASE + "TheosBalloner.apk");
+        String version = call.getString("version", "");
+        if (url == null || !url.startsWith(RELEASE_BASE)) {
+            call.reject("Kun opdateringer fra projektets egne udgivelser er tilladt");
+            return;
+        }
+        new Thread(() -> {
+            try {
+                File apk = ensureDownloaded(url, version);
                 Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", apk);
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(uri, "application/vnd.android.package-archive");
@@ -85,6 +107,43 @@ public class AppUpdatePlugin extends Plugin {
                 call.reject("Opdateringen kunne ikke hentes: " + e.getMessage());
             }
         }).start();
+    }
+
+    private File updateDir() {
+        File dir = new File(getContext().getCacheDir(), "updates");
+        if (!dir.exists() && !dir.mkdirs()) throw new IllegalStateException("Kunne ikke oprette mappe");
+        return dir;
+    }
+
+    /** Only digits and dots in file names: the version comes from the network. */
+    private String safeVersion(String version) {
+        String safe = version == null ? "" : version.replaceAll("[^0-9.]", "");
+        return safe.isEmpty() ? "ukendt" : safe;
+    }
+
+    private File apkFile(String version) {
+        return new File(updateDir(), "TheosBalloner-" + safeVersion(version) + ".apk");
+    }
+
+    /** A completed download leaves a marker next to the file, so a half-fetched APK is never installed. */
+    private File doneMarker(File apk) {
+        return new File(apk.getPath() + ".done");
+    }
+
+    private boolean isDownloaded(String version) {
+        File apk = apkFile(version);
+        return apk.exists() && apk.length() > 0 && doneMarker(apk).exists();
+    }
+
+    private File ensureDownloaded(String url, String version) throws Exception {
+        File apk = apkFile(version);
+        if (isDownloaded(version)) return apk;
+        // Older downloads are of no use any more; keep the cache small.
+        File[] old = updateDir().listFiles();
+        if (old != null) for (File file : old) file.delete();
+        download(url, apk);
+        if (!doneMarker(apk).createNewFile()) throw new IllegalStateException("Kunne ikke gemme opdateringen");
+        return apk;
     }
 
     private String currentVersion() {

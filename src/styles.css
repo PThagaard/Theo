@@ -67,6 +67,20 @@ body {
   mask: radial-gradient(circle, transparent 62%, #000 64%);
 }
 
+/* A new version is fetched and ready: a small dot for the parents (the child cannot do anything with it). */
+#parent-button.has-update::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f06a6a;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 /* Android WebView reports no safe-area insets, so keep clear of camera cut-outs by hand. */
 .platform-android #parent-button {
   top: max(28px, calc(var(--safe-top) + 10px));

@@ -242,6 +242,10 @@ const panel = new ParentPanel(settings, {
   },
 });
 
+// On the phone, a little after start, the app looks for a new version by itself (at most twice a day) and
+// fetches it in the background; a dot on the corner button then tells the parents it is ready to install.
+if (appUpdate.available) setTimeout(() => void panel.checkInBackground(), 8000);
+
 let familyPhotos: StoredPhoto[] = [];
 /** Photo balloons only appear when the parents have them switched on. */
 function applyFamilyPhotos(): void {

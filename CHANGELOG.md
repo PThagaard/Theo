@@ -3,6 +3,20 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – opdateringer næsten af sig selv
+
+- **Appen finder selv nye versioner.** Kort efter start (højst hver 12. time) spørger den GitHub Releases, og er der
+  en ny version, hentes den med det samme i baggrunden. En lille rød prik på låseknappen i hjørnet viser, at den er
+  klar. Kun på telefonen; webappen opdaterer sig selv som før.
+- **Installér nu.** I forældremenuen (*Telefon*) står der "Ny version … Hentet og klar", og knappen *Installér nu*
+  går direkte til Androids installationsvindue uden ventetid. Findes der en ny version, når menuen åbnes eller ved
+  *Søg*, hentes den også straks. Kan den ikke hentes (ingen net), hedder knappen *Hent og installér* som før.
+- Hentede opdateringer ligger i appens cache og ryddes, når en nyere hentes.
+
+**Test på telefonen:** (1) Installér denne version (sidste gang med ventetid). (2) Når næste version er ude:
+åbn appen, vent et øjeblik, og se en rød prik på låseknappen. (3) Forældremenu → *Telefon*: "Hentet og klar" og
+*Installér nu* → Androids vindue åbner med det samme → *Installér*; appen starter igen uden prik.
+
 ## 2026-09-21 – forældremenuen i fire faner
 
 - Forældremenuen er delt op i faner i stedet for én lang liste: **Leg** (musik, lyde, tempo), **Familie** (vis

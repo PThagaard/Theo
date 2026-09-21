@@ -2,7 +2,7 @@ import { Cropper } from './cropper';
 import type { KidLock } from './kidlock';
 import type { StoredPhoto } from './photos';
 import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
-import type { AppUpdate } from './update';
+import type { AppUpdate, UpdateCheck } from './update';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -51,6 +51,9 @@ export interface ParentPanelHooks {
 const STORAGE_KEY = 'theos-balloner.settings';
 /** The menu remembers which page it was on (a small convenience, kept in the browser only). */
 const TAB_KEY = 'theos-balloner.parentTab';
+/** The background check after start happens at most this often. */
+const BACKGROUND_CHECK_KEY = 'theos-balloner.lastUpdateCheck';
+const BACKGROUND_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 type TabName = 'leg' | 'familie' | 'theo' | 'telefon';
 const TABS: TabName[] = ['leg', 'familie', 'theo', 'telefon'];
 const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', familyBalloons: true };
@@ -177,6 +180,11 @@ export class ParentPanel {
   private readonly updateNotes = element<HTMLDetailsElement>('update-notes');
   private readonly updateNotesText = element<HTMLElement>('update-notes-text');
   private updateUrl: string | null = null;
+  private updateVersion = '';
+  /** True once the new APK sits in the cache, so "Installér nu" goes straight to Android's installer. */
+  private updateReady = false;
+  /** A download is running (started from the menu or in the background); never two at once. */
+  private fetching = false;
   private busy = false;
   private readonly tabButtons = Array.from(element<HTMLElement>('parent-tabs').querySelectorAll<HTMLButtonElement>('button[data-tab]'));
   private readonly tabPages = Array.from(this.panel.querySelectorAll<HTMLElement>('.tab-page'));
@@ -485,18 +493,20 @@ export class ParentPanel {
   private async checkForUpdate(): Promise<void> {
     const update = this.hooks.update;
     if (!update?.available || this.busy) return;
+    if (this.updateReady || this.fetching) {
+      // Already fetched (or on its way): nothing to look for, the status and the button are there.
+      this.offerUpdate();
+      return;
+    }
     this.busy = true;
     this.updateStatus.textContent = 'Søger efter ny version …';
     this.updateInstall.hidden = true;
     this.updateNotes.hidden = true;
+    let found: (UpdateCheck & { newer: boolean }) | null = null;
     try {
       const result = await update.check();
       if (result.newer) {
-        this.updateUrl = result.apk;
-        this.updateStatus.textContent = `Ny version ${result.latest} (${result.date}) er klar. Du har ${result.current}.`;
-        this.updateNotesText.textContent = result.notes.trim();
-        this.updateNotes.hidden = !result.notes.trim();
-        this.updateInstall.hidden = false;
+        found = result;
       } else {
         this.updateUrl = null;
         this.updateStatus.textContent = `Du har den nyeste version (${result.current}).`;
@@ -509,6 +519,68 @@ export class ParentPanel {
       this.busy = false;
       this.armAutoClose();
     }
+    if (found) await this.fetchUpdate(found);
+  }
+
+  /**
+   * Once a day, shortly after the app starts, it looks for a new version by itself and fetches it in the
+   * background, so a parent only has to tap "Installér nu". A small dot on the corner button says it is ready.
+   */
+  async checkInBackground(): Promise<void> {
+    const update = this.hooks.update;
+    if (!update?.available || this.updateReady) return;
+    try {
+      const last = Number(localStorage.getItem(BACKGROUND_CHECK_KEY) ?? 0);
+      if (Date.now() - last < BACKGROUND_CHECK_INTERVAL_MS) return;
+      localStorage.setItem(BACKGROUND_CHECK_KEY, String(Date.now()));
+    } catch {
+      // No storage: check anyway, it is one small request.
+    }
+    try {
+      const result = await update.check();
+      if (result.newer) await this.fetchUpdate(result);
+    } catch (error) {
+      console.warn('Baggrunds-opdateringstjek fejlede', error);
+    }
+  }
+
+  /** A newer version exists: fetch the APK now, so installing is one tap, and show it in the menu. */
+  private async fetchUpdate(result: UpdateCheck): Promise<void> {
+    const update = this.hooks.update;
+    if (!update?.available || this.fetching) return;
+    this.fetching = true;
+    this.updateUrl = result.apk;
+    this.updateVersion = result.latest;
+    this.updateNotesText.textContent = result.notes.trim();
+    this.updateNotes.hidden = !result.notes.trim();
+    this.updateInstall.hidden = true;
+    const describe = `Ny version ${result.latest} (${result.date}). Du har ${result.current}.`;
+    this.updateStatus.textContent = `${describe} Henter …`;
+    const stop = await update.onProgress((percent) => {
+      if (!this.updateReady) this.updateStatus.textContent = `${describe} Henter … ${percent >= 0 ? `${percent} %` : ''}`;
+    });
+    try {
+      await update.download(result.apk, result.latest);
+      this.updateReady = true;
+      this.updateStatus.textContent = `${describe} Hentet og klar til at installere.`;
+    } catch (error) {
+      // The download failed (no internet?): the button falls back to fetching on tap.
+      this.updateReady = false;
+      this.updateStatus.textContent = `${describe} Kunne ikke hente den endnu; prøv med knappen.`;
+      console.warn('Opdateringen kunne ikke hentes i baggrunden', error);
+    } finally {
+      stop();
+      this.fetching = false;
+    }
+    this.offerUpdate();
+  }
+
+  /** Shows the install button (and the dot on the corner button) for the update we know about. */
+  private offerUpdate(): void {
+    if (!this.updateUrl) return;
+    this.updateInstall.textContent = this.updateReady ? '⬇️ Installér nu' : '⬇️ Hent og installér';
+    this.updateInstall.hidden = this.fetching;
+    element('parent-button').classList.toggle('has-update', this.updateReady);
   }
 
   private async installUpdate(): Promise<void> {
@@ -516,15 +588,15 @@ export class ParentPanel {
     if (!update?.available || !this.updateUrl || this.busy) return;
     this.busy = true;
     this.updateInstall.hidden = true;
-    this.updateStatus.textContent = 'Henter opdateringen …';
+    this.updateStatus.textContent = this.updateReady ? 'Åbner installationen …' : 'Henter opdateringen …';
     const stop = await update.onProgress((percent) => {
       this.updateStatus.textContent = percent >= 0 ? `Henter opdateringen … ${percent} %` : 'Henter opdateringen …';
       this.armAutoClose();
     });
     try {
-      await update.install(this.updateUrl);
+      await update.install(this.updateUrl, this.updateVersion);
       this.updateStatus.textContent =
-        'Hentet. Tryk "Installér" i telefonens vindue. Første gang skal du tillade, at appen må installere opdateringer.';
+        'Tryk "Installér" i telefonens vindue. Første gang skal du tillade, at appen må installere opdateringer.';
     } catch (error) {
       this.updateStatus.textContent = 'Opdateringen kunne ikke hentes. Prøv igen, eller hent den fra GitHub.';
       this.updateInstall.hidden = false;
