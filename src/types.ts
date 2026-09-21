@@ -111,8 +111,13 @@ export interface Visitor {
   /** Temporary shape after a lightning strike, and seconds left of it. */
   form: VisitorForm | null;
   formTimer: number;
-  /** Seconds left of the current lightning flash (storm cloud). */
+  /** Seconds left of the current lightning bolt (storm cloud). */
   lightning: number;
+  /** Seconds left of the whole-screen flash, and when it last started (kept to at most three a second). */
+  flash: number;
+  lastFlash: number;
+  /** When the last bolt struck, to tell quick re-taps from a fresh strike. */
+  lastBolt: number;
   /** Where the last bolt struck (storm cloud). */
   boltX: number;
   /** Seconds until the storm flashes by itself again. */
@@ -204,7 +209,8 @@ export type GameEvent =
   /** A visitor arrived, was touched, or (the storm) left. */
   | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' | 'leave' }
   /** Lightning struck at x (from the storm cloud down to the ground). */
-  | { type: 'lightning'; x: number; y: number }
+  /** quick: another bolt within half a second of the last one (lighter sound); flash: the screen lit up too. */
+  | { type: 'lightning'; x: number; y: number; quick: boolean; flash: boolean }
   /** A visitor changed shape (or changed back: form null). */
   | { type: 'transform'; kind: VisitorKind; form: VisitorForm | null; x: number; y: number }
   /** A balloon picked a creature up, the creature called for help, was let go, or landed again. */

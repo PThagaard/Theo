@@ -778,6 +778,26 @@ describe('Game', () => {
       expect(events.filter((e) => e.type === 'lightning').length).toBeGreaterThanOrEqual(2);
     });
 
+    it('strikes on every quick tap, but flashes the whole screen at most three times a second', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      advance(game, 0.5);
+      const hit = game.visitorHit(storm);
+      for (let i = 0; i < 6; i++) {
+        game.press(1, hit.x, hit.y);
+        game.release(1);
+        advance(game, 0.15);
+      }
+      const bolts = events.filter((e) => e.type === 'lightning');
+      expect(bolts).toHaveLength(6);
+      expect(bolts.filter((e) => e.type === 'lightning' && e.flash).length).toBeLessThanOrEqual(3);
+      expect(bolts[0]).toMatchObject({ quick: false, flash: true });
+      expect(bolts[1]).toMatchObject({ quick: true });
+    });
+
     it('turns the dog into a hotdog and the elephant into a mouse for a while', () => {
       const { game, events } = makeGame();
       game.balloons = [];

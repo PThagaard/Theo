@@ -117,7 +117,7 @@ export class Renderer {
     for (const trail of game.trails) this.drawTrail(trail, game.time);
     for (const p of game.particles) this.drawParticle(p);
     // The whole sky lights up for an instant when lightning strikes.
-    const flash = game.visitors.reduce((max, v) => Math.max(max, v.kind === 'storm' ? v.lightning - 0.25 : 0), 0);
+    const flash = game.visitors.reduce((max, v) => Math.max(max, v.kind === 'storm' ? v.flash : 0), 0);
     if (flash > 0) {
       ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.5, flash * 2.5)})`;
       ctx.fillRect(0, 0, this.W, this.H);
@@ -379,23 +379,24 @@ export class Renderer {
     const a = game.farmAnchor();
     ctx.save();
     ctx.translate(a.x, a.y);
-    // Fence along the hill.
+    // Fence along the hill: every post stands on the ground right under it, the rails follow the slope.
+    const groundAt = (x: number) => this.hillY(a.x + x, 0) - a.y + 2 * u;
     ctx.strokeStyle = '#a97142';
     ctx.lineWidth = 2.2 * u;
     ctx.lineCap = 'round';
     for (let i = -6; i <= -2; i++) {
       const x = i * 12 * u;
       ctx.beginPath();
-      ctx.moveTo(x, 2 * u);
-      ctx.lineTo(x, -14 * u);
+      ctx.moveTo(x, groundAt(x));
+      ctx.lineTo(x, groundAt(x) - 16 * u);
       ctx.stroke();
     }
-    ctx.beginPath();
-    ctx.moveTo(-72 * u, -9 * u);
-    ctx.lineTo(-24 * u, -9 * u);
-    ctx.moveTo(-72 * u, -3 * u);
-    ctx.lineTo(-24 * u, -3 * u);
-    ctx.stroke();
+    for (const rail of [-11, -5]) {
+      ctx.beginPath();
+      ctx.moveTo(-72 * u, groundAt(-72 * u) + rail * u);
+      ctx.lineTo(-24 * u, groundAt(-24 * u) + rail * u);
+      ctx.stroke();
+    }
     // Barn: red walls with white trim, a chimney, a dark roof, a big door and a round gable window.
     ctx.fillStyle = '#d9483b';
     ctx.fillRect(-30 * u, -42 * u, 60 * u, 44 * u);
@@ -424,6 +425,11 @@ export class Renderer {
     ctx.fillStyle = '#f6efe6';
     ctx.beginPath();
     ctx.arc(0, -50 * u, 5 * u, 0, TAU);
+    ctx.fill();
+    // A little mound of grass in front of the base, so the barn sits in the hill rather than on a line.
+    ctx.fillStyle = HILLS.back;
+    ctx.beginPath();
+    ctx.ellipse(0, 1 * u, 42 * u, 6 * u, 0, 0, TAU);
     ctx.fill();
     ctx.restore();
   }

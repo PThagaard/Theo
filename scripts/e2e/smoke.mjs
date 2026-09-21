@@ -472,7 +472,7 @@ const audio = await page.evaluate(async () => {
     ['trumpet', 9.3, () => engine.trumpet(9.3)],
     ['chirp', 11.3, () => { engine.chirp(11.3); engine.flutter(11.55); engine.blub(11.7); engine.rumble(11.75); }],
     ['twirl', 12.5, () => { engine.twirl(12.5); engine.pluck(12.9); }],
-    ['thunder', 13.3, () => { engine.thunder(13.3); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
+    ['thunder', 13.3, () => { engine.thunder(13.3); engine.zap(14.7); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
     ['help', 17.4, () => { engine.help('dog', 17.4); engine.help('elephant', 17.8); engine.land(18.5); }],
     ['honk', 18.8, () => { engine.honk(18.8); engine.putter(19.3); }],
   ];

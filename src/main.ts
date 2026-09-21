@@ -139,8 +139,9 @@ game.onEvent((event) => {
       }
       break;
     case 'lightning':
-      audio?.thunder();
-      haptic(ImpactStyle.Heavy);
+      if (event.quick) audio?.zap();
+      else audio?.thunder();
+      haptic(event.quick ? ImpactStyle.Light : ImpactStyle.Heavy);
       stats.bump('lightning');
       break;
     case 'hold':

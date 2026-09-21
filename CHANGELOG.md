@@ -3,6 +3,21 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – lyn på hvert tryk, og gården står på græsset
+
+- **Uvejrsskyen lyner, hver gang man trykker på den**, så hurtigt man kan trykke (før var der 1,2 sekunders pause).
+  Hurtige tryk efter hinanden får et kort "zap" i stedet for hele tordenbraget, så det bliver ved med at være
+  sjovt og ikke larm. Selve lysglimtet over hele skærmen kommer højst tre gange i sekundet (ingen hurtige blink på
+  store flader), lynet og lyden kommer hver gang.
+
+- **Gården står på græsset.** Laden stod på en linje midt under sig, så den ene halvdel svævede, hvor bakken bøjer
+  nedad. Nu står den på det laveste punkt under hele sin bredde med en lille græstue foran, og hegnspælene står hver
+  især på jorden under sig.
+
+**Test på telefonen:** (1) Tryk hurtigt mange gange på uvejrsskyen: et lyn for hvert tryk, zap-zap-zap, og skærmen
+blinker roligt, ikke som et stroboskop. (2) Vent et halvt sekund og tryk igen: fuldt brag. (3) Laden til højre står
+på græsset i begge sider, ingen luft under den.
+
 ## 2026-09-21 – gården og traktoren
 
 - **En lille gård** til højre på den bagerste bakke: rød lade med hvid kant, stalddør, rundt vindue, et hegn og en

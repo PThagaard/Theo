@@ -56,3 +56,5 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - "Burde vi have en lille farm/gård til højre med lidt liv i sig, en traktor der kører ud og tilbage" → behov: et
   fast sted i verdenen, der lever af sig selv (noget at vente på og genkende), og køretøjer/maskiner, som babyer
   elsker → gården med rygende skorsten som fast kulisse, traktoren som besøg med egen lyd, hop og røg.
+- "Hvorfor kan jeg ikke skyde lyn hele tiden? Fjern delay" → behov: hvert tryk skal give et svar med det samme,
+  også det tiende tryk på et sekund → lyn på hvert tryk; kun skærmglimtet holdes på højst 3 i sekundet (princip 5).

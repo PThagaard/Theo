@@ -625,10 +625,16 @@ export class AudioEngine {
   thunder(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
     if (this.sample('torden', when, { vary: false })) return;
-    this.synth.tone(this.sfxBus, 'sawtooth', 1500, when, 0.26, 0.004, 0.2, { to: 220, glide: 0.18, filter: 3200 });
-    this.synth.noiseBurst(this.sfxBus, when, 0.4, 0.06, 'highpass', 2500, 0.7);
+    this.zap(when);
     this.synth.noiseBurst(this.sfxBus, when + 0.12, 0.3, 0.7, 'lowpass', 450, 0.6);
     [91, 96].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.3 + i * 0.1, 0.5, 0.25));
+  }
+
+  /** Just the zap and the crack: for bolts that follow each other quickly, so tapping away stays crisp, not booming. */
+  zap(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sawtooth', 1500, when, 0.26, 0.004, 0.2, { to: 220, glide: 0.18, filter: 3200 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.4, 0.06, 'highpass', 2500, 0.7);
   }
 
   /** Sizzle and boing: the dog just became a hotdog. */

@@ -95,7 +95,13 @@ const STORM_FLING_MAX = 260;
 const FORM_TIME = 7;
 const LIGHTNING_INTERVAL: [number, number] = [6, 12];
 const LIGHTNING_FLASH = 0.45;
-const LIGHTNING_TOUCH_COOLDOWN = 1.2;
+/** Every tap on the storm cloud makes a bolt; taps come at most this often (a baby taps up to ~5 times a second). */
+const STORM_POKE_INTERVAL = 0.12;
+/** The whole-screen flash is kept to at most three a second (no fast blinking on big surfaces), the bolts are not. */
+const SCREEN_FLASH_INTERVAL = 0.34;
+const SCREEN_FLASH_TIME = 0.2;
+/** A bolt this soon after the last one gets the lighter "zap" sound instead of the full thunder. */
+const QUICK_BOLT_INTERVAL = 0.5;
 /** Half width of the rain (and of a lightning strike's reach), in storm sizes. */
 const RAIN_HALF_WIDTH = 1.5;
 const RAINBOW_GLOW_TIME = 7;
@@ -244,10 +250,16 @@ export class Game {
     return hillY(x, this.width, this.height, this.unit, 1);
   }
 
-  /** Where the little farm stands: on the back hill, at the right. */
+  /**
+   * Where the little farm stands: on the back hill, at the right. The barn's base is the lowest ground under
+   * its whole width (plus a little), so no corner floats where the hill slopes away; the hill hides the rest.
+   */
   farmAnchor(): { x: number; y: number } {
     const x = this.width * FARM_X;
-    return { x, y: hillY(x, this.width, this.height, this.unit, 0) };
+    const u = this.unit;
+    const ground = (at: number) => hillY(at, this.width, this.height, u, 0);
+    const y = Math.max(ground(x - 30 * u), ground(x), ground(x + 30 * u)) + 4 * u;
+    return { x, y };
   }
 
   /** The top of the farmhouse chimney, where the smoke comes out. */
@@ -888,6 +900,9 @@ export class Game {
       form: null,
       formTimer: 0,
       lightning: 0,
+      flash: 0,
+      lastFlash: -Infinity,
+      lastBolt: -Infinity,
       boltX: 0,
       nextLightning: this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]),
       wet: 0,
@@ -971,7 +986,7 @@ export class Game {
 
   private pokeVisitor(v: Visitor, x: number, y: number): void {
     // A finger sliding over a visitor sends a touch every few milliseconds; react at a natural pace instead.
-    if (this.time - v.lastPoke < VISITOR_POKE_INTERVAL) return;
+    if (this.time - v.lastPoke < (v.kind === 'storm' ? STORM_POKE_INTERVAL : VISITOR_POKE_INTERVAL)) return;
     v.lastPoke = this.time;
     if (v.state === 'carried' || v.state === 'falling') {
       // Dangling in the air it can only wriggle and call for help; pop the balloon to free it.
@@ -1014,7 +1029,6 @@ export class Game {
         v.state = 'gone';
         break;
       case 'storm':
-        if (this.time - v.lastPoke < LIGHTNING_TOUCH_COOLDOWN && v.pokes > 1) return;
         this.strike(v, x);
         break;
     }
@@ -1032,12 +1046,20 @@ export class Game {
   /** Lightning from the storm cloud down to the ground: everything in its path reacts. */
   private strike(storm: Visitor, x: number): void {
     const u = this.unit;
+    const quick = this.time - storm.lastBolt < QUICK_BOLT_INTERVAL;
+    storm.lastBolt = this.time;
     storm.lightning = LIGHTNING_FLASH;
+    // The bolt comes every time; the big flash across the sky only when the last one is long enough ago.
+    const flash = this.time - storm.lastFlash >= SCREEN_FLASH_INTERVAL;
+    if (flash) {
+      storm.flash = SCREEN_FLASH_TIME;
+      storm.lastFlash = this.time;
+    }
     storm.boltX = clamp(x + this.rng.range(-20, 20) * u, storm.size * 0.5, this.width - storm.size * 0.5);
     storm.nextLightning = this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]);
     const reach = 60 * u;
     const groundY = this.ground(storm.boltX);
-    this.emit({ type: 'lightning', x: storm.boltX, y: groundY });
+    this.emit({ type: 'lightning', x: storm.boltX, y: groundY, quick, flash });
     this.sparkleBurst(storm.boltX, groundY, 12, SUN_COLORS, 20 * u);
 
     // Balloons near the bolt are shoved aside with a little hop. Never popped: lightning here is a fun
@@ -1141,6 +1163,7 @@ export class Game {
       }
     }
     storm.lightning = Math.max(0, storm.lightning - dt);
+    storm.flash = Math.max(0, storm.flash - dt);
     storm.nextLightning -= dt;
     const onScreen = storm.x > storm.size && storm.x < this.width - storm.size;
     if (storm.nextLightning <= 0 && onScreen) this.strike(storm, storm.x + this.rng.range(-0.6, 0.6) * storm.size);
