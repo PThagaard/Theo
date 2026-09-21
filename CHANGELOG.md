@@ -3,6 +3,20 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – tællere for alt
+
+- **Theos leg** i forældremenuen: tabel med *i dag* og *i alt* for balloner poppet (og heraf familie-, stjerne- og
+  regnbueballoner), balloner pustet op, balloner blæst væk, swipes, harpetoner, tryk på himlen, solen, skyerne, ryst,
+  fester, besøg set og rørt (pr. dyr) og hver person i familien poppet. Legetid i dag og i alt (kun tiden lige efter
+  et tryk tæller, så en glemt tændt telefon ikke tæller med). *Nulstil* kræver 2 sekunders tryk. Tallene bliver kun
+  på telefonen.
+- Nye hændelser i spillet til tælling: swipe (finger løftet efter mindst 60 px) og "blæst væk" (én gang pr. ballon
+  pr. swipe).
+
+**Test på telefonen:** (1) Leg et minut, åbn forældremenuen og rul til *Theos leg*: tallene passer nogenlunde med det,
+der skete (balloner, swipes, dyr, familie). (2) Luk appen helt og åbn igen: tallene er der stadig, og "i dag" tæller
+videre. (3) Hold *Nulstil tællere* nede: alt går i nul.
+
 ## 2026-09-21 – familien som standard, til/fra-kontakt og bedre dyrelyde
 
 - Mor, far og Theo er lagt ind som indbyggede familiebilleder (renset for metadata). Foto-balloner har en blød vignet,

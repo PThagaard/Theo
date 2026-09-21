@@ -11,7 +11,8 @@ Status: ✅ færdig · 🔨 i gang · 💡 idé
 - 🔨 **Aktivitets-platform:** fælles motor (`src/engine/`), `Activity`-interface, aktiviteter i `src/activities/`,
   forældrestyret valg af aktivitet i menuen, valgfrit automatisk skift hvert par minutter, og en blid overgang
   (svæv ud / svæv ind) mellem aktiviteter. Balloner flyttes ind som første aktivitet uden at ændre oplevelsen.
-- 💡 **Dagbog for forældre** i menuen: hvor længe der er leget og hvad (kun lokalt på telefonen, aldrig sendt nogen steder).
+- ✅ **Dagbog for forældre** ("Theos leg" i menuen): tællere for alt, i dag og i alt, og legetid (kun lokalt på
+  telefonen). Næste: pr. dag over tid, så man kan se hvad han foretrækker i perioder.
 
 ## 6–9 måneder: årsag og virkning, sanser, opmærksomhed
 

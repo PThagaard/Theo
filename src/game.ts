@@ -82,13 +82,19 @@ const RAIN_COLORS = ['#6fc3ff', '#a6d8ff', '#4d96ff'];
 const SUN_COLORS = ['#fff3a6', '#ffd93d', '#ffffff', '#ffb703'];
 
 interface PointerState {
+  id: number;
   x: number;
   y: number;
   travelled: number;
+  /** Whole distance the finger has moved since it touched down. */
+  totalTravelled: number;
   glideTravelled: number;
   lastGlide: number;
   trail: Trail;
 }
+
+/** A finger must travel at least this far (times unit) to count as a swipe. */
+const SWIPE_MIN_TRAVEL = 60;
 
 export type Tempo = 'rolig' | 'normal' | 'vild';
 
@@ -225,7 +231,7 @@ export class Game {
   press(id: number, x: number, y: number): void {
     const trail: Trail = { id, hue: this.rng.range(0, 360), points: [{ x, y, t: this.time }], active: true };
     this.trails.push(trail);
-    this.pointers.set(id, { x, y, travelled: 0, glideTravelled: 0, lastGlide: -1, trail });
+    this.pointers.set(id, { id, x, y, travelled: 0, totalTravelled: 0, glideTravelled: 0, lastGlide: -1, trail });
 
     // Same order as the drawing: balloons in front of visitors, visitors in front of clouds, clouds in front of the sun.
     const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
@@ -268,6 +274,7 @@ export class Game {
     const dy = y - pointer.y;
     const moved = Math.hypot(dx, dy);
     pointer.travelled += moved;
+    pointer.totalTravelled += moved;
     pointer.glideTravelled += moved;
     pointer.x = x;
     pointer.y = y;
@@ -291,7 +298,7 @@ export class Game {
       this.emit({ type: 'glide', x, y, note });
     }
 
-    this.wind(x, y, dx, dy);
+    this.wind(x, y, dx, dy, pointer.id);
 
     const balloon = this.findBalloonAt(x, y, DRAG_HIT_FACTOR, DRAG_MIN_AGE);
     if (balloon) {
@@ -623,7 +630,12 @@ export class Game {
 
   release(id: number): void {
     const pointer = this.pointers.get(id);
-    if (pointer) pointer.trail.active = false;
+    if (pointer) {
+      pointer.trail.active = false;
+      if (pointer.totalTravelled >= SWIPE_MIN_TRAVEL * this.unit) {
+        this.emit({ type: 'swipe', length: pointer.totalTravelled });
+      }
+    }
     this.pointers.delete(id);
   }
 
@@ -792,7 +804,7 @@ export class Game {
   }
 
   /** A moving finger blows nearby balloons and clouds along with it. */
-  private wind(x: number, y: number, dx: number, dy: number): void {
+  private wind(x: number, y: number, dx: number, dy: number, pointerId: number): void {
     const moved = Math.hypot(dx, dy);
     if (moved < 0.5) return;
     const u = this.unit;
@@ -813,6 +825,11 @@ export class Game {
       const strength = (1 - distance / reach) * push;
       b.vx = clamp(b.vx + dirX * strength * 6 + (offX / distance) * strength * 1.5, -420 * u, 420 * u);
       b.vyImpulse = clamp(b.vyImpulse + dirY * strength * 6 + (offY / distance) * strength * 1.5, -420 * u, 420 * u);
+      // Count a balloon as "blown away" once per swipe, as soon as it visibly moves.
+      if (b.blownBy !== pointerId && Math.abs(b.vx) + Math.abs(b.vyImpulse) > 40 * u) {
+        b.blownBy = pointerId;
+        this.emit({ type: 'blow' });
+      }
     }
     for (const c of this.clouds) {
       const reach = 110 * c.scale;
@@ -987,7 +1004,7 @@ export class Game {
     }
 
     const size = clamp((balloon.r / u - 40) / 16, 0, 1);
-    this.emit({ type: 'pop', x: balloon.x, y: balloon.y, size, kind: balloon.kind });
+    this.emit({ type: 'pop', x: balloon.x, y: balloon.y, size, kind: balloon.kind, photoId: balloon.photoId });
 
     if (this.pops % this.config.celebrateEvery === 0) this.celebrate();
   }

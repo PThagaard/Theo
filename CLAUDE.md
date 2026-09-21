@@ -62,14 +62,18 @@ behov**, ikke en kravspecifikation. Arbejdsgangen er altid:
 ```
 src/
   main.ts       opstart: canvas, spil-loop (try/catch), events → lyd/haptik, wake lock, service worker
-  game.ts       Balloner: al spillogik. Ren TypeScript uden DOM/canvas → enhedstestes i Node
+  game.ts       Balloner: al spillogik inkl. besøg (dyr), vind, sol/skyer, foto-balloner. Ren TypeScript uden
+                DOM/canvas → enhedstestes i Node
   render.ts     Balloner: tegning. Ingen spillogik her
   audio.ts      Synth (stemmer), lydeffekter og musikafspiller. Kan køre offline (OfflineAudioContext) til test
   music.ts      sange (notation + kompilering til events) – rene funktioner
   input.ts      touch/mus → press/drag/release; ryst (DeviceMotion); blokering af browser-gestus
   parent.ts     forældremenu (hold 2 sek.), indstillinger (localStorage), lås-knap
   kidlock.ts    bro til android/.../KidLockPlugin.java (Androids "fastgør vinduer")
-  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner
+  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner; builtinPhotos.ts læser src/familie/
+  cropper.ts    ansigts-klipper i forældremenuen
+  stats.ts      tællere for alt (i dag / i alt / legetid), gemt i localStorage; vises i forældremenuen
+  terrain.ts    bakkernes form, delt af spil (jordhøjde til besøgende) og tegning
   update.ts     bro til android/.../AppUpdatePlugin.java (søg/hent/installér ny version fra GitHub Releases)
   palette.ts, rng.ts, types.ts, styles.css, sw.js (service worker-skabelon; udfyldes af vite.config.ts)
 test/           Vitest-enhedstests (spillogik, sange)

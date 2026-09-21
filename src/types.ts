@@ -45,6 +45,8 @@ export interface Balloon {
   vyImpulse: number;
   /** For photo balloons: which family photo is on it. */
   photoId?: string;
+  /** Pointer id of the swipe that last blew this balloon, so each swipe counts once. */
+  blownBy?: number;
 }
 
 export interface Cloud {
@@ -133,7 +135,7 @@ export interface Particle {
 }
 
 export type GameEvent =
-  | { type: 'pop'; x: number; y: number; size: number; kind: BalloonKind }
+  | { type: 'pop'; x: number; y: number; size: number; kind: BalloonKind; photoId?: string }
   | { type: 'spawn'; x: number; y: number }
   | { type: 'sparkle'; x: number; y: number }
   | { type: 'celebrate'; pops: number }
@@ -144,4 +146,8 @@ export type GameEvent =
   /** The phone was shaken. */
   | { type: 'shake' }
   /** A visitor arrived, or was touched. */
-  | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' };
+  | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' }
+  /** A balloon was blown away by a swipe (once per balloon per swipe). */
+  | { type: 'blow' }
+  /** A finger lifted after a real swipe of at least `length` px. */
+  | { type: 'swipe'; length: number };

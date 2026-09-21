@@ -605,12 +605,13 @@ export class AudioEngine {
     this.synth.tone(this.sfxBus, 'sine', 320, when, 0.25, 0.01, 0.25, { to: 140, glide: 0.2 });
   }
 
-  /** Soft raindrops ("plip plip") when a cloud is touched. */
+  /** Soft rain when a cloud is touched: a hush of drops and a few bubbly "plops", nothing bird-like. */
   rain(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
-    [96, 93, 98, 91, 100, 95].forEach((midi, i) => {
-      const f = midiToFreq(midi);
-      this.synth.tone(this.sfxBus, 'sine', f * 1.25, when + i * 0.07, 0.12, 0.003, 0.22, { to: f, glide: 0.06 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.12, 0.5, 'lowpass', 1400, 0.5);
+    [0, 0.11, 0.2, 0.32, 0.41, 0.55].forEach((offset, i) => {
+      const f = [620, 520, 700, 480, 580, 440][i];
+      this.synth.tone(this.sfxBus, 'sine', f * 1.5, when + offset, 0.2, 0.004, 0.16, { to: f, glide: 0.1 });
     });
   }
 }

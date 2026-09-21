@@ -1,6 +1,7 @@
 import { Cropper } from './cropper';
 import type { KidLock } from './kidlock';
 import type { StoredPhoto } from './photos';
+import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
 import type { AppUpdate } from './update';
 
 /**
@@ -32,11 +33,19 @@ export interface PhotoHooks {
   onChange(photos: StoredPhoto[]): void;
 }
 
+export interface StatsHooks {
+  snapshot(): StatsSnapshot;
+  reset(): void;
+  /** Names of family photos, for "Mor poppet" rows (photo id -> name). */
+  photoNames(): Record<string, string>;
+}
+
 export interface ParentPanelHooks {
   onChange(settings: Settings): void;
   lock?: KidLock;
   photos?: PhotoHooks;
   update?: AppUpdate;
+  stats?: StatsHooks;
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
@@ -165,6 +174,9 @@ export class ParentPanel {
   private readonly updateNotesText = element<HTMLElement>('update-notes-text');
   private updateUrl: string | null = null;
   private busy = false;
+  private readonly statsSection = element<HTMLElement>('stats-section');
+  private readonly statsBody = element<HTMLElement>('stats-body');
+  private readonly statsFooter = element<HTMLElement>('stats-footer');
   private readonly pointers = new ActivePointers();
   private readonly lockHold: HoldButton;
   private locked = false;
@@ -221,6 +233,12 @@ export class ParentPanel {
     });
     void this.loadPhotos();
 
+    this.statsSection.hidden = !hooks.stats;
+    new HoldButton(element('stats-reset'), () => {
+      hooks.stats?.reset();
+      this.renderStats();
+    }, this.pointers);
+
     this.updateSection.hidden = !hooks.update?.available;
     this.updateCheck.addEventListener('click', () => void this.checkForUpdate());
     this.updateInstall.addEventListener('click', () => void this.installUpdate());
@@ -235,6 +253,7 @@ export class ParentPanel {
   open(): void {
     this.panel.hidden = false;
     this.armAutoClose();
+    this.renderStats();
     void this.showVersion();
     void this.refreshLock();
     if (this.lockPoll) clearInterval(this.lockPoll);
@@ -364,6 +383,41 @@ export class ParentPanel {
       : own === 0
         ? 'Vælg et billede og klip ansigtet ud, så dukker det op på balloner. Billeder valgt her bliver kun på denne telefon.'
         : `${own} af ${hooks.max} egne billeder. Billeder valgt her bliver kun på denne telefon.`;
+  }
+
+  // ---- Statistics ------------------------------------------------------------
+
+  private renderStats(): void {
+    const hooks = this.hooks.stats;
+    if (!hooks) return;
+    const snapshot = hooks.snapshot();
+    const names = hooks.photoNames();
+    const rows: Array<[label: string, today: number, total: number, sub: boolean]> = [];
+    for (const [key, label] of STAT_LABELS) {
+      const total = snapshot.total[key] ?? 0;
+      if (total === 0 && key !== 'pops') continue;
+      rows.push([label.replace(/^… /, ''), snapshot.today[key] ?? 0, total, label.startsWith('…')]);
+    }
+    for (const [id, name] of Object.entries(names)) {
+      const key = `photo:${id}`;
+      const total = snapshot.total[key] ?? 0;
+      if (total > 0) rows.push([`${name} poppet`, snapshot.today[key] ?? 0, total, true]);
+    }
+    this.statsBody.replaceChildren(
+      ...rows.map(([label, today, total, sub]) => {
+        const tr = document.createElement('tr');
+        if (sub) tr.classList.add('is-sub');
+        for (const text of [label, String(today), String(total)]) {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.append(td);
+        }
+        return tr;
+      }),
+    );
+    this.statsFooter.textContent =
+      `Legetid: ${formatMinutes(snapshot.playSecondsToday)} i dag, ${formatMinutes(snapshot.playSecondsTotal)} i alt ` +
+      `siden ${snapshot.since}. Tallene bliver kun på telefonen.`;
   }
 
   // ---- Updates ---------------------------------------------------------------

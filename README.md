@@ -104,6 +104,13 @@ Fastgør vinduer.
 - Skærmen slukker ikke af sig selv, mens appen er åben.
 - Ingen lyd på iPhone? Tjek lydløs-knappen på siden af telefonen.
 
+## Theos leg (statistik)
+
+Forældremenuen viser, hvad der er leget: balloner poppet (og hvor mange af dem var familie-, stjerne- og
+regnbueballoner), balloner pustet op og blæst væk, swipes, harpetoner, tryk på himlen, solen, skyerne, ryst, fester,
+besøg (og hvilke dyr der er rørt), hvor mange gange hver person i familien er poppet, og legetid. Alt både for i dag
+og i alt siden første leg. Tallene gemmes kun på telefonen og kan nulstilles med knappen (hold nede).
+
 ## Teknik
 
 - Én kodebase i TypeScript. Grafikken tegnes på et `<canvas>`, og al lyd syntetiseres med Web Audio (ingen lydfiler).

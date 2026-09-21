@@ -143,11 +143,22 @@ await page.waitForTimeout(1600);
 await page.screenshot({ path: `${OUT}/${tag}-11-visitors.png` });
 const poked = await page.evaluate(() => new Promise((resolve) => {
   const g = window.__theo.game; const events = []; g.onEvent((e) => { if (e.type === 'visitor' && e.what === 'poke') events.push(e.kind); });
-  for (const kind of ['dog', 'elephant']) { const v = g.visitors.find((v) => v.kind === kind); const hit = g.visitorHit(v); g.press(90, hit.x, hit.y); g.release(90); }
-  resolve(events);
+  const before = g.visitors.map((v) => `${v.kind}:${v.state}@${Math.round(v.x)},${Math.round(v.y)}`).join(' ');
+  for (const kind of ['dog', 'elephant']) {
+    const v = g.visitors.find((v) => v.kind === kind);
+    if (!v) { events.push(`${kind} missing`); continue; }
+    const hit = g.visitorHit(v);
+    const balloon = g.findBalloonAt(hit.x, hit.y, 1.6);
+    if (balloon) events.push(`${kind} covered by balloon`);
+    g.press(90, hit.x, hit.y); g.release(90);
+  }
+  resolve({ events, before });
 }));
-console.log('visitors poked:', poked.join(', '));
-check(poked.includes('dog') && poked.includes('elephant'), 'dog or elephant did not react to a touch');
+console.log('visitors before poke:', poked.before);
+console.log('visitors poked:', poked.events.join(', '));
+poked.splice?.(0);
+const pokedKinds = poked.events;
+check(pokedKinds.includes('dog') && pokedKinds.includes('elephant'), 'dog or elephant did not react to a touch');
 await page.waitForTimeout(250);
 await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
@@ -202,6 +213,17 @@ await page.mouse.move(btn.x + btn.width / 2, btn.y + btn.height / 2);
 await page.mouse.down(); await page.waitForTimeout(300); await page.mouse.up();
 const openAfterShort = await page.evaluate(() => !document.getElementById('parent-panel').hidden);
 console.log('open after short tap (should be false):', openAfterShort);
+
+// Statistics: the menu shows what has been played so far, and the numbers survive a reload.
+const statsShown = await page.evaluate(() => {
+  const rows = Array.from(document.querySelectorAll('#stats-body tr')).map((tr) => Array.from(tr.children).map((td) => td.textContent));
+  return { rows, footer: document.getElementById('stats-footer').textContent, pops: window.__theo.stats.snapshot.total.pops };
+});
+console.log('stats rows:', statsShown.rows.length, '| pops:', statsShown.pops, '|', statsShown.footer.slice(0, 40));
+check(statsShown.pops >= 10, 'pops were not counted');
+check(statsShown.rows.some((r) => r[0] === 'Balloner poppet' && Number(r[2]) >= 10), 'stats table does not show pops');
+check(statsShown.rows.some((r) => r[0] === 'Swipes' && Number(r[2]) >= 1), 'stats table does not show swipes');
+await page.screenshot({ path: `${OUT}/${tag}-06b-stats.png` });
 
 // Family photos: add a generated picture through the parent menu, then check photo balloons appear.
 await page.mouse.move(btn.x + btn.width / 2, btn.y + btn.height / 2);
@@ -278,6 +300,9 @@ await waitForGame(page);
 const storedPhotos = await page.evaluate(async () => (await new Promise((resolve) => { const r = indexedDB.open('theos-legeplads', 1); r.onsuccess = () => { const db = r.result; const q = db.transaction('photos').objectStore('photos').getAll(); q.onsuccess = () => resolve(q.result.length); }; })));
 console.log('photos in IndexedDB after reload:', storedPhotos);
 check(storedPhotos === 1, 'photo was not stored');
+const popsAfterReload = await page.evaluate(() => window.__theo.stats.snapshot.total.pops);
+console.log('pops remembered after reload:', popsAfterReload);
+check(popsAfterReload >= 10, 'statistics were not saved');
 
 // Live audio state.
 const audioState = await page.evaluate(() => { const a = window.__theo.audio(); return a ? { state: a.state, song: a.currentSongName } : null; });

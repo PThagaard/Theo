@@ -122,6 +122,39 @@ describe('Game', () => {
     expect(game.balloons).toContain(created);
   });
 
+  it('counts a real swipe when the finger lifts, but not a tap', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    game.press(1, 100, 400);
+    game.release(1);
+    expect(events.some((e) => e.type === 'swipe')).toBe(false);
+    swipe(game, 2, [40, 400], [340, 400]);
+    const swipeEvent = events.find((e): e is Extract<GameEvent, { type: 'swipe' }> => e.type === 'swipe');
+    expect(swipeEvent).toBeDefined();
+    expect(swipeEvent!.length).toBeGreaterThan(250);
+  });
+
+  it('counts each balloon blown by a swipe once per swipe', () => {
+    // One balloon only: the cap of one keeps the touch from making another and blocks natural spawns.
+    const game = new Game({ maxBalloons: 1, targetBalloons: 0 }, 42);
+    const events: GameEvent[] = [];
+    game.onEvent((event) => events.push(event));
+    game.resize(W, H);
+    game.balloons = [];
+    const balloon = game.spawnBalloon({ x: 200, y: 400 })!;
+    advance(game, 0.5);
+    const gap = balloon.r * 1.6;
+    swipe(game, 1, [balloon.x - gap, 600], [balloon.x - gap, 200]);
+    expect(events.filter((e) => e.type === 'blow')).toHaveLength(1);
+    balloon.baseX = 200;
+    balloon.y = 400;
+    balloon.vx = 0;
+    balloon.vyImpulse = 0;
+    advance(game, 0.1);
+    swipe(game, 2, [balloon.x - gap, 600], [balloon.x - gap, 200]);
+    expect(events.filter((e) => e.type === 'blow')).toHaveLength(2);
+  });
+
   it('paints a ribbon behind a swiping finger that fades after the finger lifts', () => {
     const { game } = makeGame();
     game.balloons = [];
