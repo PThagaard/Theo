@@ -18,7 +18,7 @@ describe('the parents\' voices', () => {
   it('keeps word keys unique and simple, and photo keys apart from them', () => {
     const keys = VOICE_WORDS.map((w) => w.key);
     expect(new Set(keys).size).toBe(keys.length);
-    for (const key of keys) expect(key).toMatch(/^[a-z]+$/);
+    for (const key of keys) expect(key).toMatch(/^[a-z]+(-[a-z]+)*$/);
     expect(photoVoiceKey('abc')).toBe('photo:abc');
     expect(keys).not.toContain(photoVoiceKey('abc'));
   });

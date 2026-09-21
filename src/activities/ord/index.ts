@@ -5,13 +5,13 @@ import { OrdGame } from './logic';
 import { OrdRenderer } from './render';
 import { handleOrdEvent } from './sounds';
 
-/** "Ord": the vocabulary activity as an Activity (see logic.ts). */
+/** "Titte-bøh og Ord" as an Activity (see logic.ts). */
 export function createOrd(canvas: HTMLCanvasElement, ctx: ActivityContext): Activity {
   const game = new OrdGame();
   const renderer = new OrdRenderer(canvas);
   let photos: StoredPhoto[] = [];
   let familyOn = ctx.settings().familyBalloons;
-  game.onEvent((event) => handleOrdEvent(event, game.current, ctx));
+  game.onEvent((event) => handleOrdEvent(event, ctx));
   const applyPhotos = () => {
     renderer.setPhotos(photos);
     game.setPhotos(familyOn ? photos.map((photo) => photo.id) : []);

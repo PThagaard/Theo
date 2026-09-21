@@ -168,6 +168,8 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['ordTouched', 'Ord: ting rørt'],
   ['ordPeeks', 'Ord: titte-bøh'],
   ['ordNext', 'Ord: swipet videre'],
+  ['ordAsked', 'Ord: "hvor er …?" spurgt'],
+  ['ordFound', 'Ord: … og fundet'],
   ['transformations', 'Dyr forvandlet'],
 ];
 

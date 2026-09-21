@@ -66,13 +66,11 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 Det Theo kan: pege med én finger, tage og slippe, kigge efter det, der forsvinder, genkende navne på ting, pludre
 efter lyde.
 
-- 🔁 **Ord (spil nr. 2)** – findes: én ting ad gangen (hund, elefant, fugl, sommerfugl, snegl, ko, kat, traktor, bil,
-  ballon, sol, sky, blomst, familiebilleder), tryk giver lyd og jeres ord, swipe giver den næste, hver tredje gemmer
-  sig bag en busk (titte-bøh; for 1–2 og 2+ rasler busken først). **Ærlig status (`docs/FORSKNING.md`):** ved 8
-  måneder er det en talende billedbog, ikke et læringsspil; det, der har dokumentation i alderen, er titte-bøh,
-  familiens ansigter og jeres stemmer. **Forslag, der afventer forældrene:** i profilen 8–12 mdr bliver Ord til
-  *Titte-bøh*: busken det meste af tiden, bag den familiens ansigter med navnet i jeres stemme og få dyr; resten af
-  tingene venter til profilen 1–2 år. "Hvor er skyen?" flyttes til 12–18 måneder (se der).
+- ✅ **Titte-bøh og Ord (spil nr. 2)** – i profilen *8–12 mdr* er det titte-bøh: familiens ansigter og fire dyr
+  (hund, elefant, ko, kat) gemmer sig bag busken tre ud af fire gange; rør busken, og tingen kommer frem med sin lyd
+  og navnet i jeres stemme; swipe giver den næste; intet sker af sig selv. Fra *1–2 år* er det hele kortbunken
+  (fugl, sommerfugl, snegl, traktor, bil, ballon, sol, sky, blomst med), én ting ad gangen, og "Hvor er …?"-runder
+  (se 12–18 måneder). Træner: objektpermanens, forventning, kendte ansigter og navne. Grundlag: `docs/FORSKNING.md`.
 - 💡 **Hvor er lyden?** – en lyd kommer fra en side af skærmen, og et dyr dukker op der, når man trykker. Træner:
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,
@@ -83,10 +81,12 @@ efter lyde.
 
 - 💡 **Put klodsen i hullet** – træk en form til det matchende hul (stor tolerance, snap-hjælp). Træner: form-genkendelse,
   træk-og-slip, tålmodighed.
-- 💡 **Hvor er skyen?** – to–tre ting på skærmen; jeres indtalte stemme spørger efter én. Alt, han rører, siger sit
-  eget navn (jeres stemme); den efterspurgte fejrer med lyd og hop. Ingen fejl, ingen tid, ingen score. Det er den
-  mekanik, der har dokumentation for ordlæring fra skærm (Kirkorian, Choi & Pempek 2016, hos toårige), uden det,
-  der ville gøre den til en prøve. Senere med farver ("den røde"). Træner: sprogforståelse, pegen.
+- ✅ **Hvor er …?** (i Titte-bøh og Ord, fra profilen *1–2 år*) – hver tredje gang står to ting ved siden af
+  hinanden (*2+*: hver anden gang, tre ting); jeres indtalte "hvor er" og ordet spørger efter én (ikke indtalt: en
+  spørge-klokke og tingens egen lyd). Alt, han rører, siger sit eget navn; den efterspurgte fejrer med stjerner og
+  hop, og så kommer den næste. Uden svar gentages spørgsmålet efter 7 sekunder, og tingen vrikker lidt (en hjælp,
+  aldrig en rettelse). Ingen fejl, ingen tid, ingen score: Kirkorian, Choi & Pempek (2016) uden prøven. Senere med
+  farver ("den røde"). Træner: sprogforståelse, pegen.
 - 💡 **Kroppen** – tryk på en figurs næse/mave/fødder; figuren siger navnet og reagerer sjovt. Træner: kropsdele, ord.
 - 💡 **Byg og vælt** – stabl klodser med tryk, swipe vælter tårnet med brag og latter. Træner: årsag-virkning-kæder,
   forventningsglæde.

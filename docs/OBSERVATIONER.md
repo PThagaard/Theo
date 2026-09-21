@@ -76,3 +76,8 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - "Kan vi ikke lave en 'vælg spil'-forside? Settings er jo kun til Balloner" → behov: appen er nu flere spil, og
   forældrene skal kunne vælge, når de giver Theo telefonen; indstillinger skal høre til det spil, de gælder →
   forsiden "Theos spil", *Skift spil* i menuen, Tempo kun i Balloner.
+- "Det her ord-spil, jeg forstår det ikke. Hvordan skal det være sjovt og lærerigt for en 8 måneders? Der MÅ være
+  noget dokumenteret videnskab" → behov: alt, vi bygger, skal kunne begrundes i, hvad der er dokumenteret for
+  alderen, og appen må ikke love mere, end den kan → `docs/FORSKNING.md` (kilder med links), ærlig status: Ord var
+  en talende billedbog, ikke et læringsspil. Beslutning (far: "ja, lav 1, 2 og 3"): titte-bøh for 8–12 mdr
+  (familien og få dyr bag busken), "Hvor er …?"-runder fra 1 år uden fejl, og fem regler i CLAUDE.md.

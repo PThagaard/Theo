@@ -32,6 +32,8 @@ export const VOICE_WORDS: ReadonlyArray<{ key: string; label: string; emoji: str
   { key: 'blomst', label: 'Blomst', emoji: '🌸' },
   { key: 'regn', label: 'Regn', emoji: '🌧️' },
   { key: 'lyn', label: 'Lyn', emoji: '⚡' },
+  // The question in Ord's "Hvor er …?" rounds: say just "hvor er"; the app adds the word.
+  { key: 'hvor-er', label: 'Hvor er …? (spørgsmålet i Ord)', emoji: '❓' },
 ];
 
 /** A recording never runs longer than this, whatever the finger does. */

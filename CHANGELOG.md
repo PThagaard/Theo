@@ -3,6 +3,30 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Titte-bøh for de mindste, og "Hvor er …?" fra 1 år
+
+Efter forskningsnoten (`docs/FORSKNING.md`) og forældrenes "ja, lav 1, 2 og 3":
+
+- **Spil nr. 2 hedder nu "Theos Titte-bøh og Ord" og retter sig efter alderen.** I *8–12 mdr* er det titte-bøh:
+  jeres familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag busken tre ud af fire gange; rør busken,
+  og tingen kommer frem med sin lyd og navnet i jeres stemme. Intet sker af sig selv. Resten af tingene venter til
+  *1–2 år*.
+- **"Hvor er …?" fra 1 år**: hver tredje gang (*2+*: hver anden) står to (tre) ting ved siden af hinanden, og jeres
+  indtalte stemme spørger efter én: "hvor er" + ordet (ikke indtalt: en lille spørge-klokke og tingens egen lyd,
+  så man kan finde den, der siger "vov vov"). Alt, Theo rører, svarer med sit eget navn; den efterspurgte fejrer med
+  stjerner og hop, og så kommer den næste. Uden svar gentages spørgsmålet efter 7 sekunder, og tingen vrikker lidt
+  (en hjælp, aldrig en rettelse). Ingen fejl, ingen tid, ingen point. *Jeres stemmer* har fået rækken *Hvor er …?*
+- **Fem regler i CLAUDE.md** ("Alderssvarende"): ingen rigtigt/forkert før 12 måneder, titte-bøh for de mindste,
+  hvad en aktivitet skal kunne begrundes med, appen lover aldrig læring, og aldrig alene, før sengetid eller som
+  trøst.
+
+**Test på telefonen:** (1) Alder *8–12 mdr*, forsiden → *Theos Titte-bøh og Ord*: en busk. Rør den: titte-bøh med
+lyd og navn; rør tingen igen: den siger navnet. Swipe: den næste gemmer sig igen; hver fjerde står frit. Kun hund,
+elefant, ko, kat og jeres billeder. (2) *Familie* → *Jeres stemmer*: indtal *Hvor er …?* (sig "hvor er").
+(3) *Leg* → *Alder* → *1–2 år*: swipe, til to ting står ved siden af hinanden, og I hører "hvor er … hund". Rør den
+anden: den siger sit navn, intet andet sker. Rør hunden: stjerner, hop, og den næste kommer. Vent 7 sekunder uden at
+røre: spørgsmålet igen, og hunden vrikker. (4) Sæt alderen tilbage til *8–12 mdr*, før Theo får telefonen.
+
 ## 2026-09-21 – Forskningsnote og revideret plan; ko, kat og bil i Ord
 
 - **`docs/FORSKNING.md`**: hvad forskningen faktisk siger om skærm og apps til børn under to år (Sundhedsstyrelsen,

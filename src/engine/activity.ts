@@ -9,8 +9,11 @@ export interface ActivityContext {
   audio(): AudioEngine | null;
   readonly stats: Stats;
   haptic(style: ImpactStyle): void;
-  /** Says a word in a parent's voice, if one is recorded (engine/voices.ts). */
-  say(key: string, delay?: number, cooldown?: number): void;
+  /**
+   * Says a word in a parent's voice, if one is recorded (engine/voices.ts). Returns how many seconds the
+   * recording lasts, or 0 when nothing will be said (no recording, or said too recently).
+   */
+  say(key: string, delay?: number, cooldown?: number): number;
   settings(): Settings;
 }
 

@@ -4,9 +4,15 @@ import { photoVoiceKey } from '../../engine/voices';
 import type { VisitorKind } from '../balloner/types';
 
 /**
- * "Ord": one thing at a time, big and calm, in the middle of the screen. Touch it and it reacts and
- * says its word (in a parent's voice, when recorded); swipe, and the next one slides in. Now and then a
- * thing hides behind a bush: touch the bush, and out it pops ("titte-bøh"). Pure logic, no DOM.
+ * "Titte-bøh og Ord" (docs/FORSKNING.md explains why it is shaped like this):
+ * - 8–12 months: peek-a-boo. The family's faces and a few animals hide behind the bush most of the time; touching
+ *   the bush brings the thing out with its sound and its name in a parent's voice. Nothing happens by itself and
+ *   nothing is ever wrong.
+ * - From 1 year: the whole deck, one thing at a time, and now and then a "Hvor er …?" round: two or three things
+ *   stand side by side, a parent's recorded voice asks for one, everything touched answers with its own name, and
+ *   the asked-for one celebrates. No mistakes, no timer, no score: the mechanic with evidence for word learning at
+ *   two years, minus what would make it a test.
+ * Pure logic, no DOM.
  */
 
 export interface Thing {
@@ -33,23 +39,60 @@ export const BASE_THINGS: ReadonlyArray<Thing> = [
   { key: 'blomst', kind: 'flower' },
 ];
 
+/** Besides the family, the youngest profile only meets these: clear sounds, and likely first words. */
+export const YOUNGEST_KEYS: ReadonlyArray<string> = ['hund', 'elefant', 'ko', 'kat'];
+
 export type ThingState = 'enter' | 'idle' | 'react' | 'leave';
 
+/** What happens with a thing when it comes: it stands there, hides behind the bush, or is asked for in a round. */
+export type Step = 'show' | 'hide' | 'ask';
+
+/**
+ * The plan by age: what happens with the n-th thing. Peek-a-boo is the game at 8–12 months (three of four
+ * hide); from 1 year most things simply stand there, a "Hvor er …?" round comes every few things, and the bush
+ * now and then.
+ */
+export const PLAN: Record<Age, ReadonlyArray<Step>> = {
+  '8-12': ['hide', 'hide', 'hide', 'show'],
+  '1-2': ['show', 'ask', 'hide'],
+  '2+': ['show', 'ask', 'hide', 'ask'],
+};
+
+/** A "Hvor er …?" round: a few things side by side, one of them asked for. */
+export interface Round {
+  things: Thing[];
+  /** Index of the thing the question asks for. */
+  asked: number;
+  /** Seconds since each thing was touched (its bounce), Infinity when it has not been. */
+  reactAge: number[];
+  found: boolean;
+  /** Seconds since the asked-for thing was found (the celebration). */
+  foundAge: number;
+  /** Seconds since the question was last asked. */
+  sinceAsk: number;
+  /** How many times the question has been asked in this round. */
+  asks: number;
+  /** 1 right after a repeated question (the asked-for thing wiggles), fading to 0. */
+  hint: number;
+}
+
 export type OrdEvent =
-  | { type: 'touch'; key: string; x: number; y: number }
-  | { type: 'peek'; key: string; x: number; y: number }
-  | { type: 'rustle'; key: string; x: number; y: number }
-  | { type: 'next'; key: string }
-  | { type: 'enter'; key: string }
+  | { type: 'touch'; thing: Thing; x: number; y: number }
+  | { type: 'peek'; thing: Thing; x: number; y: number }
+  | { type: 'rustle'; thing: Thing; x: number; y: number }
+  | { type: 'ask'; thing: Thing; repeat: boolean }
+  | { type: 'found'; thing: Thing; x: number; y: number }
+  | { type: 'next'; thing: Thing }
+  | { type: 'enter'; thing: Thing; round: boolean }
   | { type: 'sparkle'; x: number; y: number };
 
 /** A swipe this long (times unit) brings the next thing. */
 const SWIPE_DISTANCE = 60;
 const ENTER_TIME = 0.7;
 const LEAVE_TIME = 0.5;
-const REACT_TIME = 0.9;
-/** Every n-th thing hides behind the bush, by age (object permanence is the game at 8–12 months). */
-const HIDE_EVERY: Record<Age, number> = { '8-12': 3, '1-2': 3, '2+': 4 };
+export const REACT_TIME = 0.9;
+/** Things side by side in a "Hvor er …?" round (none for the youngest: no questions before 12 months). */
+const ROUND_SIZE: Record<Age, number> = { '8-12': 0, '1-2': 2, '2+': 3 };
 /**
  * Touches on the bush before it opens, by age. The youngest get the thing at once: a clear answer to the
  * touch is the whole point at 8–12 months. Older children enjoy a rustle of suspense first.
@@ -58,6 +101,11 @@ const BUSH_TOUCHES: Record<Age, number> = { '8-12': 1, '1-2': 2, '2+': 2 };
 const RUSTLE_TIME = 0.6;
 /** Seconds of no touching before the next thing comes by itself; 0 = never (the youngest decide themselves). */
 const AUTO_NEXT: Record<Age, number> = { '8-12': 0, '1-2': 40, '2+': 25 };
+/** Without an answer the question is asked again after this long, and the asked-for thing wiggles: a hint, never a correction. */
+export const REASK_AFTER = 7;
+const HINT_TIME = 1.2;
+/** The celebration before the round makes way for the next thing. */
+export const FOUND_TIME = 1.8;
 const SLEEP_TIME = 8;
 const WAKE_TIME = 2.5;
 
@@ -72,7 +120,9 @@ export class OrdGame {
   private deck: Thing[] = [];
   private shown = 0;
   current: Thing = BASE_THINGS[0];
-  /** Where the thing is (its feet on the ground), and where it is heading. */
+  /** The "Hvor er …?" round on stage, or null while one thing stands alone. */
+  round: Round | null = null;
+  /** Where the thing (or the middle of the round) is, and where it is heading. */
   x = 0;
   state: ThingState = 'enter';
   stateAge = 0;
@@ -95,6 +145,7 @@ export class OrdGame {
     this.rng = new Rng(seed);
     this.reshuffle();
     this.current = this.pickNext();
+    this.place();
   }
 
   onEvent(listener: (event: OrdEvent) => void): void {
@@ -109,11 +160,14 @@ export class OrdGame {
     this.width = width;
     this.height = height;
     this.unit = Math.max(0.5, Math.min(width, height) / 400);
-    if (this.state === 'enter' && this.stateAge === 0) this.x = width + this.size * 2;
+    if (this.state === 'enter' && this.stateAge === 0) this.x = this.entryX;
   }
 
   setAge(age: Age): void {
+    if (age === this.age) return;
     this.age = age;
+    this.reshuffle();
+    this.restartIfUnseen();
   }
 
   get currentAge(): Age {
@@ -124,17 +178,23 @@ export class OrdGame {
   setPhotos(ids: string[]): void {
     this.photoIds = [...ids];
     this.reshuffle();
+    this.restartIfUnseen();
   }
 
-  /** Everything the deck can show, base things first. */
+  /** Everything that exists, base things first. */
   get things(): Thing[] {
     return [...BASE_THINGS, ...this.photoIds.map((id) => ({ key: photoVoiceKey(id), kind: 'photo' as const, photoId: id }))];
   }
 
+  /** What this age gets to see: the family and a few animals for the youngest, everything from 1 year. */
+  get deckThings(): Thing[] {
+    const all = this.things;
+    return this.age === '8-12' ? all.filter((thing) => thing.kind === 'photo' || YOUNGEST_KEYS.includes(thing.key)) : all;
+  }
+
   private reshuffle(): void {
-    const things = this.things;
     // Shuffle, but never show the same thing twice in a row.
-    const shuffled = [...things];
+    const shuffled = [...this.deckThings];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = this.rng.int(0, i);
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -143,7 +203,14 @@ export class OrdGame {
     this.deck = shuffled;
   }
 
-  /** How big the thing is drawn (its body size, like a visitor's). */
+  /** The deck changed before the child saw anything (the age or the photos arrived at start): begin afresh. */
+  private restartIfUnseen(): void {
+    if (this.state !== 'enter' || this.stateAge > 0) return;
+    this.current = this.pickNext();
+    this.place();
+  }
+
+  /** How big a lone thing is drawn (its body size, like a visitor's). */
   get size(): number {
     return Math.min(this.width, this.height) * 0.16;
   }
@@ -158,46 +225,136 @@ export class OrdGame {
     return this.height * 0.78;
   }
 
-  /** Where the thing can be touched: a generous circle around it. */
+  /** Where a lone thing can be touched: a generous circle around it. */
   get hit(): { x: number; y: number; r: number } {
     return { x: this.x, y: this.groundY - this.size * 0.9, r: this.size * 2.2 };
   }
+
+  // ---- Round geometry ---------------------------------------------------------
+
+  /** Things in a round share the stage, so each is drawn smaller. */
+  get roundScale(): number {
+    if (!this.round) return 1;
+    return this.round.things.length >= 3 ? 0.55 : 0.72;
+  }
+
+  /** Distance between neighbours in a round: as wide as the screen allows. */
+  get roundSpacing(): number {
+    const n = this.round?.things.length ?? 1;
+    if (n < 2) return 0;
+    return Math.min(this.size * (n >= 3 ? 2.1 : 2.7), (this.width - this.size * 1.2) / (n - 1));
+  }
+
+  /** Where the i-th thing of the round stands (its feet). */
+  itemX(i: number): number {
+    const n = this.round?.things.length ?? 1;
+    return this.x + (i - (n - 1) / 2) * this.roundSpacing;
+  }
+
+  /** Where the i-th thing of the round can be touched (for the smoke test; a press uses the whole stage band). */
+  hitFor(i: number): { x: number; y: number; r: number } {
+    const s = this.size * this.roundScale;
+    return { x: this.itemX(i), y: this.groundY - s * 1.2, r: Math.max(s, this.roundSpacing * 0.5) };
+  }
+
+  private get entryX(): number {
+    const n = this.round?.things.length ?? 1;
+    return this.width + this.size * 2 + (this.roundSpacing * (n - 1)) / 2;
+  }
+
+  private get exitX(): number {
+    const n = this.round?.things.length ?? 1;
+    return -(this.size * 2 + (this.roundSpacing * (n - 1)) / 2);
+  }
+
+  // ---- The deck -----------------------------------------------------------------
 
   private pickNext(): Thing {
     if (this.deck.length === 0) this.reshuffle();
     return this.deck.shift() as Thing;
   }
 
-  /** The current thing leaves and the next one comes in (hidden behind the bush every few times). */
+  /** The current thing leaves and the next one comes in (following the age's plan). */
   next(): void {
     if (this.state === 'leave') return;
     this.state = 'leave';
     this.stateAge = 0;
-    this.emit({ type: 'next', key: this.current.key });
+    this.emit({ type: 'next', thing: this.current });
   }
 
   private bringNext(): void {
     this.current = this.pickNext();
     this.shown++;
-    if (this.shown % HIDE_EVERY[this.age] === 0) this.hide();
-    else {
-      this.hidden = false;
-      this.bushOpen = 1;
-    }
-    this.x = this.width + this.size * 2;
+    this.place();
+    this.emit({ type: 'enter', thing: this.current, round: this.round !== null });
+  }
+
+  /** Puts the current thing at the edge, ready to slide in, as the plan says: shown, hidden or asked for. */
+  private place(): void {
     this.state = 'enter';
     this.stateAge = 0;
     this.idle = 0;
-    this.emit({ type: 'enter', key: this.current.key });
+    this.round = null;
+    this.hidden = false;
+    this.bushOpen = 1;
+    const plan = PLAN[this.age];
+    const step = plan[this.shown % plan.length];
+    if (step === 'hide') this.hide();
+    else if (step === 'ask' && ROUND_SIZE[this.age] >= 2 && this.deckThings.length >= 2) this.ask();
+    this.x = this.entryX;
   }
 
   /** The current thing hides behind the bush (also used by the tests to force a titte-bøh). */
   hide(): void {
+    this.round = null;
     this.hidden = true;
     this.bushOpen = 0;
     this.bushTouches = 0;
     this.rustle = 0;
   }
+
+  /**
+   * Starts a "Hvor er …?" round: the current thing and a few others from the deck, side by side, the current one
+   * being asked for (also used by the smoke test). The question is asked once the things have slid in.
+   */
+  ask(): void {
+    const count = Math.max(2, ROUND_SIZE[this.age]);
+    const pool = this.deckThings.filter((thing) => thing.key !== this.current.key);
+    const things: Thing[] = [];
+    while (things.length < count - 1 && pool.length > 0) things.push(pool.splice(this.rng.int(0, pool.length - 1), 1)[0]);
+    if (things.length === 0) return;
+    const asked = this.rng.int(0, things.length);
+    things.splice(asked, 0, this.current);
+    this.round = { things, asked, reactAge: things.map(() => Infinity), found: false, foundAge: 0, sinceAsk: 0, asks: 0, hint: 0 };
+    this.hidden = false;
+    this.bushOpen = 1;
+    if (this.state !== 'enter') this.askQuestion(false);
+  }
+
+  private askQuestion(repeat: boolean): void {
+    const round = this.round;
+    if (!round) return;
+    round.sinceAsk = 0;
+    round.asks++;
+    if (repeat) round.hint = 1;
+    this.emit({ type: 'ask', thing: round.things[round.asked], repeat });
+  }
+
+  /** Which thing of the round a touch on the stage means: the nearest one, so there are no dead areas between them. */
+  private roundThingAt(x: number, y: number): number | null {
+    const round = this.round;
+    if (!round) return null;
+    const n = round.things.length;
+    const s = this.size * this.roundScale;
+    if (Math.abs(y - (this.groundY - s * 1.2)) > s * 2.6) return null;
+    const margin = this.roundSpacing * 0.8;
+    if (x < this.itemX(0) - margin || x > this.itemX(n - 1) + margin) return null;
+    let best = 0;
+    for (let i = 1; i < n; i++) if (Math.abs(x - this.itemX(i)) < Math.abs(x - this.itemX(best))) best = i;
+    return best;
+  }
+
+  // ---- Touch --------------------------------------------------------------------
 
   press(id: number, x: number, y: number): void {
     if (this.asleep) {
@@ -207,6 +364,25 @@ export class OrdGame {
     this.pointers.set(id, { x, y, startX: x, startY: y, swiped: false });
     this.idle = 0;
     if (this.state === 'leave') return;
+    if (this.round) {
+      const i = this.roundThingAt(x, y);
+      if (i === null) {
+        this.emit({ type: 'sparkle', x, y });
+        return;
+      }
+      const round = this.round;
+      round.reactAge[i] = 0;
+      const thing = round.things[i];
+      if (i === round.asked && !round.found) {
+        round.found = true;
+        round.foundAge = 0;
+        this.emit({ type: 'found', thing, x, y });
+      } else {
+        // Every thing answers with its own name. Nothing is wrong.
+        this.emit({ type: 'touch', thing, x, y });
+      }
+      return;
+    }
     const hit = this.hit;
     const onThing = Math.hypot(x - hit.x, y - hit.y) <= hit.r;
     if (this.hidden) {
@@ -218,20 +394,20 @@ export class OrdGame {
       if (this.bushTouches < BUSH_TOUCHES[this.age]) {
         // The bush shakes: "something is in there!" It opens on the next touch.
         this.rustle = 1;
-        this.emit({ type: 'rustle', key: this.current.key, x, y });
+        this.emit({ type: 'rustle', thing: this.current, x, y });
         return;
       }
       // Titte-bøh!
       this.hidden = false;
       this.state = 'react';
       this.stateAge = 0;
-      this.emit({ type: 'peek', key: this.current.key, x, y });
+      this.emit({ type: 'peek', thing: this.current, x, y });
       return;
     }
     if (onThing) {
       this.state = 'react';
       this.stateAge = 0;
-      this.emit({ type: 'touch', key: this.current.key, x, y });
+      this.emit({ type: 'touch', thing: this.current, x, y });
     } else {
       // Touching the sky is not wrong: a little sparkle, and the thing wiggles to say "here I am".
       this.emit({ type: 'sparkle', x, y });
@@ -258,11 +434,19 @@ export class OrdGame {
     this.pointers.delete(id);
   }
 
+  /** A shake: everything on stage bounces, and in a round the question is asked again. */
   shake(): void {
     if (this.asleep || this.state === 'leave') return;
+    this.idle = 0;
+    if (this.round) {
+      this.round.reactAge.fill(0);
+      this.askQuestion(true);
+      return;
+    }
+    if (this.hidden) return;
     this.state = 'react';
     this.stateAge = 0;
-    this.emit({ type: 'touch', key: this.current.key, x: this.hit.x, y: this.hit.y });
+    this.emit({ type: 'touch', thing: this.current, x: this.hit.x, y: this.hit.y });
   }
 
   sleep(): void {
@@ -285,11 +469,13 @@ export class OrdGame {
       case 'enter': {
         const t = Math.min(1, this.stateAge / ENTER_TIME);
         const ease = 1 - (1 - t) * (1 - t);
-        this.x = this.width + this.size * 2 + (target - (this.width + this.size * 2)) * ease;
+        const from = this.entryX;
+        this.x = from + (target - from) * ease;
         if (t >= 1) {
           this.x = target;
           this.state = 'idle';
           this.stateAge = 0;
+          if (this.round) this.askQuestion(false);
         }
         break;
       }
@@ -301,14 +487,28 @@ export class OrdGame {
         break;
       case 'leave': {
         const t = Math.min(1, this.stateAge / LEAVE_TIME);
-        this.x = target - (target + this.size * 2) * t * t;
+        this.x = target + (this.exitX - target) * t * t;
         if (t >= 1) this.bringNext();
         break;
       }
       case 'idle': {
         const auto = AUTO_NEXT[this.age];
-        if (!this.asleep && auto > 0 && this.idle >= auto) this.next();
+        if (!this.asleep && auto > 0 && this.idle >= auto && !this.round?.found) this.next();
         break;
+      }
+    }
+    const round = this.round;
+    if (round) {
+      for (let i = 0; i < round.reactAge.length; i++) round.reactAge[i] += dt;
+      round.hint = Math.max(0, round.hint - dt / HINT_TIME);
+      if (this.state === 'idle') {
+        round.sinceAsk += dt;
+        if (round.found) {
+          round.foundAge += dt;
+          if (round.foundAge >= FOUND_TIME) this.next();
+        } else if (!this.asleep && round.sinceAsk >= REASK_AFTER) {
+          this.askQuestion(true);
+        }
       }
     }
     // The bush jumps aside once the thing has been found (and stays put while it hides).

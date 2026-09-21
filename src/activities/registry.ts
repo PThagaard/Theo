@@ -17,7 +17,7 @@ export interface ActivityEntry {
 /** Every game the shell can run, in the order the start page shows them. */
 export const ACTIVITIES: ReadonlyArray<ActivityEntry> = [
   { id: 'balloner', title: 'Theos Balloner', emoji: '🎈', blurb: 'Pop og swipe, dyr, uvejr og gården', hasTempo: true, create: createBalloner },
-  { id: 'ord', title: 'Theos Ord og Billeder', emoji: '🗣️', blurb: 'Én ting ad gangen, jeres stemmer og titte-bøh', hasTempo: false, create: createOrd },
+  { id: 'ord', title: 'Theos Titte-bøh og Ord', emoji: '🙈', blurb: '8–12 mdr: titte-bøh med familien. Fra 1 år: ord og "hvor er …?"', hasTempo: false, create: createOrd },
 ];
 
 export const DEFAULT_ACTIVITY = ACTIVITIES[0].id;

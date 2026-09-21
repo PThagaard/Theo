@@ -62,31 +62,33 @@ venligt; det rigtige fejrer).
 skærmblink, lav musik) er den rigtige. Dyrene, uvejret og gården er sjove for jer og for ham senere; for ham nu er
 det poppet, der tæller.
 
-## Planen pr. alder (udledt af ovenstående; skal besluttes af forældrene)
+## Planen pr. alder (udledt af ovenstående; forældrene sagde ja til punkt 1–3 den 21.9.2026, og de er bygget)
 
 **8–12 måneder (nu).** To ting, begge sammen med jer, højst 5–10 minutter ad gangen, aldrig før sengetid, aldrig som
 trøst:
 - *Balloner* i profilen 8–12 mdr som nu.
-- *Ord* bliver til **Titte-bøh**: busken det meste af tiden (ikke hver tredje gang), bag den først og fremmest
-  familiens ansigter med navnet i jeres stemme ("Mor!", "Far!", "Theo!") og få dyr med lyd; ingen syntetisk tale;
-  ingen "næste" af sig selv; swipe stadig for den næste. De øvrige ting (ko, kat, bil, traktor, sol, sky, blomst)
-  bliver liggende i kortbunken til profilen 1–2 år.
+- *Ord* er blevet til **Titte-bøh** (spillet hedder "Theos Titte-bøh og Ord"): tre ud af fire ting gemmer sig bag
+  busken, bag den familiens ansigter med navnet i jeres stemme ("Mor!", "Far!", "Theo!") og fire dyr (hund, elefant,
+  ko, kat); ingen syntetisk tale; ingen "næste" af sig selv; swipe for den næste. De øvrige ting (bil, traktor, fugl,
+  sommerfugl, snegl, ballon, sol, sky, blomst) venter til profilen 1–2 år.
 
 **10–14 måneder.** Pegen og fælles opmærksomhed kommer. Det, appen kan: være det, I peger på sammen. Forældrene
 spørger selv ("hvor er hunden?"), appen svarer på hans hånd. Ingen ny funktion nødvendig, kun at Titte-bøh og
 Balloner stadig svarer på alt.
 
-**12–18 måneder.** *Hvor er skyen?* som en valgfri tilstand i Ord: to–tre ting på skærmen, jeres stemme spørger
-efter én, alt han rører siger sit eget navn (jeres stemme), den efterspurgte fejrer med lyd og hop. Ingen fejl,
-ingen tid, ingen score. Det er den mekanik, der har dokumentation (Kirkorian 2016), bare uden det, der ville gøre den
-til en prøve. Desuden imitation ("gør som mig") og simple årsag-virkning-kæder (stable, vælte, putte i).
+**12–18 måneder.** *Hvor er skyen?* er bygget som runder i Ord (profilen *1–2 år*: hver tredje gang, to ting;
+*2+*: hver anden gang, tre ting): jeres indtalte "hvor er" og ordet spørger efter én ting (ikke indtalt: en lille
+spørge-klokke og tingens egen lyd), alt han rører siger sit eget navn, den efterspurgte fejrer med stjerner og hop.
+Uden svar gentages spørgsmålet efter 7 sekunder, og tingen vrikker lidt. Ingen fejl, ingen tid, ingen score. Det er
+den mekanik, der har dokumentation (Kirkorian 2016), bare uden det, der ville gøre den til en prøve. Næste:
+imitation ("gør som mig") og simple årsag-virkning-kæder (stable, vælte, putte i).
 
 **18–24 måneder.** Matche og sortere (ens ting sammen), tælle til tre med jer, sange med fagter (musikafspilleren
 kan sangene allerede).
 
 **2–3 år.** Kirkorian-mekanikken kan blive lidt sværere (flere ting, "den røde"), vendespil med 2–4 par, male.
 
-## Regler, vi bør skrive ind i CLAUDE.md (forslag, ikke ændret endnu)
+## Regler (skrevet ind i CLAUDE.md under "Alderssvarende" den 21.9.2026)
 
 1. Ingen "rigtigt/forkert" før 12 måneder. Fra 12 måneder kun opgaver, hvor alt, barnet rører, svarer venligt, og
    det efterspurgte fejrer.

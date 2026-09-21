@@ -66,8 +66,18 @@ Derfor gælder for **al kode**, nu og fremover:
 - **Korte sessioner.** Pausen (verdenen falder i søvn efter 10 minutter, forældrene kan ændre eller slå den fra) er
   en del af produktet, ikke en detalje. Den må aldrig føles som straf: solen går ned, alt lægger sig til rette.
 - **Kendte stemmer.** Forældrenes egne indtalte ord ("hund", "mor") er den sprogstøtte, der giver mening; syntetiske
-  stemmer er ikke et mål.
-- **Ikke før sengetid** og altid sammen med en voksen: det står i README, appen kan ikke sikre det.
+  stemmer er ikke et mål. Appen har ingen syntetisk tale og ingen tekst til barnet.
+- **Ikke før sengetid, aldrig som trøst** og altid sammen med en voksen: det står i README, appen kan ikke sikre det.
+- **Ingen "rigtigt/forkert" før 12 måneder.** Fra profilen *1–2 år* må en leg spørge efter noget ("Hvor er skyen?"),
+  men alt, barnet rører, svarer venligt med sit eget navn, og det efterspurgte fejrer. Aldrig fejl-lyd, tidspres
+  eller score. Gentages spørgsmålet, er det med en hjælp (tingen vrikker), ikke en rettelse.
+- **Ord i profilen 8–12 mdr er titte-bøh** med familiens ansigter og få dyr bag busken; ordet siges kun i
+  forældrenes stemme. Resten af tingene og "Hvor er …?" hører til fra *1–2 år*.
+- **Hver aktivitet skal kunne begrundes som mindst én af tre ting:** et kontingens-legetøj (barnets handling giver
+  et svar med det samme), et fælles fokuspunkt for forældrenes egen snak, eller titte-bøh/objektpermanens. Kan den
+  ikke, hører den til en ældre profil.
+- **Appen lover aldrig læring.** README kalder den et legetøj til fælles leg, og det skal blive ved med at være
+  sandt i alt, vi skriver om den.
 
 ## Sådan forstår vi ønsker fra forældrene
 
@@ -112,8 +122,9 @@ src/
     rng.ts                seedbar tilfældighed og små matematikhjælpere
   activities/
     registry.ts           listen over spil (id, titel, emoji, blurb, hasTempo, create) – forsiden og menuen bruger den
-    ord/                  Ord: én ting ad gangen, ordet i forældrenes stemme, swipe, titte-bøh (logic.ts, render.ts
-                          låner balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
+    ord/                  Titte-bøh og Ord: plan pr. alder (8–12: gem bag busken; fra 1 år: én ting ad gangen og
+                          "Hvor er …?"-runder), ordet i forældrenes stemme (logic.ts, render.ts låner
+                          balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

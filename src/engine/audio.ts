@@ -320,14 +320,14 @@ export class AudioEngine {
 
   /**
    * Says a word in a parent's voice a moment after the touch (so the effect sound leads), at most once per
-   * `cooldown` seconds for that word, with the music turned down while it speaks. Returns false when there
-   * is no recording for the word.
+   * `cooldown` seconds for that word, with the music turned down while it speaks. Returns the length of the
+   * recording in seconds, or 0 when nothing will be said (no recording for the word, or said too recently).
    */
-  say(key: string, delay = 0.35, cooldown = 1.5): boolean {
+  say(key: string, delay = 0.35, cooldown = 1.5): number {
     const buffer = this.voices.get(key);
-    if (!buffer || !this.sfxOn) return false;
+    if (!buffer || !this.sfxOn) return 0;
     const now = this.ctx.currentTime;
-    if (now - (this.lastSaid.get(key) ?? -Infinity) < cooldown) return false;
+    if (now - (this.lastSaid.get(key) ?? -Infinity) < cooldown) return 0;
     this.lastSaid.set(key, now);
     const when = now + delay;
     const source = this.ctx.createBufferSource();
@@ -345,7 +345,7 @@ export class AudioEngine {
       gain.linearRampToValueAtTime(level, when + buffer.duration + 0.6);
     }
     this.voicesSaid++;
-    return true;
+    return buffer.duration;
   }
 
   // ---- Recordings ----------------------------------------------------------
@@ -1010,6 +1010,15 @@ export class AudioEngine {
         this.synth.tone(this.sfxBus, 'sawtooth', freq, when + offset, 0.08, 0.008, 0.18, { filter: 2200 });
       }
     }
+  }
+
+  /** "Ding-ding?": two soft rising notes that stand in for the question "Hvor er …?" when it is not recorded. */
+  question(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 659, when, 0.16, 0.01, 0.3);
+    this.synth.tone(this.sfxBus, 'sine', 1318, when, 0.04, 0.01, 0.2);
+    this.synth.tone(this.sfxBus, 'sine', 880, when + 0.22, 0.16, 0.01, 0.45, { to: 990, glide: 0.4 });
+    this.synth.tone(this.sfxBus, 'sine', 1760, when + 0.22, 0.04, 0.01, 0.25);
   }
 
   /** Leaves rustling when the bush is touched but not yet opened: dry and light, with a little "hmm?" */

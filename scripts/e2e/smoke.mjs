@@ -278,11 +278,17 @@ const sunbursts = await page.evaluate(() => window.__theo.stats.snapshot.today.s
 console.log('sunbursts', sunbursts);
 check(sunbursts > 0, 'holding the sun did not make a sunburst');
 
-// Activity #2, "Ord": one thing at a time; touch says the word, swipe brings the next, the bush hides one.
+// Activity #2, "Titte-bøh og Ord". 8–12 months: the family and a few animals hide behind the bush; touch the
+// bush and the thing comes out with its sound and its name.
 await page.evaluate(() => window.__theo.startActivity('ord'));
 await page.waitForTimeout(1200);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'ord', 'the Ord activity did not start');
-const ordHit = await page.evaluate(() => { const g = window.__theo.game; g.setAge('8-12'); return g.hit; });
+const ordHit = await page.evaluate(() => { const g = window.__theo.game; g.setAge('8-12'); g.hide(); return g.hit; });
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/${tag}-23-ord-bush.png` });
+await page.touchscreen.tap(ordHit.x, ordHit.y);
+await page.waitForTimeout(400);
+check(await page.evaluate(() => { const g = window.__theo.game; return !g.hidden && g.deckThings.every((t) => t.kind === 'photo' || ['hund', 'elefant', 'ko', 'kat'].includes(t.key)); }), 'the youngest should get the family and a few animals, out of the bush after one touch');
 await page.touchscreen.tap(ordHit.x, ordHit.y);
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}/${tag}-22-ord.png` });
@@ -291,14 +297,6 @@ await page.mouse.down();
 await page.mouse.move(viewport.width * 0.2, viewport.height * 0.4, { steps: 12 });
 await page.mouse.up();
 await page.waitForTimeout(1500);
-const ordHidden = await page.evaluate(() => { const g = window.__theo.game; g.hide(); return g.hit; });
-await page.waitForTimeout(200);
-await page.screenshot({ path: `${OUT}/${tag}-23-ord-bush.png` });
-await page.touchscreen.tap(ordHidden.x, ordHidden.y);
-await page.waitForTimeout(300);
-const ordStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { touched: s.ordTouched ?? 0, next: s.ordNext ?? 0, peeks: s.ordPeeks ?? 0, key: window.__theo.game.current.key }; });
-console.log('ord:', JSON.stringify(ordStats));
-check(ordStats.touched >= 1 && ordStats.next >= 1 && ordStats.peeks >= 1, 'Ord did not react to touch, swipe and peek-a-boo');
 // For 2+ the bush rustles on the first touch and opens on the second.
 const ordRustle = await page.evaluate(() => { const g = window.__theo.game; g.setAge('2+'); g.hide(); return g.hit; });
 await page.touchscreen.tap(ordRustle.x, ordRustle.y);
@@ -309,15 +307,32 @@ await page.waitForTimeout(700);
 await page.touchscreen.tap(ordRustle.x, ordRustle.y);
 await page.waitForTimeout(300);
 check(await page.evaluate(() => !window.__theo.game.hidden), 'the bush should open on the second touch');
+// From 1 year: "Hvor er …?" rounds. Everything touched answers with its name; the asked-for thing celebrates.
+const ordRound = await page.evaluate(() => { const g = window.__theo.game; g.setAge('1-2'); g.round = null; g.ask(); const r = g.round; return { asked: r.asked, keys: r.things.map((t) => t.key), hits: r.things.map((_, i) => g.hitFor(i)) }; });
+console.log('hvor er:', JSON.stringify(ordRound));
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}/${tag}-26-ord-hvor-er.png` });
+const ordOther = ordRound.asked === 0 ? 1 : 0;
+await page.touchscreen.tap(ordRound.hits[ordOther].x, ordRound.hits[ordOther].y);
+await page.waitForTimeout(300);
+check(await page.evaluate(() => window.__theo.game.round && !window.__theo.game.round.found), 'touching another thing must not end the round (and is never wrong)');
+await page.touchscreen.tap(ordRound.hits[ordRound.asked].x, ordRound.hits[ordRound.asked].y);
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${OUT}/${tag}-27-ord-found.png` });
+check(await page.evaluate(() => window.__theo.game.round && window.__theo.game.round.found), 'touching the asked-for thing should celebrate');
+await page.waitForTimeout(2600);
+check(await page.evaluate(() => window.__theo.game.round === null), 'after the celebration the next thing should come');
 // Ord's own figures: the cow, the cat and the car, each touched once.
 for (const kind of ['cow', 'cat', 'car']) {
-  await page.evaluate((k) => { const g = window.__theo.game; g.current = g.things.find((t) => t.kind === k); g.setAge('8-12'); }, kind);
+  await page.evaluate((k) => { const g = window.__theo.game; g.setAge('8-12'); g.round = null; g.hidden = false; g.bushOpen = 1; g.state = 'idle'; g.stateAge = 0; g.x = g.centerX; g.current = g.things.find((t) => t.kind === k); }, kind);
   await page.waitForTimeout(150);
   await page.touchscreen.tap(ordHit.x, ordHit.y);
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${OUT}/${tag}-25-ord-${kind}.png` });
 }
-check((await page.evaluate(() => window.__theo.stats.snapshot.today.ordTouched)) >= ordStats.touched + 3, 'the cow, cat and car did not count as touched');
+const ordStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { touched: s.ordTouched ?? 0, next: s.ordNext ?? 0, peeks: s.ordPeeks ?? 0, asked: s.ordAsked ?? 0, found: s.ordFound ?? 0, key: window.__theo.game.current.key }; });
+console.log('ord:', JSON.stringify(ordStats));
+check(ordStats.touched >= 4 && ordStats.next >= 1 && ordStats.peeks >= 2 && ordStats.asked >= 1 && ordStats.found >= 1, 'Ord did not react to touch, swipe, peek-a-boo and the hvor-er round');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -610,6 +625,7 @@ const audio = await page.evaluate(async () => {
     ['meow', 21.2, () => engine.meow(21.2)],
     ['beep', 22.0, () => engine.beep(22.0)],
     ['rustle', 22.7, () => engine.rustle(22.7)],
+    ['question', 23.3, () => engine.question(23.3)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();

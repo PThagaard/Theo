@@ -79,7 +79,7 @@ const context: ActivityContext = {
   audio: () => audio,
   stats,
   haptic,
-  say: (key, delay, cooldown) => void audio?.say(key, delay, cooldown),
+  say: (key, delay, cooldown) => audio?.say(key, delay, cooldown) ?? 0,
   settings: () => settings,
 };
 
@@ -175,7 +175,7 @@ const panel = new ParentPanel(settings, {
     save: saveVoice,
     remove: removeVoice,
     record: startRecording,
-    play: (key) => audio?.say(key, 0, 0) ?? false,
+    play: (key) => (audio?.say(key, 0, 0) ?? 0) > 0,
     onChange: () => void loadVoicesIntoAudio(),
   },
   photos: {
