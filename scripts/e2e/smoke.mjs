@@ -163,6 +163,28 @@ await page.waitForTimeout(250);
 await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
 
+// Storm: bring the dark cloud in over the dog and the elephant, strike it, and photograph the transformations.
+const struck = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.visitors = [];
+  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  const storm = g.spawnVisitor('storm'); storm.x = g.width * 0.5; storm.dir = 1; storm.vx = Math.abs(storm.vx);
+  const dog = g.spawnVisitor('dog'); dog.x = g.width * 0.42; dog.vx = 0;
+  const elephant = g.spawnVisitor('elephant'); elephant.x = g.width * 0.6;
+  return true;
+});
+await page.waitForTimeout(1600);
+const stormHit = await page.evaluate(() => window.__theo.game.visitorHit(window.__theo.game.storm));
+await page.touchscreen.tap(stormHit.x, stormHit.y);
+await page.waitForTimeout(60);
+await page.screenshot({ path: `${OUT}/${tag}-14-lightning.png` });
+await page.waitForTimeout(500);
+const forms = await page.evaluate(() => window.__theo.game.visitors.map((v) => `${v.kind}:${v.form ?? '-'}`).join(' '));
+console.log('after lightning:', forms);
+check(forms.includes('dog:hotdog') && forms.includes('elephant:mouse'), 'lightning did not transform the animals');
+await page.screenshot({ path: `${OUT}/${tag}-15-storm.png` });
+await page.evaluate(() => { window.__theo.game.visitors = []; });
+
 // Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
 const flowerTap = await page.evaluate(() => {
   const g = window.__theo.game;
@@ -334,7 +356,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 14, sr);
+  const ctx = new OfflineAudioContext(1, sr * 18, sr);
   const engine = new AudioEngine(ctx);
   const marks = [
     ['pop big', 0.2, () => engine.pop(1, 0.2)],
@@ -353,6 +375,7 @@ const audio = await page.evaluate(async () => {
     ['trumpet', 9.3, () => engine.trumpet(9.3)],
     ['chirp', 11.3, () => { engine.chirp(11.3); engine.flutter(11.55); engine.blub(11.7); engine.rumble(11.75); }],
     ['twirl', 12.5, () => { engine.twirl(12.5); engine.pluck(12.9); }],
+    ['thunder', 13.3, () => { engine.thunder(13.3); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -368,7 +391,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 14;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 18;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -380,7 +403,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 14);
+  out.total = stats(0, 18);
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));
   const str = (o, s) => { for (let i = 0; i < s.length; i++) wav.setUint8(o + i, s.charCodeAt(i)); };

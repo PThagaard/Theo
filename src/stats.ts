@@ -157,6 +157,9 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['visitor:butterfly', '… sommerfuglen'],
   ['visitor:snail', '… sneglen'],
   ['visitor:star', '… stjerneskud'],
+  ['storms', 'Uvejr'],
+  ['lightning', 'Lyn'],
+  ['transformations', 'Dyr forvandlet'],
 ];
 
 export function formatMinutes(seconds: number): string {

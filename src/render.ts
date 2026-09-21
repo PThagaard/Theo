@@ -100,18 +100,26 @@ export class Renderer {
     ctx.fillStyle = this.sky ?? SKY.middle;
     ctx.fillRect(0, 0, this.W, this.H);
     this.drawSun(game, dt);
-    this.drawRainbow();
+    this.drawRainbow(game.rainbowGlow > 0 ? Math.min(1, game.rainbowGlow / 2) : 0);
     for (const cloud of game.clouds) this.drawCloud(cloud);
+    for (const v of game.visitors) if (v.kind === 'storm') this.drawStorm(v);
     this.drawHill(0);
     // The elephant peeks up from between the hills, so it is drawn before the front hill.
     for (const v of game.visitors) if (v.kind === 'elephant') this.drawVisitor(v);
     this.drawHill(1);
     for (const f of game.flowers) this.drawFlower(f, game);
-    for (const v of game.visitors) if (v.kind !== 'elephant') this.drawVisitor(v);
+    for (const v of game.visitors) if (v.kind !== 'elephant' && v.kind !== 'storm') this.drawVisitor(v);
+    for (const v of game.visitors) if (v.kind === 'storm' && v.lightning > 0) this.drawLightning(v, game);
     for (const b of game.balloons) this.drawString(b);
     for (const b of game.balloons) this.drawBalloon(b);
     for (const trail of game.trails) this.drawTrail(trail, game.time);
     for (const p of game.particles) this.drawParticle(p);
+    // The whole sky lights up for an instant when lightning strikes.
+    const flash = game.visitors.reduce((max, v) => Math.max(max, v.kind === 'storm' ? v.lightning - 0.25 : 0), 0);
+    if (flash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.5, flash * 2.5)})`;
+      ctx.fillRect(0, 0, this.W, this.H);
+    }
   }
 
   // ---- Scenery -------------------------------------------------------------
@@ -180,14 +188,15 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawRainbow(): void {
+  private drawRainbow(glow = 0): void {
     const ctx = this.ctx;
     const u = this.u;
     const cx = this.W * 0.22;
     const cy = this.H * 0.92;
     const radius = Math.max(this.W * 0.42, 160 * u);
     ctx.save();
-    ctx.globalAlpha = 0.28;
+    // After a storm the rainbow shines brightly for a while, then settles back to its soft self.
+    ctx.globalAlpha = 0.28 + 0.6 * Math.min(1, glow);
     ctx.lineWidth = 9 * u;
     ctx.lineCap = 'butt';
     RAINBOW.forEach((color, i) => {
@@ -276,9 +285,9 @@ export class Renderer {
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(0, -f.size * 2.2 * growth);
+    ctx.lineTo(0, -f.size * (1 + f.boost) * 2.2 * growth);
     ctx.stroke();
-    ctx.translate(0, -f.size * 2.4 * growth);
+    ctx.translate(0, -f.size * (1 + f.boost) * 2.4 * growth);
     ctx.rotate(f.angle);
     this.drawFlowerHead(f, growth, game.time);
     ctx.restore();
@@ -286,7 +295,7 @@ export class Renderer {
 
   private drawFlowerHead(f: Flower, scale: number, now: number): void {
     const ctx = this.ctx;
-    const size = f.size * scale;
+    const size = f.size * (1 + f.boost) * scale;
     for (let i = 0; i < f.petals; i++) {
       const a = (i / f.petals) * TAU;
       // A tapped flower shimmers: every petal runs through the rainbow at its own offset.
@@ -306,15 +315,19 @@ export class Renderer {
   private drawVisitor(v: Visitor): void {
     const ctx = this.ctx;
     ctx.save();
+    if (v.wet > 0) this.drawDrips(v);
     switch (v.kind) {
       case 'dog':
-        this.drawDog(v);
+        if (v.form === 'hotdog') this.drawHotdog(v);
+        else this.drawDog(v);
         break;
       case 'elephant':
-        this.drawElephant(v);
+        if (v.form === 'mouse') this.drawMouse(v);
+        else this.drawElephant(v);
         break;
       case 'bird':
-        this.drawBird(v);
+        if (v.form === 'puffed') this.drawPuffedBird(v);
+        else this.drawBird(v);
         break;
       case 'butterfly':
         this.drawButterfly(v);
@@ -325,6 +338,234 @@ export class Renderer {
       case 'star':
         this.drawShootingStar(v);
         break;
+      case 'storm':
+        break;
+    }
+    ctx.restore();
+  }
+
+  /** Little drops flying off a creature that has been rained on. */
+  private drawDrips(v: Visitor): void {
+    const ctx = this.ctx;
+    const u = this.u;
+    ctx.save();
+    ctx.fillStyle = 'rgba(120, 180, 240, 0.7)';
+    for (let i = 0; i < 4; i++) {
+      const a = this.time * 5 + i * 1.7;
+      ctx.beginPath();
+      ctx.ellipse(v.x + Math.cos(a) * v.size * 1.1, v.y - v.size * 0.8 - v.lift + Math.sin(a * 1.3) * v.size * 0.5, 2 * u, 3 * u, 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /** The dog after a lightning strike: a hotdog in a bun, still wagging. */
+  private drawHotdog(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    // Short legs.
+    ctx.strokeStyle = '#c8863c';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.2;
+    for (const x of [-0.5, -0.15, 0.25, 0.6]) {
+      const swing = Math.sin(v.age * 9 + x * 10) * s * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(x * s, -s * 0.45);
+      ctx.lineTo(x * s + swing, 0);
+      ctx.stroke();
+    }
+    // Bun.
+    ctx.fillStyle = '#e9b46a';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.72, s * 1.05, s * 0.4, 0, 0, TAU);
+    ctx.fill();
+    // Sausage with a wiggle of mustard.
+    ctx.fillStyle = '#c8553d';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.85, s * 1.15, s * 0.24, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd93d';
+    ctx.lineWidth = s * 0.09;
+    ctx.beginPath();
+    for (let x = -s * 0.9; x <= s * 0.9; x += s * 0.15) {
+      const y = -s * 0.85 + Math.sin(x / s * 12) * s * 0.08;
+      if (x === -s * 0.9) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // Top bun.
+    ctx.fillStyle = '#f2c785';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.98, s * 1.0, s * 0.28, 0, Math.PI, TAU);
+    ctx.fill();
+    // Head at the front, tail at the back.
+    ctx.fillStyle = '#c8863c';
+    ctx.beginPath();
+    ctx.arc(s * 1.2, -s * 1.0, s * 0.36, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#8a5a2b';
+    ctx.beginPath();
+    ctx.ellipse(s * 1.0, -s * 1.15, s * 0.12, s * 0.26, 0.3, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = EYE_COLOR;
+    ctx.beginPath();
+    ctx.arc(s * 1.52, -s * 0.98, s * 0.08, 0, TAU);
+    ctx.fill();
+    this.eye(s * 1.26, -s * 1.1, s * 0.07);
+    ctx.strokeStyle = '#c8863c';
+    ctx.lineWidth = s * 0.14;
+    const wag = Math.sin(v.age * 16) * s * 0.25;
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.1, -s * 0.85);
+    ctx.quadraticCurveTo(-s * 1.4, -s * 1.1, -s * 1.5 + wag * 0.3, -s * 1.25 + wag);
+    ctx.stroke();
+  }
+
+  /** The elephant after a lightning strike: a small mouse peeking up from the same spot. */
+  private drawMouse(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size * 0.5;
+    const cy = v.size * 0.1 - v.lift + v.size * 0.35;
+    ctx.translate(v.x, v.y);
+    // Ears.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#9b9b9b';
+      ctx.beginPath();
+      ctx.arc(side * s * 0.6, cy - s * 0.55, s * 0.42, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#f5b8c8';
+      ctx.beginPath();
+      ctx.arc(side * s * 0.6, cy - s * 0.55, s * 0.26, 0, TAU);
+      ctx.fill();
+    }
+    // Head with a pointy snout.
+    ctx.fillStyle = '#b3b3b3';
+    ctx.beginPath();
+    ctx.ellipse(0, cy, s * 0.75, s * 0.62, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.5, cy + s * 0.1);
+    ctx.lineTo(0, cy + s * 0.75);
+    ctx.lineTo(s * 0.5, cy + s * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ff7a9a';
+    ctx.beginPath();
+    ctx.arc(0, cy + s * 0.68, s * 0.1, 0, TAU);
+    ctx.fill();
+    // Whiskers.
+    ctx.strokeStyle = 'rgba(60, 60, 60, 0.7)';
+    ctx.lineWidth = s * 0.04;
+    for (const side of [-1, 1]) {
+      for (const dy of [-0.05, 0.08]) {
+        ctx.beginPath();
+        ctx.moveTo(side * s * 0.15, cy + s * 0.55);
+        ctx.lineTo(side * s * 0.9, cy + s * 0.45 + dy * s * 3);
+        ctx.stroke();
+      }
+    }
+    for (const side of [-1, 1]) this.eye(side * s * 0.28, cy - s * 0.05, s * 0.1);
+    // A tail that curls up beside it.
+    ctx.strokeStyle = '#9b9b9b';
+    ctx.lineWidth = s * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(s * 0.8, cy + s * 0.5);
+    ctx.quadraticCurveTo(s * 1.5, cy + s * 0.3 + Math.sin(v.age * 4) * s * 0.2, s * 1.3, cy - s * 0.4);
+    ctx.stroke();
+  }
+
+  /** The bird with its feathers standing on end after a fright. */
+  private drawPuffedBird(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y);
+    ctx.scale(v.dir, 1);
+    ctx.fillStyle = '#4d96ff';
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * TAU;
+      const r = s * (1.5 + 0.25 * Math.sin(v.age * 30 + i));
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * r * 0.55, Math.sin(a) * r * 0.55, s * 0.45, 0, TAU);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 1.15, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffe9a8';
+    ctx.beginPath();
+    ctx.ellipse(0, s * 0.35, s * 0.6, s * 0.4, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ff9f43';
+    ctx.beginPath();
+    ctx.moveTo(s * 1.0, -s * 0.1);
+    ctx.lineTo(s * 1.6, 0.05 * s);
+    ctx.lineTo(s * 1.0, s * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    this.eye(s * 0.6, -s * 0.3, s * 0.16);
+  }
+
+  /** The dark storm cloud: bigger and darker than the others, lit up from inside when it flashes. */
+  private drawStorm(v: Visitor): void {
+    const ctx = this.ctx;
+    const scale = (v.size / 60) * 1.7;
+    const lit = v.lightning > 0.25;
+    ctx.save();
+    ctx.translate(v.x, v.y);
+    ctx.scale(scale, scale);
+    const body = ctx.createLinearGradient(0, -34, 0, 30);
+    body.addColorStop(0, lit ? '#c9d3e0' : '#8b96a6');
+    body.addColorStop(1, lit ? '#8a97ab' : '#4e5866');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    for (const [dx, dy, r] of CLOUD_SHAPES[2]) {
+      ctx.moveTo(dx + r, dy);
+      ctx.arc(dx, dy, r, 0, TAU);
+    }
+    ctx.fill();
+    // Grumpy little face so the child knows this cloud is different.
+    ctx.strokeStyle = '#2f3641';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 3;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * 16 - side * 6, -4);
+      ctx.lineTo(side * 16 + side * 6, 0);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 18, 8, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** A jagged bolt from the cloud to the ground, fading with the flash. */
+  private drawLightning(v: Visitor, game: Game): void {
+    const ctx = this.ctx;
+    const u = this.u;
+    const alpha = Math.min(1, v.lightning / 0.3);
+    const top = v.y + v.size * 0.4;
+    const bottom = game.ground(v.boltX);
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const [width, colour] of [
+      [14 * u, `rgba(255, 240, 150, ${alpha * 0.35})`],
+      [4 * u, `rgba(255, 255, 255, ${alpha})`],
+    ] as const) {
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(v.x, top);
+      const segments = 6;
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const x = v.x + (v.boltX - v.x) * t + Math.sin(i * 12.9898 + v.boltX) * 22 * u * (i < segments ? 1 : 0);
+        ctx.lineTo(x, top + (bottom - top) * t);
+      }
+      ctx.stroke();
     }
     ctx.restore();
   }

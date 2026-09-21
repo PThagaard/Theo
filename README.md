@@ -65,6 +65,10 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
+- **Uvejrsskyen** – en sjælden gæst: en mørk, gnaven sky driver hen over himlen og regner. Regnen presser
+  ballonerne ned og får blomsterne til at vokse. Den lyner af sig selv af og til, og hver gang man trykker på den:
+  balloner i lynets vej popper, blomsterne snurrer, hunden bliver til en hotdog, elefanten til en mus og fuglen
+  strutter af skræk (alt bliver normalt igen efter nogle sekunder). Når skyen er drevet over, lyser regnbuen op.
 - **Blomsterne** – tryk på en blomst: den snurrer rundt og skifter farver i nogle sekunder. Swipe hen over
   blomsterne: de plukkes, flyver op i luften, snurrer og daler ned, og vokser op igen lidt efter.
 - **Besøg** – med jævne mellemrum kommer der nogen forbi: en hund, der går hen over græsset og hopper og gør, når

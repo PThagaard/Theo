@@ -3,6 +3,25 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – uvejrsskyen
+
+- **Uvejrsskyen** kommer sjældent forbi (tidligst efter et minut, højst hvert 4. minut): en stor, mørk sky med et
+  gnavent ansigt, der driver langsomt over himlen med stille regn i baggrunden.
+- **Regn:** dråber falder fra skyen; balloner under den presses ned, blomster vokser sig store, dyr drypper,
+  sneglen skynder sig (den elsker regn), sommerfuglen flygter fra regnen.
+- **Lyn:** af sig selv hvert 6.–12. sekund, og hver gang man trykker på skyen. Skærmen blinker, et lyn slår ned med
+  brag og torden. I lynets vej: balloner popper, blomster snurrer i regnbuefarver, **hunden bliver til en hotdog**
+  (med sennep og logrende hale), **elefanten til en mus**, fuglen strutter, sneglen gemmer sig. Efter 7 sekunder
+  bliver alle sig selv igen med et lille "pop".
+- Når skyen er drevet over, lyser regnbuen kraftigt op til en klokkeklang.
+- Tælles i Theos leg (uvejr, lyn, dyr forvandlet).
+
+**Test på telefonen:** (1) Leg i et par minutter (eller vent): en mørk sky kommer ind fra siden, og der høres stille
+regn. (2) Tryk på skyen: lyn, brag, torden og skærmen blinker. (3) Sørg for at hunden eller elefanten står under skyen
+og tryk: hunden bliver til en hotdog, elefanten til en mus; efter ca. 7 sekunder er de sig selv igen. (4) Balloner
+under skyen synker lidt; blomster under skyen vokser. (5) Når skyen er ude af skærmen, stopper regnen, og regnbuen
+lyser op med en klokkeklang.
+
 ## 2026-09-21 – levende blomster
 
 - **Tryk på en blomst:** den snurrer rundt og skifter farver gennem regnbuen i 4–5 sekunder med en lille

@@ -122,9 +122,21 @@ game.onEvent((event) => {
         haptic(ImpactStyle.Light);
         stats.bump('visitorsPoked');
         stats.bump(`visitor:${event.kind}`);
-      } else {
-        stats.bump('visitorsSeen');
+      } else if (event.what === 'appear') {
+        stats.bump(event.kind === 'storm' ? 'storms' : 'visitorsSeen');
       }
+      break;
+    case 'lightning':
+      audio?.thunder();
+      haptic(ImpactStyle.Heavy);
+      stats.bump('lightning');
+      break;
+    case 'transform':
+      if (event.form === 'hotdog') audio?.sizzle();
+      else if (event.form === 'mouse') audio?.squeak();
+      else if (event.form === 'puffed') audio?.chirp();
+      else audio?.sparkle();
+      if (event.form) stats.bump('transformations');
       break;
     case 'celebrate':
       audio?.fanfare();
@@ -135,9 +147,18 @@ game.onEvent((event) => {
 });
 
 /** Each visitor has a sound when it appears and another when it is touched. */
-function visitorSound(kind: VisitorKind, what: 'appear' | 'poke'): void {
+function visitorSound(kind: VisitorKind, what: 'appear' | 'poke' | 'leave'): void {
   if (!audio) return;
   switch (kind) {
+    case 'storm':
+      if (what === 'appear') {
+        audio.rumble();
+        audio.startRain();
+      } else if (what === 'leave') {
+        audio.stopRain();
+        audio.clearing();
+      }
+      break;
     case 'dog':
       audio.bark();
       break;

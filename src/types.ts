@@ -63,7 +63,10 @@ export interface Cloud {
   wobble: number;
 }
 
-export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star';
+export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm';
+
+/** What lightning can turn a visitor into for a little while. */
+export type VisitorForm = 'hotdog' | 'mouse' | 'puffed';
 
 export type VisitorState = 'enter' | 'idle' | 'react' | 'leave' | 'gone';
 
@@ -95,6 +98,17 @@ export interface Visitor {
   targetY: number;
   /** Height above ground while jumping (dog), or how far up it has risen (elephant). */
   lift: number;
+  /** Temporary shape after a lightning strike, and seconds left of it. */
+  form: VisitorForm | null;
+  formTimer: number;
+  /** Seconds left of the current lightning flash (storm cloud). */
+  lightning: number;
+  /** Where the last bolt struck (storm cloud). */
+  boltX: number;
+  /** Seconds until the storm flashes by itself again. */
+  nextLightning: number;
+  /** Seconds left of dripping after being rained on. */
+  wet: number;
 }
 
 /** A flower on the hills: spins and cycles colours when tapped, flies off when swiped, grows back. */
@@ -117,6 +131,8 @@ export interface Flower {
   regrow: number;
   /** The head while it flies through the air after being plucked. */
   flying: { x: number; y: number; vx: number; vy: number; life: number } | null;
+  /** Extra size from rain (0 = normal), fades back slowly. */
+  boost: number;
 }
 
 export interface TrailPoint {
@@ -167,8 +183,12 @@ export type GameEvent =
   | { type: 'cloud'; x: number; y: number }
   /** The phone was shaken. */
   | { type: 'shake' }
-  /** A visitor arrived, or was touched. */
-  | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' }
+  /** A visitor arrived, was touched, or (the storm) left. */
+  | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' | 'leave' }
+  /** Lightning struck at x (from the storm cloud down to the ground). */
+  | { type: 'lightning'; x: number; y: number }
+  /** A visitor changed shape (or changed back: form null). */
+  | { type: 'transform'; kind: VisitorKind; form: VisitorForm | null; x: number; y: number }
   /** A balloon was blown away by a swipe (once per balloon per swipe). */
   | { type: 'blow' }
   /** A finger lifted after a real swipe of at least `length` px. */

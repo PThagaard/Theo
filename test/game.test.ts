@@ -412,6 +412,95 @@ describe('Game', () => {
     });
   });
 
+  describe('storm cloud', () => {
+    it('is rare: never in the first minute, then at most every four minutes', () => {
+      const game = new Game({}, 5);
+      game.resize(W, H);
+      let storms = 0;
+      game.onEvent((e) => {
+        if (e.type === 'visitor' && e.kind === 'storm' && e.what === 'appear') storms++;
+      });
+      advance(game, 55, 1 / 20);
+      expect(storms).toBe(0);
+      advance(game, 900, 1 / 20);
+      expect(storms).toBeGreaterThanOrEqual(1);
+      expect(storms).toBeLessThanOrEqual(4);
+    });
+
+    it('drifts across, rains, presses balloons down and grows flowers, then leaves with a glowing rainbow', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.dir = 1;
+      storm.vx = Math.abs(storm.vx);
+      const balloon = game.spawnBalloon({ x: W / 2, y: H * 0.6 })!;
+      const flower = game.flowers.reduce((best, f) => (Math.abs(game.flowerHead(f).x - W / 2) < Math.abs(game.flowerHead(best).x - W / 2) ? f : best));
+      advance(game, 1);
+      expect(game.particles.filter((p) => p.shape === 'drop').length).toBeGreaterThan(10);
+      expect(balloon.vyImpulse).toBeGreaterThan(20);
+      expect(flower.boost).toBeGreaterThan(0.2);
+      // Let it drift off the screen; the rainbow glows right after it has gone.
+      for (let t = 0; t < 120 && game.visitors.includes(storm); t += 1 / 30) game.update(1 / 30);
+      expect(game.visitors).not.toContain(storm);
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'leave')).toBe(true);
+      expect(game.rainbowGlow).toBeGreaterThan(5);
+      advance(game, 10);
+      expect(game.rainbowGlow).toBe(0);
+    });
+
+    it('flashes lightning by itself and when touched', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      advance(game, 0.2);
+      const hit = game.visitorHit(storm);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(storm.lightning).toBeGreaterThan(0);
+      expect(events.filter((e) => e.type === 'lightning')).toHaveLength(1);
+      advance(game, 14);
+      expect(events.filter((e) => e.type === 'lightning').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('turns the dog into a hotdog and the elephant into a mouse for a while', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      const dog = game.spawnVisitor('dog');
+      dog.x = W / 2;
+      dog.vx = 0;
+      const elephant = game.spawnVisitor('elephant');
+      elephant.x = W / 2;
+      advance(game, 2);
+      const hit = game.visitorHit(storm);
+      game.press(1, hit.x, hit.y);
+      expect(dog.form).toBe('hotdog');
+      expect(elephant.form).toBe('mouse');
+      expect(events.filter((e) => e.type === 'transform' && e.form)).toHaveLength(2);
+      advance(game, 8);
+      expect(dog.form).toBeNull();
+      expect(elephant.form).toBeNull();
+      expect(events.filter((e) => e.type === 'transform' && e.form === null)).toHaveLength(2);
+    });
+
+    it('pops balloons in the path of the bolt', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      const under = game.spawnBalloon({ x: W / 2, y: H * 0.6 })!;
+      const aside = game.spawnBalloon({ x: 60, y: H * 0.6 })!;
+      advance(game, 0.2);
+      game.press(1, storm.x, storm.y);
+      expect(game.balloons).not.toContain(under);
+      expect(game.balloons).toContain(aside);
+      expect(events.some((e) => e.type === 'pop')).toBe(true);
+    });
+  });
+
   describe('visitors', () => {
     const kinds = ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star'] as const;
 

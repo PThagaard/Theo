@@ -327,6 +327,7 @@ export class AudioEngine {
   setSfxEnabled(on: boolean): void {
     this.sfxOn = on;
     this.sfxBus.gain.value = on ? SFX_LEVEL : 0;
+    if (this.rainLoop) this.rainLoop.gain.gain.value = on ? 0.055 : 0;
   }
 
   setMusicEnabled(on: boolean): void {
@@ -490,6 +491,69 @@ export class AudioEngine {
       this.synth.noiseBurst(this.sfxBus, when + i * 0.085, 0.35, 0.07, 'highpass', 3800);
     }
     [96, 100, 103].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.05 + i * 0.09, 0.5, 0.25));
+  }
+
+  // ---- Storm ---------------------------------------------------------------
+
+  private rainLoop: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
+
+  /** Soft rain in the background while the storm cloud is on screen. */
+  startRain(): void {
+    if (this.rainLoop) return;
+    const ctx = this.ctx;
+    const source = ctx.createBufferSource();
+    source.buffer = this.synth.noise;
+    source.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1500;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(this.sfxOn ? 0.055 : 0, ctx.currentTime + 1.5);
+    source.connect(filter).connect(gain).connect(this.sfxBus);
+    source.start();
+    this.rainLoop = { source, gain };
+  }
+
+  stopRain(): void {
+    const loop = this.rainLoop;
+    if (!loop) return;
+    this.rainLoop = null;
+    const now = this.ctx.currentTime;
+    loop.gain.gain.cancelScheduledValues(now);
+    loop.gain.gain.setValueAtTime(loop.gain.gain.value, now);
+    loop.gain.gain.linearRampToValueAtTime(0.0001, now + 2);
+    loop.source.stop(now + 2.1);
+  }
+
+  /** Crack of lightning, then rolling thunder (kept where a phone speaker can reproduce it). */
+  thunder(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.noiseBurst(this.sfxBus, when, 0.5, 0.09, 'highpass', 2500, 0.7);
+    this.synth.noiseBurst(this.sfxBus, when + 0.25, 0.4, 1.4, 'lowpass', 500, 0.6);
+    this.synth.noiseBurst(this.sfxBus, when + 0.6, 0.25, 1.2, 'bandpass', 250, 0.8);
+    this.synth.tone(this.sfxBus, 'sawtooth', 140, when + 0.25, 0.18, 0.05, 1.3, { to: 70, glide: 1.2, filter: 400 });
+  }
+
+  /** Sizzle and boing: the dog just became a hotdog. */
+  sizzle(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.noiseBurst(this.sfxBus, when, 0.25, 0.6, 'bandpass', 4200, 1.2);
+    this.boing(when + 0.15);
+  }
+
+  /** Mouse squeaks. */
+  squeak(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    for (const offset of [0, 0.18]) {
+      this.synth.tone(this.sfxBus, 'sine', 1900, when + offset, 0.18, 0.005, 0.13, { to: 2700, glide: 0.06 });
+    }
+  }
+
+  /** The storm has passed: a bright little chime for the rainbow. */
+  clearing(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    [72, 76, 79, 84, 88].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + i * 0.12, 0.6, 0.3));
   }
 
   // ---- Flowers -------------------------------------------------------------

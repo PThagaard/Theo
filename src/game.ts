@@ -12,6 +12,7 @@ import type {
   ParticleShape,
   Trail,
   Visitor,
+  VisitorForm,
   VisitorKind,
 } from './types';
 
@@ -72,6 +73,18 @@ const VISITOR_WEIGHTS: Array<{ kind: VisitorKind; weight: number }> = [
   { kind: 'star', weight: 6 },
 ];
 const MAX_VISITORS = 2;
+/** The storm cloud is a rare treat: never in the first minute, and at least this long between storms. */
+const STORM_MIN_INTERVAL = 240;
+const STORM_FIRST_DELAY = 60;
+const STORM_WEIGHT = 10;
+/** Seconds a lightning-struck visitor stays in its new shape. */
+const FORM_TIME = 7;
+const LIGHTNING_INTERVAL: [number, number] = [6, 12];
+const LIGHTNING_FLASH = 0.45;
+const LIGHTNING_TOUCH_COOLDOWN = 1.2;
+/** Half width of the rain (and of a lightning strike's reach), in storm sizes. */
+const RAIN_HALF_WIDTH = 1.5;
+const RAINBOW_GLOW_TIME = 7;
 /** Shortest time between two reactions of the same visitor (a bark takes about this long). */
 const VISITOR_POKE_INTERVAL = 0.35;
 const FIRST_VISIT_DELAY = 8;
@@ -146,6 +159,9 @@ export class Game {
   sinceCelebration = 1e9;
   /** Seconds since the sun was last touched (the renderer spins it for a moment). */
   sunHit = 1e9;
+  /** Seconds left of the rainbow glowing after a storm has passed. */
+  rainbowGlow = 0;
+  private lastStorm = -Infinity;
 
   private nextId = 1;
   private spawnTimer = 0.4;
@@ -242,6 +258,7 @@ export class Game {
           growth: 1,
           regrow: 0,
           flying: null,
+          boost: 0,
         });
       }
       const cloudCount = 4 + Math.round(width / 300);
@@ -365,7 +382,7 @@ export class Game {
   /** Where a flower's head is (its stem grows from the ground). */
   flowerHead(f: Flower): { x: number; y: number } {
     const x = f.fx * this.width;
-    return { x, y: this.ground(x) + 4 * this.unit - f.size * 2.4 * f.growth };
+    return { x, y: this.ground(x) + 4 * this.unit - f.size * (1 + f.boost) * 2.4 * f.growth };
   }
 
   findFlowerAt(x: number, y: number): Flower | null {
@@ -415,6 +432,7 @@ export class Game {
     const u = this.unit;
     for (const f of this.flowers) {
       f.rainbow = Math.max(0, f.rainbow - dt);
+      f.boost = Math.max(0, f.boost - dt * 0.04);
       if (f.flying) {
         const fly = f.flying;
         fly.vy += 420 * u * dt;
@@ -460,7 +478,14 @@ export class Game {
         return { x: v.x, y: v.y - s * 0.5, r: s * 1.8 };
       case 'star':
         return { x: v.x, y: v.y, r: s * 3.5 };
+      case 'storm':
+        return { x: v.x, y: v.y, r: s * 1.7 };
     }
+  }
+
+  /** The storm cloud on screen, if any. */
+  get storm(): Visitor | null {
+    return this.visitors.find((v) => v.kind === 'storm' && v.state !== 'gone') ?? null;
   }
 
   findVisitorAt(x: number, y: number): Visitor | null {
@@ -479,9 +504,11 @@ export class Game {
   }
 
   private pickVisitorKind(): VisitorKind {
-    const total = VISITOR_WEIGHTS.reduce((sum, k) => sum + k.weight, 0);
+    const stormAllowed = this.time > STORM_FIRST_DELAY && this.time - this.lastStorm > STORM_MIN_INTERVAL && !this.storm;
+    const weights = stormAllowed ? [...VISITOR_WEIGHTS, { kind: 'storm' as VisitorKind, weight: STORM_WEIGHT }] : VISITOR_WEIGHTS;
+    const total = weights.reduce((sum, k) => sum + k.weight, 0);
     let roll = this.rng.range(0, total);
-    for (const k of VISITOR_WEIGHTS) {
+    for (const k of weights) {
       roll -= k.weight;
       if (roll <= 0) return k.kind;
     }
@@ -512,8 +539,22 @@ export class Game {
       targetX: 0,
       targetY: 0,
       lift: 0,
+      form: null,
+      formTimer: 0,
+      lightning: 0,
+      boltX: 0,
+      nextLightning: this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]),
+      wet: 0,
     };
     switch (kind) {
+      case 'storm':
+        v.size = 60 * u;
+        v.x = dir === 1 ? -v.size * 3 : W + v.size * 3;
+        v.y = this.rng.range(H * 0.16, H * 0.3);
+        v.vx = dir * 14 * u;
+        v.state = 'idle';
+        this.lastStorm = this.time;
+        break;
       case 'dog':
         v.size = 34 * u;
         v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
@@ -599,9 +640,137 @@ export class Game {
         this.sparkleBurst(v.x, v.y, 18, SUN_COLORS, v.size);
         v.state = 'gone';
         break;
+      case 'storm':
+        if (this.time - v.lastPoke < LIGHTNING_TOUCH_COOLDOWN && v.pokes > 1) return;
+        this.strike(v, x);
+        break;
     }
     this.sparkleBurst(x, y, 5);
     this.emit({ type: 'visitor', kind: v.kind, x, y, what: 'poke' });
+  }
+
+  // ---- Storm -------------------------------------------------------------
+
+  /** True when x is under the storm's rain. */
+  private underStorm(storm: Visitor, x: number, y: number): boolean {
+    return Math.abs(x - storm.x) < storm.size * RAIN_HALF_WIDTH && y > storm.y;
+  }
+
+  /** Lightning from the storm cloud down to the ground: everything in its path reacts. */
+  private strike(storm: Visitor, x: number): void {
+    const u = this.unit;
+    storm.lightning = LIGHTNING_FLASH;
+    storm.boltX = clamp(x + this.rng.range(-20, 20) * u, storm.size * 0.5, this.width - storm.size * 0.5);
+    storm.nextLightning = this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]);
+    const reach = 60 * u;
+    const groundY = this.ground(storm.boltX);
+    this.emit({ type: 'lightning', x: storm.boltX, y: groundY });
+    this.sparkleBurst(storm.boltX, groundY, 12, SUN_COLORS, 20 * u);
+
+    // Balloons in the bolt's path pop with a bang.
+    for (const b of [...this.balloons]) {
+      if (Math.abs(b.x - storm.boltX) < reach + b.r && b.y > storm.y) this.pop(b);
+    }
+    // Flowers near the strike light up and spin.
+    for (const f of this.flowers) {
+      const head = this.flowerHead(f);
+      if (!f.flying && Math.abs(head.x - storm.boltX) < reach * 1.5) {
+        f.rainbow = FLOWER_RAINBOW_TIME;
+        f.spin = (this.rng.chance(0.5) ? 1 : -1) * this.rng.range(10, 16);
+      }
+    }
+    // Creatures near the strike change shape for a while.
+    for (const v of this.visitors) {
+      if (v === storm || v.state === 'gone') continue;
+      const hit = this.visitorHit(v);
+      if (Math.abs(hit.x - storm.boltX) > reach + hit.r) continue;
+      switch (v.kind) {
+        case 'dog':
+          this.transform(v, 'hotdog');
+          break;
+        case 'elephant':
+          if (v.state === 'idle' || v.state === 'react') this.transform(v, 'mouse');
+          break;
+        case 'bird':
+          this.transform(v, 'puffed');
+          break;
+        case 'snail':
+          v.state = 'react';
+          v.stateAge = 0;
+          break;
+        case 'butterfly':
+          v.state = 'react';
+          v.stateAge = 0;
+          this.newButterflyTarget(v);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  private transform(v: Visitor, form: VisitorForm): void {
+    v.form = form;
+    v.formTimer = FORM_TIME;
+    const hit = this.visitorHit(v);
+    this.sparkleBurst(hit.x, hit.y, 10, SUN_COLORS, hit.r * 0.6);
+    this.emit({ type: 'transform', kind: v.kind, form, x: hit.x, y: hit.y });
+  }
+
+  private updateStorm(storm: Visitor, dt: number): void {
+    const u = this.unit;
+    storm.x += storm.vx * dt;
+    storm.lightning = Math.max(0, storm.lightning - dt);
+    storm.nextLightning -= dt;
+    const onScreen = storm.x > storm.size && storm.x < this.width - storm.size;
+    if (storm.nextLightning <= 0 && onScreen) this.strike(storm, storm.x + this.rng.range(-0.6, 0.6) * storm.size);
+
+    // Rain: drops fall from the cloud's underside all the time.
+    const drops = 22 * dt + (this.rng.chance((22 * dt) % 1) ? 1 : 0);
+    for (let i = 0; i < Math.floor(drops); i++) {
+      const life = this.rng.range(1.2, 1.8);
+      this.addParticle({
+        x: storm.x + this.rng.range(-RAIN_HALF_WIDTH, RAIN_HALF_WIDTH) * storm.size,
+        y: storm.y + this.rng.range(0.3, 0.6) * storm.size,
+        vx: storm.vx * 0.5,
+        vy: u * this.rng.range(220, 300),
+        life,
+        maxLife: life,
+        size: u * this.rng.range(4, 6),
+        color: this.rng.pick(['#5b9bd5', '#7fb3e0', '#a6d8ff']),
+        shape: 'drop',
+        rot: 0,
+        spin: 0,
+        gravity: u * 300,
+        drag: 0,
+      });
+    }
+
+    // Rain presses balloons down, makes flowers grow and gets creatures wet.
+    for (const b of this.balloons) {
+      if (this.underStorm(storm, b.x, b.y)) b.vyImpulse = Math.min(b.vyImpulse + 130 * u * dt, 90 * u);
+    }
+    for (const f of this.flowers) {
+      const head = this.flowerHead(f);
+      if (!f.flying && this.underStorm(storm, head.x, head.y)) f.boost = Math.min(0.7, f.boost + dt * 0.5);
+    }
+    for (const v of this.visitors) {
+      if (v === storm) continue;
+      if (this.underStorm(storm, v.x, v.y)) {
+        v.wet = 1.5;
+        if (v.kind === 'snail' && v.state === 'idle') v.x += v.vx * dt * 2; // snails love rain
+        if (v.kind === 'butterfly' && v.state === 'idle' && Math.abs(v.targetX - storm.x) < storm.size * RAIN_HALF_WIDTH) {
+          this.newButterflyTarget(v);
+        }
+      }
+    }
+
+    const margin = storm.size * 3.2;
+    if ((storm.dir === 1 && storm.x > this.width + margin) || (storm.dir === -1 && storm.x < -margin)) {
+      storm.state = 'gone';
+      this.rainbowGlow = RAINBOW_GLOW_TIME;
+      this.emit({ type: 'visitor', kind: 'storm', x: storm.x, y: storm.y, what: 'leave' });
+    }
   }
 
   private updateVisitors(dt: number): void {
@@ -616,11 +785,21 @@ export class Game {
       const v = this.visitors[i];
       v.age += dt;
       v.stateAge += dt;
+      v.wet = Math.max(0, v.wet - dt);
+      if (v.form) {
+        v.formTimer -= dt;
+        if (v.formTimer <= 0) {
+          v.form = null;
+          const hit = this.visitorHit(v);
+          this.sparkleBurst(hit.x, hit.y, 8, SPARKLE_COLORS, hit.r * 0.5);
+          this.emit({ type: 'transform', kind: v.kind, form: null, x: hit.x, y: hit.y });
+        }
+      }
       const margin = v.size * 3;
       const offScreen = (v.dir === 1 && v.x > W + margin) || (v.dir === -1 && v.x < -margin);
       switch (v.kind) {
         case 'dog': {
-          v.x += v.vx * dt;
+          v.x += v.vx * dt * (v.form === 'hotdog' ? 0.6 : 1);
           v.y = this.ground(v.x);
           if (v.vy !== 0 || v.lift > 0) {
             v.vy += 900 * u * dt;
@@ -710,6 +889,10 @@ export class Game {
           v.y += v.vy * dt;
           this.sparkleBurst(v.x - v.size, v.y, 1, SUN_COLORS);
           if (v.x > W + margin) v.state = 'gone';
+          break;
+        }
+        case 'storm': {
+          this.updateStorm(v, dt);
           break;
         }
       }
@@ -851,6 +1034,7 @@ export class Game {
     this.time += dt;
     this.sinceCelebration += dt;
     this.sunHit += dt;
+    this.rainbowGlow = Math.max(0, this.rainbowGlow - dt);
 
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
