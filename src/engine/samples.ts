@@ -32,6 +32,7 @@ export const SAMPLE_NAMES = {
   ko: 'koen siger muh (tryk på koen i Ord)',
   kat: 'katten mjaver (tryk på katten i Ord)',
   bil: 'bilen dytter (tryk på bilen i Ord)',
+  and: 'anden rapper (tryk på anden i Bobler)',
 } as const;
 
 export type SampleName = keyof typeof SAMPLE_NAMES;

@@ -75,7 +75,15 @@ efter lyde.
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,
   imitation (Theo siger lyden efter).
-- 💡 **Bobler** – bobler stiger langsomt; tryk popper dem; swipe laver en boblesky. Roligere søskende til Balloner.
+- ✅ **Bobler** – badet: sæbebobler stiger fra vandet; tryk popper, tryk på vandet plasker og sender nye bobler op,
+  tryk på væggen giver sæbebobler, swipe popper alt på vejen og laver bølger, hold stille puster en boble op, ryst
+  giver en byge, og gummiænderne rapper. Samme kontingens som Balloner i en ny verden ("mere af det, der virker",
+  `docs/FORSKNING.md`). Træner: hånd-øje, tryk og slip, at følge noget med øjnene, årsag-virkning.
+- 💡 **Trommer** – hele skærmen er tre-fire store farveflader; hvert slag giver en tone og en bølge i fladen, og alle
+  toner passer sammen (pentatonisk), så det aldrig lyder forkert; swipe giver et glissando; ryst en trommehvirvel.
+  Træner: at slå og banke (det store ved 8–12 mdr), rytme, hånd-øje.
+- 💡 **Bolde** – store bløde bolde, der hopper; tryk sender dem op, swipe ruller dem, ryst får dem alle til at hoppe;
+  de forlader aldrig skærmen. Træner: at følge bevægelse, at forvente, hvor bolden lander.
 
 ## 12–18 måneder: matche, putte i, aflevere, simple ord og kropsdele
 

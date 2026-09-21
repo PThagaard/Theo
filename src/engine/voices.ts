@@ -30,6 +30,9 @@ export const VOICE_WORDS: ReadonlyArray<{ key: string; label: string; emoji: str
   { key: 'sol', label: 'Sol', emoji: '☀️' },
   { key: 'sky', label: 'Sky', emoji: '☁️' },
   { key: 'blomst', label: 'Blomst', emoji: '🌸' },
+  { key: 'boble', label: 'Boble', emoji: '🫧' },
+  { key: 'and', label: 'And', emoji: '🦆' },
+  { key: 'vand', label: 'Vand', emoji: '💧' },
   { key: 'regn', label: 'Regn', emoji: '🌧️' },
   { key: 'lyn', label: 'Lyn', emoji: '⚡' },
   // The question in Ord's "Hvor er …?" rounds: say just "hvor er"; the app adds the word.

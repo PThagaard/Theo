@@ -333,6 +333,57 @@ for (const kind of ['cow', 'cat', 'car']) {
 const ordStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { touched: s.ordTouched ?? 0, next: s.ordNext ?? 0, peeks: s.ordPeeks ?? 0, asked: s.ordAsked ?? 0, found: s.ordFound ?? 0, key: window.__theo.game.current.key }; });
 console.log('ord:', JSON.stringify(ordStats));
 check(ordStats.touched >= 4 && ordStats.next >= 1 && ordStats.peeks >= 2 && ordStats.asked >= 1 && ordStats.found >= 1, 'Ord did not react to touch, swipe, peek-a-boo and the hvor-er round');
+// Activity #3, "Bobler": the bath. Pop, splash, ducks, swipe, hold and shake, everything answering at once.
+await page.evaluate(() => window.__theo.startActivity('bobler'));
+await page.waitForTimeout(800);
+check((await page.evaluate(() => window.__theo.activity.id)) === 'bobler', 'the Bobler activity did not start');
+const bath = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.setAge('2+');
+  g.bubbles = [];
+  const b = g.spawnBubble({ x: g.width * 0.5, y: g.height * 0.35, r: g.baseR, kind: 'plain' });
+  g.spawnBubble({ x: g.width * 0.25, y: g.height * 0.5, r: g.baseR * 1.2, kind: 'star' });
+  const duck = g.ducks[0];
+  return { bubble: { x: b.x, y: b.y }, duck: { x: duck.x, y: g.duckY(duck) - g.duckSize * 0.5 }, water: { x: g.width * 0.7, y: g.height * 0.85 }, w: g.width, h: g.height };
+});
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}/${tag}-30-bobler.png` });
+await page.touchscreen.tap(bath.bubble.x, bath.bubble.y);
+await page.waitForTimeout(150);
+await page.screenshot({ path: `${OUT}/${tag}-31-bobler-pop.png` });
+await page.touchscreen.tap(bath.water.x, bath.water.y);
+await page.waitForTimeout(150);
+await page.touchscreen.tap(bath.duck.x, bath.duck.y);
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/${tag}-32-bobler-splash.png` });
+// A swipe across the wall pops what it crosses and leaves a trail of tiny bubbles.
+await page.evaluate(() => { const g = window.__theo.game; for (const f of [0.3, 0.5, 0.7]) g.spawnBubble({ x: g.width * f, y: g.height * 0.3, r: g.baseR, kind: 'plain' }); });
+await page.waitForTimeout(400);
+await page.mouse.move(bath.w * 0.1, bath.h * 0.3);
+await page.mouse.down();
+await page.mouse.move(bath.w * 0.9, bath.h * 0.3, { steps: 24 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+// Hold still on the water (the ducks are moved aside): a bubble grows under the finger and floats off when let go.
+await page.evaluate(() => { const g = window.__theo.game; g.ducks.forEach((d, i) => { d.x = g.width * (i === 0 ? 0.12 : 0.88); }); });
+await page.mouse.move(bath.w * 0.5, bath.h * 0.82);
+await page.mouse.down();
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `${OUT}/${tag}-33-bobler-hold.png` });
+await page.mouse.up();
+await page.waitForTimeout(200);
+// Shake through the DeviceMotion path.
+const bathShook = await page.evaluate(() => {
+  const g = window.__theo.game; const before = g.shakes;
+  const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));
+  fire(0, 9.8, 0); fire(18, -12, 6);
+  return g.shakes - before;
+});
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}/${tag}-34-bobler-shake.png` });
+const bathStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { popped: s.bubblesPopped ?? 0, splashes: s.splashes ?? 0, quacks: s.quacks ?? 0, blown: s.bubblesBlown ?? 0, swipes: s.bubbleSwipes ?? 0, shakes: s.bubbleShakes ?? 0, bubbles: window.__theo.game.bubbles.length }; });
+console.log('bobler:', JSON.stringify(bathStats), 'shook', bathShook);
+check(bathStats.popped >= 3 && bathStats.splashes >= 1 && bathStats.quacks >= 1 && bathStats.blown >= 1 && bathStats.swipes >= 1 && bathShook >= 1, 'Bobler did not answer tap, splash, duck, swipe, hold and shake');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -598,7 +649,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 24, sr);
+  const ctx = new OfflineAudioContext(1, sr * 27, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -626,6 +677,10 @@ const audio = await page.evaluate(async () => {
     ['beep', 22.0, () => engine.beep(22.0)],
     ['rustle', 22.7, () => engine.rustle(22.7)],
     ['question', 23.3, () => engine.question(23.3)],
+    ['plop', 23.9, () => { engine.plop(0.2, 23.9); engine.plop(0.9, 24.15); }],
+    ['splash', 24.6, () => { engine.splash(false, 24.6); engine.splash(true, 25.0); }],
+    ['quack', 25.6, () => engine.quack(25.6)],
+    ['gurgle', 26.2, () => engine.gurgle(26.2)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -641,7 +696,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 24;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 27;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -653,7 +708,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 24);
+  out.total = stats(0, 27);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

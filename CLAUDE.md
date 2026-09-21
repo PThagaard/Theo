@@ -125,6 +125,8 @@ src/
     ord/                  Titte-bøh og Ord: plan pr. alder (8–12: gem bag busken; fra 1 år: én ting ad gangen og
                           "Hvor er …?"-runder), ordet i forældrenes stemme (logic.ts, render.ts låner
                           balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
+    bobler/               Theos Bobler: badet (logic.ts uden DOM: bobler, vand, ænder, dråber, bølger; render.ts;
+                          sounds.ts; index.ts). Samme kontingens-greb som Balloner
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

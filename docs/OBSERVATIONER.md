@@ -81,3 +81,7 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   alderen, og appen må ikke love mere, end den kan → `docs/FORSKNING.md` (kilder med links), ærlig status: Ord var
   en talende billedbog, ikke et læringsspil. Beslutning (far: "ja, lav 1, 2 og 3"): titte-bøh for 8–12 mdr
   (familien og få dyr bag busken), "Hvor er …?"-runder fra 1 år uden fejl, og fem regler i CLAUDE.md.
+- "Vores ballonspil er sjovt og lærer ham at koordinere hænder og fingre. Jeg har brug for et spil med samme sjove
+  gameplay for en 8 måneders: sjovt at trykke, ryste, swipe" → behov: mere af det, der virker (kontingens med hele
+  hånden), i en ny verden, så det er friskt → *Theos Bobler* (badet: pop, plask, ænder, swipe-bølger, hold-og-pust,
+  ryst-byge), og ideerne *Trommer* og *Bolde* i roadmappen som de næste af samme slags.

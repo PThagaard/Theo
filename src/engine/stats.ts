@@ -171,6 +171,17 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['ordAsked', 'Ord: "hvor er …?" spurgt'],
   ['ordFound', 'Ord: … og fundet'],
   ['transformations', 'Dyr forvandlet'],
+  ['bubblesPopped', 'Bobler poppet'],
+  ['bubblesPoppedPhoto', '… heraf familie-bobler'],
+  ['bubblesPoppedStar', '… heraf stjernebobler'],
+  ['bubblesBlown', 'Bobler pustet op (holdt)'],
+  ['bubbleBursts', '… heraf sprængt (holdt til de revnede)'],
+  ['splashes', 'Plask i vandet'],
+  ['quacks', 'Ænder rørt'],
+  ['soapTouches', 'Sæbe på væggen'],
+  ['bubbleSwipes', 'Swipes i badet'],
+  ['bubbleShakes', 'Rystet (bobler)'],
+  ['bubbleCelebrations', 'Boble-fester'],
 ];
 
 export function formatMinutes(seconds: number): string {

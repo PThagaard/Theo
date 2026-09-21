@@ -110,6 +110,10 @@ titte-bøh, jeres ansigter og jeres ord.
   lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
 - **Forsiden "Theos spil"**: når appen åbner, vælger I spillet på store felter. Spillene har ingen vej tilbage
   til forsiden; forældremenuen → *Leg* → *Skift spil* fører tilbage.
+- **Theos Bobler** (spil nr. 3): badet. Sæbebobler stiger langsomt op fra vandet. Tryk på en boble: plop. Tryk på
+  vandet: plask, bølger og nye bobler. Swipe: popper alt på vejen og laver bølger. Hold fingeren stille: en boble
+  vokser og svæver væk, når du slipper. Ryst telefonen: alt hopper, og en byge af bobler stiger op. Gummiænderne
+  rapper. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og *Alder* gælder her også.
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:
@@ -117,7 +121,7 @@ titte-bøh, jeres ansigter og jeres ord.
   græsset, busken rasler først og åbner ved andet tryk, og hver tredje gang en **"Hvor er …?"-runde**: to ting ved
   siden af hinanden (*2+ år*: tre), jeres indtalte stemme spørger efter én, alt han rører siger sit eget navn, og
   den rigtige fejrer med stjerner og hop. Ingen fejl, ingen tid, ingen point. Hvorfor sådan: `docs/FORSKNING.md`.
-- **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ko, kat, ballon, bil, traktor …), spørgsmålet *Hvor er …?* (sig bare "hvor er") og navnene på
+- **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ko, kat, ballon, boble, and, vand, bil, traktor …), spørgsmålet *Hvor er …?* (sig bare "hvor er") og navnene på
   familiebillederne med jeres egne stemmer. Når Theo rører tingen eller popper billedet, siger appen ordet med jeres
   stemme. Telefonen beder om lov til mikrofonen første gang; optagelserne bliver på telefonen.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,

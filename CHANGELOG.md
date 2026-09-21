@@ -3,6 +3,26 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Theos Bobler: badet, hvor alt svarer
+
+- **Nyt spil: Theos Bobler.** Samme greb som Balloner, fordi det er dem, en 8 måneders kan bruge (kontingens, se
+  `docs/FORSKNING.md`), i en ny verden: badet. Sæbebobler stiger langsomt op fra vandet med regnbueskær. Tryk på en
+  boble: den popper med et vådt plop og drypper. Tryk på vandet: plask, bølger og to nye bobler netop dér. Tryk på
+  væggen: en lille sky af sæbebobler. Swipe: popper alt på vejen, skubber resten, efterlader et spor af små bobler,
+  og langs vandet laver fingeren bølger, som ænderne gynger på. Hold fingeren stille: en boble vokser under den og
+  svæver væk, når du slipper; holder du for længe, revner den med et brag. Ryst telefonen: alt hopper, ænderne
+  snurrer, og en byge af små bobler stiger op. Gummiænderne rapper og snurrer, når de røres. Hver tiende boble: en
+  stille boble-byge. Familiebilleder svæver med i bobler nu og da; pop dem, og billedet plasker i vandet, mens
+  navnet siges. *Tempo* og *Alder* gælder som i Balloner: for *8–12 mdr* få bobler, én and, små byger.
+- *Jeres stemmer* har fået *Boble*, *And* og *Vand*. En rigtig andelyd kan lægges i `src/lyde/and.mp3`.
+- Flere spil af samme slags står som ideer i `docs/ROADMAP.md`: *Trommer* (slå på store farveflader, alt lyder godt)
+  og *Bolde* (hoppebolde, der aldrig forsvinder).
+
+**Test på telefonen:** (1) Forsiden → *Theos Bobler*. Tryk på en boble: plop. Tryk på vandet: plask og nye bobler.
+Tryk på anden: rap og snur. (2) Swipe hen over boblerne og langs vandet. (3) Hold fingeren stille på vandet i to
+sekunder: boblen vokser; slip, og den svæver op. Hold længere: den revner. (4) Ryst telefonen: byge af bobler.
+(5) Alder *8–12 mdr*: roligt, få bobler, én and. Lyt efter, om plask og rap er for høje.
+
 ## 2026-09-21 – Titte-bøh for de mindste, og "Hvor er …?" fra 1 år
 
 Efter forskningsnoten (`docs/FORSKNING.md`) og forældrenes "ja, lav 1, 2 og 3":

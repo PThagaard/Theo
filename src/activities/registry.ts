@@ -1,5 +1,6 @@
 import type { Activity, ActivityContext } from '../engine/activity';
 import { createBalloner } from './balloner';
+import { createBobler } from './bobler';
 import { createOrd } from './ord';
 
 export interface ActivityEntry {
@@ -17,6 +18,7 @@ export interface ActivityEntry {
 /** Every game the shell can run, in the order the start page shows them. */
 export const ACTIVITIES: ReadonlyArray<ActivityEntry> = [
   { id: 'balloner', title: 'Theos Balloner', emoji: '🎈', blurb: 'Pop og swipe, dyr, uvejr og gården', hasTempo: true, create: createBalloner },
+  { id: 'bobler', title: 'Theos Bobler', emoji: '🫧', blurb: 'Bobler i badet: pop, plask, ryst og pust op', hasTempo: true, create: createBobler },
   { id: 'ord', title: 'Theos Titte-bøh og Ord', emoji: '🙈', blurb: '8–12 mdr: titte-bøh med familien. Fra 1 år: ord og "hvor er …?"', hasTempo: false, create: createOrd },
 ];
 

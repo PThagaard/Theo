@@ -22,6 +22,7 @@ Ingen kode skal ændres: næste build samler filen op. Mangler filen, eller kan 
 | `ko.mp3`              | koen siger muh, når man rører den (Ord)                                    |
 | `kat.mp3`             | katten mjaver, når man rører den (Ord)                                     |
 | `bil.mp3`             | bilen dytter, når man rører den (Ord)                                      |
+| `and.mp3`             | gummianden rapper, når man rører den (Bobler)                              |
 
 Listen vedligeholdes i `src/engine/samples.ts` (`SAMPLE_NAMES`); en fil med et andet navn får enhedstesten til at fejle.
 

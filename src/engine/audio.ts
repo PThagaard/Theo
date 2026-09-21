@@ -1012,6 +1012,55 @@ export class AudioEngine {
     }
   }
 
+  // ---- Bobler ------------------------------------------------------------------
+
+  /** A soap bubble popping: a wet "plop", quick and high for a small bubble, deeper for a big one. */
+  plop(size: number, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const f = 1100 - size * 650;
+    this.synth.tone(this.sfxBus, 'sine', f, when, 0.5, 0.003, 0.14 + size * 0.1, { to: f * 0.35, glide: 0.09 + size * 0.06 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.35, 0.03, 'bandpass', 2600 - size * 1200, 1.2);
+    // A little "bloop" of water after a big one.
+    if (size > 0.4) this.synth.tone(this.sfxBus, 'sine', 300, when + 0.06, 0.2 * size, 0.01, 0.2, { to: 520, glide: 0.15 });
+  }
+
+  /** A splash: a wash of water and a few drops pinging down again. */
+  splash(big = false, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.noiseBurst(this.sfxBus, when, big ? 0.45 : 0.3, big ? 0.4 : 0.25, 'lowpass', 1600, 0.6);
+    this.synth.tone(this.sfxBus, 'sine', 240, when, big ? 0.3 : 0.18, 0.005, 0.2, { to: 90, glide: 0.18 });
+    const drops = big ? [0.12, 0.2, 0.27, 0.36, 0.45] : [0.1, 0.18, 0.28];
+    drops.forEach((offset, i) => {
+      const f = [1500, 1150, 1700, 1300, 1900][i];
+      this.synth.tone(this.sfxBus, 'sine', f, when + offset, 0.12, 0.003, 0.12, { to: f * 0.7, glide: 0.08 });
+    });
+  }
+
+  /** The rubber duck: two cheerful, nasal "kvæk"s, short enough to stay friendly. */
+  quack(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('and', when)) return;
+    for (const [offset, base] of [
+      [0, 430],
+      [0.2, 470],
+    ] as const) {
+      const t = when + offset;
+      this.synth.tone(this.sfxBus, 'sawtooth', base, t, 0.28, 0.01, 0.17, { to: base * 0.72, glide: 0.14, filter: 1900 });
+      this.synth.tone(this.sfxBus, 'square', base / 2, t, 0.08, 0.01, 0.15, { to: base * 0.36, glide: 0.14, filter: 900 });
+      this.synth.noiseBurst(this.sfxBus, t, 0.12, 0.05, 'bandpass', 1400, 1.5);
+    }
+  }
+
+  /** The bath being shaken: a bubbly gurgle of plops tumbling upwards. */
+  gurgle(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.noiseBurst(this.sfxBus, when, 0.2, 0.45, 'bandpass', 600, 2);
+    for (let i = 0; i < 7; i++) {
+      const f = 380 + i * 95 + (i % 2) * 40;
+      this.synth.tone(this.sfxBus, 'sine', f, when + i * 0.06, 0.22, 0.004, 0.12, { to: f * 1.5, glide: 0.08 });
+    }
+  }
+
   /** "Ding-ding?": two soft rising notes that stand in for the question "Hvor er …?" when it is not recorded. */
   question(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
