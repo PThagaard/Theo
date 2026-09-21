@@ -21,7 +21,7 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 
 - ✅ **Balloner** – tryk/swipe popper, himlen puster balloner op, fingerspor med harpetoner, sol og skyer reagerer,
   ryst ryster alt. Træner: årsag-virkning, øje-hånd, visuel tracking, rytme.
-- ✅ **Familie-balloner** – mor, far og Theo på balloner (klippet på telefonen eller indbygget fra `src/familie/`);
+- ✅ **Familie-balloner** – mor, far og Theo på balloner (klippet på telefonen, bliver på telefonen);
   billedet springer frem ved pop. Træner: ansigtsgenkendelse, glæde ved kendte ansigter, senere ord ("Mor!") med
   egen stemme.
 - ✅ **Besøg** – hund, elefant, fugl, sommerfugl, snegl og stjerneskud kommer forbi, reagerer på tryk og ryst og går
@@ -32,9 +32,19 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 - ✅ **Uvejrssky** – sjældent besøg med regn, lyn og torden, hvor alle elementer reagerer (hund → hotdog,
   elefant → mus, fugl strutter, balloner presses ned, blomster vokser, regnbuen lyser op bagefter). Træner:
   forventning, overraskelse, "hvad sker der nu?", at ting hænger sammen.
-- 💡 **Ballonen samler dyr op** – en ballon pustet op over et dyr løfter det i snoren; det råber om hjælp, og et pop
-  lader det dale roligt ned. 💡 **Gården** – et lille landbrug til højre med skorstensrøg og en gammel traktor, der
-  kører ud og hjem og kan samles op af en ballon.
+- ✅ **Ballonen samler dyr op** – en ballon pustet op over et dyr løfter det i snoren; det råber om hjælp, og et pop
+  lader det dale roligt ned i faldskærm. Træner: kæder af årsag og virkning (min ballon → dyret hænger → mit tryk →
+  det lander), omsorg ("hjælp den!").
+- ✅ **Rigtige dyrelyde** – hund og elefant med optagelser fra `src/lyde/`; alle dyr og vejret kan få en. Træner:
+  dyrelyde til ordforråd (rigtige lyde genkendes fra bøger og virkeligheden).
+- 💡 **Gården** – et lille landbrug til højre med skorstensrøg og en gammel traktor, der kører ud og hjem, dytter ved
+  tryk og kan samles op af en ballon.
+- 💡 **Hold fingeren nede** – langt tryk på en sky gør den mørk og forvandler den til uvejrsskyen (far's idé);
+  samme behov (Theo bestemmer selv, hvad der sker, ved at holde): hold på himlen, og ballonen vokser, til den
+  sprænger; hold på solen, og den blusser op. Træner: en tredje bevægelse ud over tryk og swipe, tålmodighed.
+- 💡 **Dag og nat** – himlen skifter langsomt over dagen (eller efter klokken), og natten får sit eget indhold: måne,
+  stjerner der tændes ved tryk, ildfluer, ugle, stille vuggeviser og roligere tempo før sengetid (far's idé, til
+  senere). Træner: ro før søvn, kontrast-syn, nye ting at opdage i en kendt verden.
 - 💡 **Rasle** – hele skærmen er en rangle: tryk giver klokker, ryst giver rasle-lyd og hoppende kugler, tilt får kuglerne
   til at rulle (accelerometer). Træner: årsag-virkning, kropslig kontrol, lyd-opmærksomhed.
 - 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle

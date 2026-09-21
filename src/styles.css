@@ -181,7 +181,7 @@ body {
   width: 64px;
   height: 36px;
   border-radius: 18px;
-  background: #d7d3e0;
+  background: #f06a6a;
   transition: background 0.2s;
 }
 
@@ -198,37 +198,8 @@ body {
   transition: transform 0.2s;
 }
 
-.row input:checked + .row-stacked {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  cursor: default;
-}
-
-.segmented {
-  display: flex;
-  gap: 6px;
-}
-
-.segmented button {
-  flex: 1;
-  padding: 12px 4px;
-  border: 0;
-  border-radius: 14px;
-  background: #eef2ff;
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.segmented button.is-selected {
-  background: #4d96ff;
-  color: #fff;
-}
-
-.switch {
+/* Off is clearly red, on is clearly green, so a glance tells what is switched off. */
+.row input:checked + .switch {
   background: #5ed37a;
 }
 
@@ -280,10 +251,6 @@ body {
   object-fit: cover;
   border: 3px solid #ffd93d;
   display: block;
-}
-
-.photo-item-builtin img {
-  border-color: #4d96ff;
 }
 
 .photo-remove {

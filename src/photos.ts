@@ -11,8 +11,6 @@ export interface StoredPhoto {
   /** Small square JPEG as a data URL. */
   dataUrl: string;
   created: number;
-  /** True for pictures that ship inside the app (src/familie/); they can't be removed from the menu. */
-  builtin?: boolean;
 }
 
 export const MAX_PHOTOS = 8;

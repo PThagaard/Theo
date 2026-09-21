@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import { TRAIL_LIFE } from './game';
+import { STRING_LENGTH, TRAIL_LIFE } from './game';
 import { HILLS, RAINBOW, SKY } from './palette';
 import { TAU, clamp, easeOutBack } from './rng';
 import { hillY } from './terrain';
@@ -104,13 +104,14 @@ export class Renderer {
     for (const cloud of game.clouds) this.drawCloud(cloud);
     for (const v of game.visitors) if (v.kind === 'storm') this.drawStorm(v);
     this.drawHill(0);
-    // The elephant peeks up from between the hills, so it is drawn before the front hill.
-    for (const v of game.visitors) if (v.kind === 'elephant') this.drawVisitor(v);
+    // The elephant peeks up from between the hills, so it is drawn before the front hill (unless it is airborne).
+    const airborne = (v: Visitor) => v.state === 'carried' || v.state === 'falling';
+    for (const v of game.visitors) if (v.kind === 'elephant' && !airborne(v)) this.drawVisitor(v);
     this.drawHill(1);
     for (const f of game.flowers) this.drawFlower(f, game);
-    for (const v of game.visitors) if (v.kind !== 'elephant' && v.kind !== 'storm') this.drawVisitor(v);
+    for (const v of game.visitors) if ((v.kind !== 'elephant' || airborne(v)) && v.kind !== 'storm') this.drawVisitor(v);
     for (const v of game.visitors) if (v.kind === 'storm' && v.lightning > 0) this.drawLightning(v, game);
-    for (const b of game.balloons) this.drawString(b);
+    for (const b of game.balloons) this.drawString(b, game);
     for (const b of game.balloons) this.drawBalloon(b);
     for (const trail of game.trails) this.drawTrail(trail, game.time);
     for (const p of game.particles) this.drawParticle(p);
@@ -315,6 +316,14 @@ export class Renderer {
   private drawVisitor(v: Visitor): void {
     const ctx = this.ctx;
     ctx.save();
+    if (v.state === 'falling') this.drawParachute(v);
+    if (v.state === 'carried') {
+      // Dangling from the string: swing gently around the hook point.
+      const hook = { x: v.x, y: v.y - v.size * 0.8 - v.lift };
+      ctx.translate(hook.x, hook.y);
+      ctx.rotate(Math.sin(v.stateAge * 3) * 0.18);
+      ctx.translate(-hook.x, -hook.y);
+    }
     if (v.wet > 0) this.drawDrips(v);
     switch (v.kind) {
       case 'dog':
@@ -340,6 +349,39 @@ export class Renderer {
         break;
       case 'storm':
         break;
+    }
+    ctx.restore();
+  }
+
+  /** A little parachute for a creature floating back down to the ground. */
+  private drawParachute(v: Visitor): void {
+    const ctx = this.ctx;
+    const u = this.u;
+    const r = Math.max(v.size * 1.4, 28 * u);
+    const top = v.y - v.size * 1.6 - v.lift - r * 1.3;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(70, 50, 90, 0.6)';
+    ctx.lineWidth = 1.5 * u;
+    for (const side of [-1, -0.35, 0.35, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(v.x + side * r, top);
+      ctx.lineTo(v.x, v.y - v.size * 0.9 - v.lift);
+      ctx.stroke();
+    }
+    const canopy = ctx.createLinearGradient(v.x - r, top, v.x + r, top);
+    canopy.addColorStop(0, '#ff7ad9');
+    canopy.addColorStop(0.5, '#ffd93d');
+    canopy.addColorStop(1, '#4d96ff');
+    ctx.fillStyle = canopy;
+    ctx.beginPath();
+    ctx.arc(v.x, top, r, Math.PI, TAU);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    for (const side of [-0.6, 0, 0.6]) {
+      ctx.beginPath();
+      ctx.arc(v.x + side * r, top, r * 0.28, Math.PI, TAU);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -931,7 +973,7 @@ export class Renderer {
     return Math.cos(TAU * b.swayFreq * b.age + b.swayPhase) * 0.13 + push;
   }
 
-  private drawString(b: Balloon): void {
+  private drawString(b: Balloon, game: Game): void {
     const ctx = this.ctx;
     const u = this.u;
     const s = b.scale;
@@ -940,14 +982,22 @@ export class Renderer {
     const knotDistance = (b.r * 1.15 + b.r * 0.2) * s;
     const kx = b.x - Math.sin(tilt) * knotDistance;
     const ky = b.y + Math.cos(tilt) * knotDistance;
-    const length = 62 * u * s;
     const wobble = Math.sin(this.time * 2.4 + b.swayPhase) * 9 * u - clamp(b.vx / 20, -14 * u, 14 * u);
     ctx.strokeStyle = 'rgba(70, 50, 90, 0.55)';
     ctx.lineWidth = 2.2 * u;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(kx, ky);
-    ctx.bezierCurveTo(kx + wobble, ky + length * 0.35, kx - wobble, ky + length * 0.7, kx + wobble * 0.6, ky + length);
+    const carried = b.carrying === undefined ? undefined : game.visitors.find((v) => v.id === b.carrying);
+    if (carried && carried.state === 'carried') {
+      // The string runs to the creature hanging from it (slack while the creature is still on the ground).
+      const hook = game.visitorHit(carried);
+      const slack = Math.max(0, STRING_LENGTH * u * s - (hook.y - ky));
+      ctx.bezierCurveTo(kx + wobble * 0.5, ky + (hook.y - ky) * 0.4 + slack * 0.6, hook.x - wobble * 0.5, hook.y - (hook.y - ky) * 0.3 + slack * 0.4, hook.x, hook.y);
+    } else {
+      const length = STRING_LENGTH * u * s;
+      ctx.bezierCurveTo(kx + wobble, ky + length * 0.35, kx - wobble, ky + length * 0.7, kx + wobble * 0.6, ky + length);
+    }
     ctx.stroke();
   }
 

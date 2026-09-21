@@ -2,7 +2,6 @@ import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { AudioEngine } from './audio';
-import { loadBuiltinPhotos } from './builtinPhotos';
 import { Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
@@ -126,6 +125,19 @@ game.onEvent((event) => {
         stats.bump(event.kind === 'storm' ? 'storms' : 'visitorsSeen');
       }
       break;
+    case 'carry':
+      if (event.what === 'hooked') {
+        audio?.boing();
+        stats.bump('creaturesLifted');
+      } else if (event.what === 'help') {
+        audio?.help(event.kind);
+      } else if (event.what === 'released') {
+        audio?.sparkle();
+      } else {
+        audio?.land();
+        haptic(ImpactStyle.Light);
+      }
+      break;
     case 'lightning':
       audio?.thunder();
       haptic(ImpactStyle.Heavy);
@@ -184,9 +196,6 @@ function visitorSound(kind: VisitorKind, what: 'appear' | 'poke' | 'leave'): voi
 
 // ---- Parent menu and kid lock ----------------------------------------------
 
-/** Pictures bundled in src/familie/ are always part of the family, next to the ones picked on the phone. */
-const builtinPhotos = loadBuiltinPhotos();
-
 game.setTempo(settings.tempo);
 const panel = new ParentPanel(settings, {
   onChange: (updated) => {
@@ -205,7 +214,7 @@ const panel = new ParentPanel(settings, {
   },
   photos: {
     max: MAX_PHOTOS,
-    list: async () => [...(await builtinPhotos), ...(await listPhotos())],
+    list: listPhotos,
     add: addCroppedPhoto,
     remove: removePhoto,
     onChange: (photos) => {

@@ -157,6 +157,7 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['visitor:butterfly', '… sommerfuglen'],
   ['visitor:snail', '… sneglen'],
   ['visitor:star', '… stjerneskud'],
+  ['creaturesLifted', 'Dyr løftet af en ballon'],
   ['storms', 'Uvejr'],
   ['lightning', 'Lyn'],
   ['transformations', 'Dyr forvandlet'],

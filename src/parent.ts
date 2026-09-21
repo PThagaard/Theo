@@ -19,7 +19,7 @@ export interface Settings {
   autoLock: boolean;
   /** How busy the sky is. */
   tempo: Tempo;
-  /** Show family photos on balloons (built-in and own). */
+  /** Show family photos on balloons. */
   familyBalloons: boolean;
 }
 
@@ -322,14 +322,10 @@ export class ParentPanel {
     }
   }
 
-  private get ownPhotos(): StoredPhoto[] {
-    return this.photos.filter((photo) => !photo.builtin);
-  }
-
   private async storeFace(dataUrl: string): Promise<void> {
     const hooks = this.hooks.photos;
     if (!hooks) return;
-    if (this.ownPhotos.length >= hooks.max) {
+    if (this.photos.length >= hooks.max) {
       this.photoStatus.textContent = `Der er plads til ${hooks.max} billeder. Fjern et for at tilføje et nyt.`;
       return;
     }
@@ -358,12 +354,6 @@ export class ParentPanel {
         const image = document.createElement('img');
         image.src = photo.dataUrl;
         image.alt = photo.name || 'Familiebillede';
-        if (photo.builtin) {
-          image.title = `${photo.name} (indbygget)`;
-          item.classList.add('photo-item-builtin');
-          item.append(image);
-          return item;
-        }
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'photo-remove';
@@ -374,15 +364,15 @@ export class ParentPanel {
         return item;
       }),
     );
-    const own = this.ownPhotos.length;
-    const full = own >= hooks.max;
+    const count = this.photos.length;
+    const full = count >= hooks.max;
     this.photoPick.parentElement!.hidden = full;
     this.photoSnap.parentElement!.hidden = full;
     this.photoStatus.textContent = full
-      ? `Der er plads til ${hooks.max} egne billeder. Fjern et for at tilføje et nyt.`
-      : own === 0
+      ? `Der er plads til ${hooks.max} billeder. Fjern et for at tilføje et nyt.`
+      : count === 0
         ? 'Vælg et billede og klip ansigtet ud, så dukker det op på balloner. Billeder valgt her bliver kun på denne telefon.'
-        : `${own} af ${hooks.max} egne billeder. Billeder valgt her bliver kun på denne telefon.`;
+        : `${count} af ${hooks.max} billeder. Billeder valgt her bliver kun på denne telefon.`;
   }
 
   // ---- Statistics ------------------------------------------------------------

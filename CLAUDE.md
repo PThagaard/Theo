@@ -33,8 +33,10 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
    mærkes som undervisning. Theo bestemmer tempoet.
 7. **Robusthed frem for features.** Én fejl må aldrig fryse spillet (spil-loopet fanger fejl), partikler og
    objekter har lofter, og alt skal køre glat (60 fps) på S21'eren og gerne på ældre telefoner.
-8. **Al musik er public domain eller original,** og al lyd syntetiseres i koden (ingen lydfiler, ingen samples med
-   uklar licens). Grafik tegnes i kode eller er vores egen.
+8. **Al musik er public domain eller original.** Lyd syntetiseres i koden, undtagen dyrelyde og vejr, som må være
+   rigtige optagelser fra `src/lyde/`, når licensen tillader fri brug (CC0, Pixabay Content License eller lignende)
+   og kilden står i `src/lyde/README.md`. Synthen er altid reserve, hvis filen mangler. Grafik tegnes i kode eller er
+   vores egen.
 
 ## Sådan forstår vi ønsker fra forældrene
 
@@ -70,7 +72,8 @@ src/
   input.ts      touch/mus → press/drag/release; ryst (DeviceMotion); blokering af browser-gestus
   parent.ts     forældremenu (hold 2 sek.), indstillinger (localStorage), lås-knap
   kidlock.ts    bro til android/.../KidLockPlugin.java (Androids "fastgør vinduer")
-  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner; builtinPhotos.ts læser src/familie/
+  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner. Ingen billeder i repoet
+  samples.ts    optagelser fra src/lyde/ (filnavn = lyd); audio.ts spiller dem og falder tilbage på synthen
   cropper.ts    ansigts-klipper i forældremenuen
   stats.ts      tællere for alt (i dag / i alt / legetid), gemt i localStorage; vises i forældremenuen
   terrain.ts    bakkernes form, delt af spil (jordhøjde til besøgende) og tegning
@@ -95,6 +98,9 @@ logik uden DOM (testbar), tegning for sig, events ud til lyd/haptik.
 - Alle størrelser skaleres med `unit` (≈1 på en telefon, ≈2 på en tablet); hastigheder med skærmhøjden.
 - Trykflader er store (mindst 1,6× objektets omrids for tryk), og swipe rammer alt på vejen.
 - Nye lyde laves i `audio.ts` som syntetiserede stemmer og skal have en stat i røgtesten (ikke stille, ikke klip).
+  Dyr og vejr kan få en rigtig optagelse i `src/lyde/` (navne i `samples.ts`, klip med `scripts/lyd.mjs`); synthen
+  bliver stående som reserve.
+- Ingen billeder af familien i repoet: familiebilleder vælges på telefonen og bliver der.
 - Farver fra `palette.ts`. Høj kontrast og mættede farver: det ser babyer bedst.
 
 ## Sådan arbejder vi

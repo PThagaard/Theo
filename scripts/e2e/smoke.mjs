@@ -185,6 +185,32 @@ check(forms.includes('dog:hotdog') && forms.includes('elephant:mouse'), 'lightni
 await page.screenshot({ path: `${OUT}/${tag}-15-storm.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
 
+// A balloon made right above the dog lifts it; popping the balloon lets it parachute down.
+const lifted = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.visitors = [];
+  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  const dog = g.spawnVisitor('dog'); dog.x = g.width * 0.5; dog.vx = 0;
+  g.update(1 / 60);
+  const hit = g.visitorHit(dog);
+  return { x: hit.x, y: hit.y - 100 * g.unit };
+});
+await page.touchscreen.tap(lifted.x, lifted.y);
+// The string hangs slack until the balloon has risen enough to lift the dog off the ground.
+await page.waitForFunction(() => { const g = window.__theo.game; const dog = g.visitors.find((v) => v.kind === 'dog'); return dog.state === 'carried' && dog.y < g.ground(dog.x) - 55 * g.unit; }, null, { timeout: 10000 }).catch(() => undefined);
+const carried = await page.evaluate(() => { const g = window.__theo.game; const dog = g.visitors.find((v) => v.kind === 'dog'); const b = g.balloons.find((b) => b.carrying === dog.id); return { state: dog.state, height: Math.round(g.ground(dog.x) - dog.y), balloon: b ? [b.x, b.y] : null }; });
+console.log('dog lifted by balloon:', carried.state, 'height', carried.height);
+check(carried.state === 'carried' && carried.balloon && carried.height > 40, 'the balloon did not lift the dog');
+await page.screenshot({ path: `${OUT}/${tag}-16-lifted.png` });
+await page.touchscreen.tap(carried.balloon[0], carried.balloon[1]);
+const falling = await page.waitForFunction(() => window.__theo.game.visitors.find((v) => v.kind === 'dog').state === 'falling', null, { timeout: 1500 }).then(() => 'falling').catch(() => 'not falling');
+console.log('after popping:', falling);
+check(falling === 'falling', 'the dog did not parachute down');
+await page.screenshot({ path: `${OUT}/${tag}-17-parachute.png` });
+await page.waitForFunction(() => { const dog = window.__theo.game.visitors.find((v) => v.kind === 'dog'); return dog.state !== 'falling'; }, null, { timeout: 8000 });
+check(await page.evaluate(() => window.__theo.game.visitors.find((v) => v.kind === 'dog').state === 'idle'), 'the dog did not land and walk on');
+await page.evaluate(() => { window.__theo.game.visitors = []; });
+
 // Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
 const flowerTap = await page.evaluate(() => {
   const g = window.__theo.game;
@@ -207,9 +233,10 @@ console.log('flowers plucked by a swipe:', plucked);
 check(plucked >= 3, 'swiping over the flowers did not pluck them');
 await page.screenshot({ path: `${OUT}/${tag}-13-flowers.png` });
 
-// Pop until a celebration happens.
+// Pop until a celebration happens (every tenth pop; earlier steps have already popped some).
 let guard = 0;
-while (s.pops < 10 && guard++ < 200) {
+const celebrationAt = Math.ceil((s.pops + 1) / 10) * 10;
+while (s.pops < celebrationAt && guard++ < 200) {
   const b = s.balloons.find((b) => b.y > 60 && b.y < viewport.height - 60 && b.scale > 0.9);
   if (b) await page.touchscreen.tap(b.x, b.y);
   await page.waitForTimeout(150);
@@ -293,10 +320,8 @@ await page.mouse.up();
 await page.locator('#crop-zoom').fill('1.6');
 await page.screenshot({ path: `${OUT}/${tag}-08a-cropper.png` });
 await page.click('#crop-save');
-await page.waitForFunction(() => document.querySelectorAll('#photo-list .photo-item:not(.photo-item-builtin) img').length === 1, null, { timeout: 10000 });
+await page.waitForFunction(() => document.querySelectorAll('#photo-list .photo-item img').length === 1, null, { timeout: 10000 });
 check(await page.evaluate(() => !document.getElementById('crop-again').hidden), 'cropper did not offer another face');
-const builtin = await page.evaluate(() => document.querySelectorAll('#photo-list .photo-item-builtin img').length);
-console.log('built-in photos shown in the menu:', builtin);
 await page.click('#crop-cancel');
 // Switching family balloons off empties the game's photo list; on again brings them back.
 await page.click('label:has(#opt-family)');
@@ -356,8 +381,9 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 18, sr);
+  const ctx = new OfflineAudioContext(1, sr * 20, sr);
   const engine = new AudioEngine(ctx);
+  await engine.ready;
   const marks = [
     ['pop big', 0.2, () => engine.pop(1, 0.2)],
     ['pop small', 0.8, () => engine.pop(0, 0.8)],
@@ -376,6 +402,7 @@ const audio = await page.evaluate(async () => {
     ['chirp', 11.3, () => { engine.chirp(11.3); engine.flutter(11.55); engine.blub(11.7); engine.rumble(11.75); }],
     ['twirl', 12.5, () => { engine.twirl(12.5); engine.pluck(12.9); }],
     ['thunder', 13.3, () => { engine.thunder(13.3); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
+    ['help', 17.4, () => { engine.help('dog', 17.4); engine.help('elephant', 17.8); engine.land(18.5); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -391,7 +418,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 18;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 20;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -403,7 +430,8 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 18);
+  out.total = stats(0, 20);
+  out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));
   const str = (o, s) => { for (let i = 0; i < s.length; i++) wav.setUint8(o + i, s.charCodeAt(i)); };
@@ -416,12 +444,13 @@ const audio = await page.evaluate(async () => {
 });
 console.log('audio stats:', JSON.stringify(audio, null, 1));
 for (const [name, v] of Object.entries(audio)) {
-  if (typeof v !== 'object' || name === 'silence_before' || name === 'total' || name === 'wavBase64') continue;
+  if (typeof v !== 'object' || name === 'silence_before' || name === 'total' || name === 'wavBase64' || name === 'recordings') continue;
   if (!(v.rms > 0.005)) throw new Error(`sound "${name}" is silent (rms ${v.rms})`);
   if (v.nan) throw new Error(`sound "${name}" produced NaN`);
   if (v.peak > 1.0) throw new Error(`sound "${name}" clips (peak ${v.peak})`);
 }
-check(audio.trumpet.seconds >= 1.3, `the elephant trumpet is too short (${audio.trumpet.seconds} s)`);
+check(audio.recordings.includes('elefant') && audio.recordings.includes('hund'), `recordings not loaded: ${audio.recordings.join(', ')}`);
+check(audio.trumpet.seconds >= 0.8, `the elephant trumpet is too short (${audio.trumpet.seconds} s)`);
 check(audio.bark.seconds >= 0.35, `the bark is too short (${audio.bark.seconds} s)`);
 
 await page.waitForTimeout(500);

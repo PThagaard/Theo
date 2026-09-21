@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE } from '../src/game';
-import type { GameEvent } from '../src/types';
+import type { Balloon, GameEvent, Visitor } from '../src/types';
 
 const W = 390;
 const H = 844;
@@ -27,6 +27,15 @@ function emptySpot(game: Game): [number, number] {
 
 function advance(game: Game, seconds: number, step = 1 / 60): void {
   for (let t = 0; t < seconds; t += step) game.update(step);
+}
+
+/** Runs the game until the condition holds, or fails after `maxSeconds`. */
+function advanceUntil(game: Game, done: () => boolean, maxSeconds: number, step = 1 / 60): void {
+  for (let t = 0; t < maxSeconds; t += step) {
+    if (done()) return;
+    game.update(step);
+  }
+  if (!done()) throw new Error(`Ventede ${maxSeconds} s forgæves`);
 }
 
 /** Slides a finger from one point to another in small steps. */
@@ -409,6 +418,118 @@ describe('Game', () => {
       const { game } = makeGame();
       game.shake();
       expect(game.flowers.some((f) => f.spin !== 0)).toBe(true);
+    });
+  });
+
+  describe('balloons carrying creatures', () => {
+    /** Spawns a balloon by touching just above a creature, so the string reaches it. */
+    function liftWithBalloon(game: Game, v: Visitor): Balloon {
+      const hit = game.visitorHit(v);
+      const before = game.balloons.length;
+      game.press(1, hit.x, hit.y - 100 * game.unit);
+      game.release(1);
+      expect(game.balloons.length).toBe(before + 1);
+      return game.balloons[game.balloons.length - 1];
+    }
+
+    it('a balloon made above the dog picks it up; popping it lets the dog parachute down and walk on', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const dog = game.spawnVisitor('dog');
+      dog.x = W / 2;
+      advance(game, 1);
+      const balloon = liftWithBalloon(game, dog);
+      expect(dog.state).toBe('carried');
+      expect(balloon.carrying).toBe(dog.id);
+      expect(events.some((e) => e.type === 'carry' && e.what === 'hooked')).toBe(true);
+      advance(game, 3);
+      // Hangs from the string and calls for help.
+      expect(Math.abs(game.visitorHit(dog).y - game.stringEnd(balloon).y)).toBeLessThan(2);
+      expect(dog.y).toBeLessThan(game.ground(dog.x) - 50);
+      expect(events.filter((e) => e.type === 'carry' && e.what === 'help').length).toBeGreaterThanOrEqual(1);
+      game.press(2, balloon.x, balloon.y);
+      expect(game.balloons).not.toContain(balloon);
+      expect(dog.state).toBe('falling');
+      const heightBefore = dog.y;
+      advance(game, 1);
+      expect(dog.y).toBeGreaterThan(heightBefore);
+      expect(dog.y).toBeLessThan(heightBefore + 100 * game.unit); // gently, not a drop
+      advanceUntil(game, () => dog.state !== 'falling', 30);
+      expect(dog.state).toBe('idle');
+      expect(dog.y).toBe(game.ground(dog.x));
+      expect(events.some((e) => e.type === 'carry' && e.what === 'landed')).toBe(true);
+      const x = dog.x;
+      advance(game, 1);
+      expect(dog.x).not.toBe(x); // walking again
+    });
+
+    it('a balloon carrying a creature rises slowly', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const dog = game.spawnVisitor('dog');
+      dog.x = W / 2;
+      advance(game, 1);
+      const heavy = liftWithBalloon(game, dog);
+      const light = game.spawnBalloon({ x: 60, y: heavy.y })!;
+      light.vy = heavy.vy;
+      light.inflate = heavy.inflate;
+      light.scale = heavy.scale;
+      advance(game, 3);
+      expect(heavy.y).toBeGreaterThan(light.y + 30);
+    });
+
+    it('lets a lifted bird fly on when the balloon pops, and the elephant land on the hill', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const bird = game.spawnVisitor('bird');
+      bird.x = W / 2;
+      bird.y = H * 0.5;
+      advance(game, 0.5);
+      const balloon = liftWithBalloon(game, bird);
+      expect(bird.state).toBe('carried');
+      game.press(2, balloon.x, balloon.y);
+      expect(bird.state).toBe('idle');
+
+      game.balloons = [];
+      const elephant = game.spawnVisitor('elephant');
+      elephant.x = W / 2;
+      advance(game, 2);
+      const lifter = liftWithBalloon(game, elephant);
+      expect(elephant.state).toBe('carried');
+      game.press(3, lifter.x, lifter.y);
+      expect(elephant.state).toBe('falling');
+      advanceUntil(game, () => elephant.state !== 'falling', 40);
+      expect(elephant.state).toBe('idle');
+      expect(elephant.lift).toBeGreaterThan(elephant.size);
+      expect(elephant.y).toBe(game.ground(elephant.x));
+    });
+
+    it('the storm cloud and shooting stars cannot be picked up', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      game.press(1, storm.x, storm.y - 110 * game.unit);
+      expect(storm.state).not.toBe('carried');
+    });
+
+    it('a creature dropped by a balloon floating off the top parachutes down from there', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const snail = game.spawnVisitor('snail');
+      snail.x = W / 2;
+      advance(game, 1);
+      const balloon = liftWithBalloon(game, snail);
+      const ageBefore = snail.age;
+      // The balloon drifts off the top of the screen with the snail on its string.
+      advanceUntil(game, () => snail.state !== 'carried', 60);
+      expect(game.balloons).not.toContain(balloon);
+      expect(snail.state).toBe('falling');
+      expect(snail.y).toBeLessThan(H * 0.25); // let go near the top of the screen
+      expect(snail.age).toBeCloseTo(ageBefore, 1); // the adventure does not count as lifetime
+      advanceUntil(game, () => snail.state !== 'falling', 60);
+      expect(snail.state).toBe('idle');
+      expect(snail.y).toBe(game.ground(snail.x));
     });
   });
 

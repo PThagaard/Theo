@@ -3,6 +3,31 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – rigtige dyrelyde, ballonen samler dyr op, ingen billeder i repoet
+
+- **Rigtige dyrelyde.** Hunden gør og elefanten trutter med rigtige optagelser (frie lyde fra Pixabay), lidt
+  forskelligt i tonehøjde fra gang til gang. Når de hænger i en ballonsnor, kalder de på hjælp med samme stemme, bare
+  lysere. Alle dyr og vejret kan få en optagelse: læg en lydfil i `src/lyde/` med det rigtige navn (se README der),
+  klip og normalisér den med `node scripts/lyd.mjs`, og næste build bruger den. Mangler filen, spiller synthen som før.
+- **Ballonen samler dyr op.** Pust en ballon op (tryk på himlen) lige over et dyr: snoren fanger det, dyret dingler
+  og råber om hjælp, og ballonen stiger langsomt, fordi den er tung. Snoren hænger slapt, til ballonen er højt nok
+  oppe til at løfte; dyret trækkes aldrig ned i jorden. Tryk på ballonen: dyret daler roligt ned under en lille
+  regnbue-faldskærm, lander med et "flump" og fortsætter, hvor det slap. Fuglen og sommerfuglen flyver bare videre.
+  Flyver ballonen ud af toppen, dumper dyret ned i faldskærm derfra. Tælles i Theos leg (dyr løftet af en ballon).
+- **Ingen indbyggede familiebilleder.** De tre billeder af mor, far og Theo er fjernet fra appen og fra mappen i
+  repoet; familie-balloner laves kun med billeder valgt på telefonen (galleri eller kamera), som bliver på telefonen.
+  Kontakten *Vis familien på balloner* virker som før på dine egne billeder.
+- Kontakterne i forældremenuen er **røde, når de er slået fra**, og grønne, når de er slået til (før var de altid
+  grønne).
+
+**Test på telefonen:** (1) Tryk på hunden: et rigtigt "vov"; tryk på elefanten: en rigtig elefant-trut, ikke for
+høj og ikke skurrende i telefonens højttaler. (2) Vent på hunden (eller sneglen/elefanten), og tryk på himlen ca. en
+fingerbredde over dens ryg: ballonen pustes op, snoren strammer, og dyret hænger i snoren og råber. (3) Ballonen
+stiger langsomt; tryk på den: dyret daler ned i faldskærm og går videre. (4) Prøv det samme med fuglen: når ballonen
+popper, flyver den bare videre. (5) Forældremenu → *Familie-balloner*: der er ingen indbyggede billeder, kun dem du
+selv har valgt; vælg/tag et, og det dukker op på balloner. (6) Slå *Musik* fra: kontakten bliver rød; til igen:
+grøn.
+
 ## 2026-09-21 – uvejrsskyen
 
 - **Uvejrsskyen** kommer sjældent forbi (tidligst efter et minut, højst hvert 4. minut): en stor, mørk sky med et

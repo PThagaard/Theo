@@ -28,3 +28,16 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - "En hund der går over græsset … en elefant der kigger op bag græsset." → behov: liv, overraskelser og dyr med
   lyde, noget nyt at opdage → generelt besøgssystem (hund, elefant + egne ideer: fugl, sommerfugl, snegl, blomster
   der vrikker, stjerneskud). Forslag er eksempler på behov, ikke krav (regel i CLAUDE.md).
+
+## 2026-09-21 – lyde, billeder og små ting (behov bag)
+
+- "Elefanten lyder ikke rask" / "Vi skal have styr på lydene" → behov: dyrelyde skal lyde som dyr, ikke som en
+  synth, så Theo kan genkende dem → rigtige, frie optagelser i `src/lyde/` (far finder lydene, Claude klipper og
+  bygger dem ind); synthen bliver reserve. Regel: alle dyr og vejret kan få en optagelse med fast filnavn.
+- "De 3 billeder skal væk … så ligger der heller ikke Theo-billeder offentligt i repo" → behov: privatliv; billeder
+  af familien må ikke ligge offentligt → ingen indbyggede billeder, kun billeder valgt på telefonen. Regel i CLAUDE.md.
+- "Når en slider er off skal den være rød" → behov: se med ét blik, hvad der er slået fra → rød/grøn.
+- "Måske long-press på en sky skal lave den om til tordensky" → behov: Theo skal selv kunne fremkalde det sjældne;
+  et langt tryk som tredje bevægelse → på roadmap med egne idéer (hold på himlen: ballon vokser til den sprænger).
+- "Lav dag/nat-cyklus, så kan vi lave et helt nyt setup til nat" (til senere) → behov: variation i en kendt verden og
+  ro før sengetid → på roadmap.

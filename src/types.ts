@@ -47,6 +47,8 @@ export interface Balloon {
   photoId?: string;
   /** Pointer id of the swipe that last blew this balloon, so each swipe counts once. */
   blownBy?: number;
+  /** Id of the creature hanging from this balloon's string, if any. */
+  carrying?: number;
 }
 
 export interface Cloud {
@@ -68,7 +70,7 @@ export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 
 /** What lightning can turn a visitor into for a little while. */
 export type VisitorForm = 'hotdog' | 'mouse' | 'puffed';
 
-export type VisitorState = 'enter' | 'idle' | 'react' | 'leave' | 'gone';
+export type VisitorState = 'enter' | 'idle' | 'react' | 'leave' | 'gone' | 'carried' | 'falling';
 
 /** A creature that drops by now and then: walks, flies or peeks, and reacts when touched. */
 export interface Visitor {
@@ -109,6 +111,12 @@ export interface Visitor {
   nextLightning: number;
   /** Seconds left of dripping after being rained on. */
   wet: number;
+  /** Id of the balloon carrying this creature on its string, while state is 'carried'. */
+  carriedBy: number | null;
+  /** Seconds until the carried creature calls for help again. */
+  helpTimer: number;
+  /** What the creature was doing before it was picked up, to carry on with afterwards. */
+  resumeState: VisitorState;
 }
 
 /** A flower on the hills: spins and cycles colours when tapped, flies off when swiped, grows back. */
@@ -189,6 +197,8 @@ export type GameEvent =
   | { type: 'lightning'; x: number; y: number }
   /** A visitor changed shape (or changed back: form null). */
   | { type: 'transform'; kind: VisitorKind; form: VisitorForm | null; x: number; y: number }
+  /** A balloon picked a creature up, the creature called for help, was let go, or landed again. */
+  | { type: 'carry'; kind: VisitorKind; x: number; y: number; what: 'hooked' | 'help' | 'released' | 'landed' }
   /** A balloon was blown away by a swipe (once per balloon per swipe). */
   | { type: 'blow' }
   /** A finger lifted after a real swipe of at least `length` px. */

@@ -1,10 +1,12 @@
 import { SONGS, compileSong, midiToFreq, type CompiledSong, type Song, type SongEvent } from './music';
 import { clamp } from './rng';
+import { SAMPLE_URLS, type SampleName } from './samples';
 
 /**
- * Everything the app plays is synthesised with the Web Audio API, so there are
- * no sound files to ship: balloon pops, sparkles, a fanfare and a little
- * music-box band that plays children's songs in the background.
+ * Nearly everything the app plays is synthesised with the Web Audio API: balloon pops,
+ * sparkles, a fanfare and a little music-box band that plays children's songs in the
+ * background. The animals use real recordings from src/lyde/ when a file is there
+ * (see samples.ts), with a synthesised voice as the fallback.
  */
 
 export const MUSIC_LEVEL = 0.3;
@@ -250,6 +252,12 @@ export class AudioEngine {
   private sfxOn = true;
   private musicOn = true;
   private timer: ReturnType<typeof setInterval> | null = null;
+  /** Decoded recordings from src/lyde/, by file name. */
+  private readonly samples = new Map<string, AudioBuffer>();
+  /** Resolves once every recording has been decoded (or given up on). */
+  readonly ready: Promise<void>;
+  /** Cycles through small pitch variations so repeated recordings do not sound like a machine. */
+  private variation = 0;
 
   constructor(ctx: BaseAudioContext) {
     this.ctx = ctx;
@@ -275,6 +283,48 @@ export class AudioEngine {
 
     this.synth = new Synth(ctx, makeNoise(ctx));
     this.music = new MusicPlayer(this.synth, this.musicBus, SONGS);
+    this.ready = this.loadSamples();
+  }
+
+  // ---- Recordings ----------------------------------------------------------
+
+  private async loadSamples(): Promise<void> {
+    await Promise.all(
+      Object.entries(SAMPLE_URLS).map(async ([name, url]) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          this.samples.set(name, await this.ctx.decodeAudioData(await response.arrayBuffer()));
+        } catch (error) {
+          console.warn(`Lydfilen "${name}" kunne ikke bruges; den syntetiserede lyd bruges i stedet`, error);
+        }
+      }),
+    );
+  }
+
+  /** File names of the recordings that are loaded and used instead of the synth. */
+  get loadedSamples(): string[] {
+    return [...this.samples.keys()].sort();
+  }
+
+  /**
+   * Plays a recording if there is one, a little varied in pitch each time. Returns false when
+   * there is no such file, so the caller plays its synthesised voice instead.
+   */
+  private sample(name: SampleName, when: number, options: { gain?: number; rate?: number; vary?: boolean } = {}): boolean {
+    const buffer = this.samples.get(name);
+    if (!buffer) return false;
+    const ctx = this.ctx;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const variations = [1, 1.05, 0.96, 1.02, 0.98];
+    const vary = options.vary === false ? 1 : variations[this.variation++ % variations.length];
+    source.playbackRate.value = (options.rate ?? 1) * vary;
+    const gain = ctx.createGain();
+    gain.gain.value = options.gain ?? 1;
+    source.connect(gain).connect(this.sfxBus);
+    source.start(when);
+    return true;
   }
 
   /** Creates an engine on a real, playing AudioContext. */
@@ -327,7 +377,7 @@ export class AudioEngine {
   setSfxEnabled(on: boolean): void {
     this.sfxOn = on;
     this.sfxBus.gain.value = on ? SFX_LEVEL : 0;
-    if (this.rainLoop) this.rainLoop.gain.gain.value = on ? 0.055 : 0;
+    if (this.rainLoop) this.rainLoop.gain.gain.value = on ? (this.samples.has('regn') ? 0.35 : 0.055) : 0;
   }
 
   setMusicEnabled(on: boolean): void {
@@ -493,6 +543,44 @@ export class AudioEngine {
     [96, 100, 103].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.05 + i * 0.09, 0.5, 0.25));
   }
 
+  // ---- Carried creatures -----------------------------------------------------
+
+  /** A creature dangling from a balloon calls for help in its own voice. */
+  help(kind: string, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    switch (kind) {
+      case 'dog':
+        if (this.sample('hund-hjaelp', when) || this.sample('hund', when, { rate: 1.3, gain: 0.85 })) return;
+        // Two quick worried yelps.
+        for (const offset of [0, 0.16]) {
+          this.synth.tone(this.sfxBus, 'sawtooth', 620, when + offset, 0.3, 0.01, 0.13, { to: 860, glide: 0.1, filter: 2600 });
+        }
+        break;
+      case 'elephant':
+        if (this.sample('elefant-hjaelp', when) || this.sample('elefant', when, { rate: 1.25, gain: 0.85 })) return;
+        this.synth.tone(this.sfxBus, 'sawtooth', 330, when, 0.28, 0.03, 0.45, { to: 520, glide: 0.35, filter: 1800 });
+        break;
+      case 'bird':
+        this.chirp(when);
+        break;
+      case 'butterfly':
+        this.flutter(when);
+        break;
+      case 'snail':
+        this.blub(when);
+        break;
+      default:
+        this.boing(when);
+    }
+  }
+
+  /** Soft "flump" when a creature lands under its parachute. */
+  land(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 240, when, 0.3, 0.01, 0.18, { to: 120, glide: 0.15 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.15, 0.1, 'lowpass', 800, 0.6);
+  }
+
   // ---- Storm ---------------------------------------------------------------
 
   private rainLoop: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
@@ -502,14 +590,15 @@ export class AudioEngine {
     if (this.rainLoop) return;
     const ctx = this.ctx;
     const source = ctx.createBufferSource();
-    source.buffer = this.synth.noise;
+    const recording = this.samples.get('regn');
+    source.buffer = recording ?? this.synth.noise;
     source.loop = true;
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 1500;
+    filter.frequency.value = recording ? 8000 : 1500;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(this.sfxOn ? 0.055 : 0, ctx.currentTime + 1.5);
+    gain.gain.linearRampToValueAtTime(this.sfxOn ? (recording ? 0.35 : 0.055) : 0, ctx.currentTime + 1.5);
     source.connect(filter).connect(gain).connect(this.sfxBus);
     source.start();
     this.rainLoop = { source, gain };
@@ -529,6 +618,7 @@ export class AudioEngine {
   /** Crack of lightning, then rolling thunder (kept where a phone speaker can reproduce it). */
   thunder(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('torden', when, { vary: false })) return;
     this.synth.noiseBurst(this.sfxBus, when, 0.5, 0.09, 'highpass', 2500, 0.7);
     this.synth.noiseBurst(this.sfxBus, when + 0.25, 0.4, 1.4, 'lowpass', 500, 0.6);
     this.synth.noiseBurst(this.sfxBus, when + 0.6, 0.25, 1.2, 'bandpass', 250, 0.8);
@@ -581,6 +671,7 @@ export class AudioEngine {
    */
   bark(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('hund', when)) return;
     for (const offset of [0, 0.3]) {
       const t = when + offset;
       this.synth.tone(this.sfxBus, 'sawtooth', 460, t, 0.4, 0.012, 0.22, { to: 250, glide: 0.16, filter: 2400 });
@@ -595,6 +686,7 @@ export class AudioEngine {
    */
   trumpet(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('elefant', when)) return;
     const ctx = this.ctx;
     const length = 1.95;
     const gain = ctx.createGain();
@@ -660,6 +752,7 @@ export class AudioEngine {
   /** A friendly grumble when the elephant peeks up (kept above the range a phone speaker loses). */
   rumble(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('elefant-brum', when)) return;
     this.synth.tone(this.sfxBus, 'sawtooth', 180, when, 0.22, 0.08, 0.8, { to: 120, glide: 0.7, filter: 700 });
     this.synth.tone(this.sfxBus, 'triangle', 90, when, 0.25, 0.08, 0.8, { to: 60, glide: 0.7, filter: 400 });
   }
@@ -667,6 +760,7 @@ export class AudioEngine {
   /** "Tweet tweet" for the bird. */
   chirp(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('fugl', when)) return;
     for (const offset of [0, 0.13, 0.3]) {
       this.synth.tone(this.sfxBus, 'sine', 2100, when + offset, 0.14, 0.005, 0.1, { to: 3000, glide: 0.07 });
     }
@@ -675,6 +769,7 @@ export class AudioEngine {
   /** Tiny twinkle for the butterfly. */
   flutter(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('sommerfugl', when)) return;
     [91, 95, 98, 103].forEach((midi, i) => {
       this.synth.tone(this.sfxBus, 'sine', midiToFreq(midi), when + i * 0.05, 0.1, 0.003, 0.25);
     });
@@ -683,6 +778,7 @@ export class AudioEngine {
   /** Soft "blub" when the snail hides in its shell. */
   blub(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
+    if (this.sample('snegl', when)) return;
     this.synth.tone(this.sfxBus, 'sine', 320, when, 0.25, 0.01, 0.25, { to: 140, glide: 0.2 });
   }
 

@@ -85,6 +85,15 @@ const LIGHTNING_TOUCH_COOLDOWN = 1.2;
 /** Half width of the rain (and of a lightning strike's reach), in storm sizes. */
 const RAIN_HALF_WIDTH = 1.5;
 const RAINBOW_GLOW_TIME = 7;
+/** Balloon strings: how long they hang below the knot (times unit), and how close a creature must be to get hooked. */
+export const STRING_LENGTH = 62;
+const HOOK_REACH = 46;
+/** A carried creature calls for help this often. */
+const HELP_INTERVAL: [number, number] = [2.2, 3.4];
+/** How fast a let-go creature floats down (px/s times unit). */
+const PARACHUTE_SPEED = 55;
+/** How fast a hooked creature is tugged towards the string end (so it does not teleport). */
+const TUG_SPEED = 260;
 /** Shortest time between two reactions of the same visitor (a bark takes about this long). */
 const VISITOR_POKE_INTERVAL = 0.35;
 const FIRST_VISIT_DELAY = 8;
@@ -315,7 +324,121 @@ export class Game {
     this.emit({ type: 'sparkle', x, y });
     if (this.balloons.length < this.config.maxBalloons) {
       const created = this.spawnBalloon({ x, y, inflate: true });
-      if (created) this.emit({ type: 'spawn', x, y });
+      if (created) {
+        this.emit({ type: 'spawn', x, y });
+        this.hookCreature(created);
+      }
+    }
+  }
+
+  // ---- Carrying creatures ------------------------------------------------------
+
+  /** Where a balloon's string ends. */
+  stringEnd(b: Balloon): { x: number; y: number } {
+    const scale = Math.max(0.3, b.scale);
+    return { x: b.x, y: b.y + (b.r * 1.15 + b.r * 0.2) * scale + STRING_LENGTH * this.unit * scale };
+  }
+
+  /** A balloon made right above a creature catches it on its string. */
+  private hookCreature(b: Balloon): void {
+    // The string of a freshly inflated balloon will hang this far down once it is full size.
+    const end = { x: b.x, y: b.y + b.r * 1.35 + STRING_LENGTH * this.unit };
+    let best: Visitor | null = null;
+    let bestDistance = Infinity;
+    for (const v of this.visitors) {
+      if (v.kind === 'storm' || v.kind === 'star' || v.state === 'carried' || v.state === 'falling' || v.state === 'gone') continue;
+      const hit = this.visitorHit(v);
+      const distance = Math.hypot(hit.x - end.x, hit.y - end.y);
+      if (distance <= HOOK_REACH * this.unit + hit.r * 0.5 && distance < bestDistance) {
+        bestDistance = distance;
+        best = v;
+      }
+    }
+    if (!best) return;
+    best.resumeState = best.state === 'enter' ? 'idle' : best.state;
+    best.state = 'carried';
+    best.stateAge = 0;
+    best.carriedBy = b.id;
+    best.helpTimer = 0.6;
+    if (best.kind === 'elephant') best.lift = best.size * 1.15;
+    if (best.kind === 'dog') {
+      // A jump in progress ends here: the string holds the dog now.
+      best.lift = 0;
+      best.vy = 0;
+    }
+    b.carrying = best.id;
+    this.emit({ type: 'carry', kind: best.kind, x: best.x, y: best.y, what: 'hooked' });
+  }
+
+  /** The balloon is gone (popped or floated away): the creature floats gently down. */
+  private releaseCreature(b: Balloon): void {
+    if (b.carrying === undefined) return;
+    const v = this.visitors.find((visitor) => visitor.id === b.carrying);
+    b.carrying = undefined;
+    if (!v || v.state !== 'carried') return;
+    v.carriedBy = null;
+    this.emit({ type: 'carry', kind: v.kind, x: v.x, y: v.y, what: 'released' });
+    if (v.kind === 'bird' || v.kind === 'butterfly') {
+      // Flying creatures simply fly on.
+      v.state = 'idle';
+      v.stateAge = 0;
+      if (v.kind === 'butterfly') this.newButterflyTarget(v);
+      return;
+    }
+    v.state = 'falling';
+    v.stateAge = 0;
+  }
+
+  private updateCarried(v: Visitor, dt: number): void {
+    const b = this.balloons.find((balloon) => balloon.id === v.carriedBy);
+    if (!b) {
+      // The balloon vanished without popping (floated off the top): let go from here.
+      v.carriedBy = null;
+      v.state = v.kind === 'bird' || v.kind === 'butterfly' ? 'idle' : 'falling';
+      v.stateAge = 0;
+      return;
+    }
+    const end = this.stringEnd(b);
+    const hit = this.visitorHit(v);
+    const step = TUG_SPEED * this.unit * dt;
+    v.x += clamp(end.x - hit.x, -step, step);
+    // The string may hang slack at first: the creature stays where it is until the balloon has
+    // risen far enough for the string end to lift it, and is never pulled into the ground.
+    const targetY = Math.min(v.y + (end.y - hit.y), this.ground(v.x));
+    v.y = Math.max(Math.min(v.y, targetY), v.y - step);
+    if (!this.isLifted(v)) return;
+    v.helpTimer -= dt;
+    if (v.helpTimer <= 0) {
+      v.helpTimer = this.rng.range(HELP_INTERVAL[0], HELP_INTERVAL[1]);
+      this.emit({ type: 'carry', kind: v.kind, x: v.x, y: v.y, what: 'help' });
+    }
+  }
+
+  /** A carried creature that is off the ground (the string is taut, the balloon is heavy). */
+  private isLifted(v: Visitor): boolean {
+    return v.state === 'carried' && v.y < this.ground(v.x) - 0.5;
+  }
+
+  /** A balloon rises at half speed once its string has lifted a creature off the ground. */
+  private riseFactor(b: Balloon): number {
+    if (b.carrying === undefined) return 1;
+    const v = this.visitors.find((visitor) => visitor.id === b.carrying);
+    return v && this.isLifted(v) ? 0.5 : 1;
+  }
+
+  private updateFalling(v: Visitor, dt: number): void {
+    const u = this.unit;
+    v.y += PARACHUTE_SPEED * u * dt;
+    v.x += Math.sin(v.stateAge * 2.5) * 18 * u * dt;
+    v.x = clamp(v.x, v.size, this.width - v.size);
+    const groundY = this.ground(v.x);
+    if (v.y >= groundY) {
+      v.y = groundY;
+      v.state = v.resumeState === 'leave' || v.resumeState === 'gone' ? 'idle' : v.resumeState;
+      v.stateAge = 0;
+      if (v.kind === 'elephant') v.lift = v.size * 1.15;
+      this.sparkleBurst(v.x, v.y - v.size * 0.5, 6, SPARKLE_COLORS, v.size * 0.6);
+      this.emit({ type: 'carry', kind: v.kind, x: v.x, y: v.y, what: 'landed' });
     }
   }
 
@@ -545,6 +668,9 @@ export class Game {
       boltX: 0,
       nextLightning: this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]),
       wet: 0,
+      carriedBy: null,
+      helpTimer: 0,
+      resumeState: 'idle',
     };
     switch (kind) {
       case 'storm':
@@ -613,6 +739,12 @@ export class Game {
     // A finger sliding over a visitor sends a touch every few milliseconds; react at a natural pace instead.
     if (this.time - v.lastPoke < VISITOR_POKE_INTERVAL) return;
     v.lastPoke = this.time;
+    if (v.state === 'carried' || v.state === 'falling') {
+      // Dangling in the air it can only wriggle and call for help; pop the balloon to free it.
+      this.sparkleBurst(x, y, 4);
+      this.emit({ type: 'carry', kind: v.kind, x, y, what: 'help' });
+      return;
+    }
     const u = this.unit;
     v.pokes++;
     switch (v.kind) {
@@ -783,7 +915,9 @@ export class Game {
     const W = this.width;
     for (let i = this.visitors.length - 1; i >= 0; i--) {
       const v = this.visitors[i];
-      v.age += dt;
+      // A creature hanging from a balloon gets its lifetime back afterwards: the adventure
+      // does not count, so it lands and carries on with what it was doing.
+      if (v.state !== 'carried' && v.state !== 'falling') v.age += dt;
       v.stateAge += dt;
       v.wet = Math.max(0, v.wet - dt);
       if (v.form) {
@@ -797,6 +931,14 @@ export class Game {
       }
       const margin = v.size * 3;
       const offScreen = (v.dir === 1 && v.x > W + margin) || (v.dir === -1 && v.x < -margin);
+      if (v.state === 'carried') {
+        this.updateCarried(v, dt);
+        continue;
+      }
+      if (v.state === 'falling') {
+        this.updateFalling(v, dt);
+        continue;
+      }
       switch (v.kind) {
         case 'dog': {
           v.x += v.vx * dt * (v.form === 'hotdog' ? 0.6 : 1);
@@ -1055,7 +1197,8 @@ export class Game {
       } else {
         b.scale = 1;
       }
-      b.y -= b.vy * dt * (0.3 + 0.7 * b.inflate);
+      // A balloon with a passenger is heavy and rises slowly.
+      b.y -= b.vy * dt * (0.3 + 0.7 * b.inflate) * this.riseFactor(b);
       // Pushes from swipes: drift sideways/vertically and settle again.
       b.baseX += b.vx * dt;
       b.y += b.vyImpulse * dt;
@@ -1078,7 +1221,10 @@ export class Game {
           b.blinkTimer = this.rng.range(1.5, 5);
         }
       }
-      if (b.y < -b.r * 2.5) this.balloons.splice(i, 1);
+      if (b.y < -b.r * 2.5) {
+        this.releaseCreature(b);
+        this.balloons.splice(i, 1);
+      }
     }
 
     for (const c of this.clouds) {
@@ -1204,6 +1350,7 @@ export class Game {
     if (index < 0) return;
     this.balloons.splice(index, 1);
     this.pops++;
+    this.releaseCreature(balloon);
 
     const u = this.unit;
     const scale = Math.max(0.3, balloon.scale);

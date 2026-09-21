@@ -65,6 +65,9 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
+- **Ballonen samler dyr op** – pust en ballon op lige over hunden, sneglen, elefanten, fuglen eller sommerfuglen,
+  så hænger dyret i snoren og råber om hjælp, mens ballonen tungt stiger til vejrs. Pop ballonen: dyret daler roligt
+  ned under en lille faldskærm og fortsætter, hvor det slap (fuglen og sommerfuglen flyver bare videre).
 - **Uvejrsskyen** – en sjælden gæst: en mørk, gnaven sky driver hen over himlen og regner. Regnen presser
   ballonerne ned og får blomsterne til at vokse. Den lyner af sig selv af og til, og hver gang man trykker på den:
   balloner i lynets vej popper, blomsterne snurrer, hunden bliver til en hotdog, elefanten til en mus og fuglen
@@ -78,8 +81,8 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen: vælg et billede fra galleriet (gerne
   et gruppebillede) eller tag et selfie, træk ansigtet ind i cirklen, zoom og gem; klip gerne flere ansigter fra
   samme billede. Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort
-  frem med hjerter og "ta-daa". Billeder valgt på telefonen bliver kun på telefonen. Billeder, der skal være med i
-  alle udgaver, lægges i mappen `src/familie/` (se README der; bemærk at repoet er offentligt).
+  frem med hjerter og "ta-daa". Billeder valgt på telefonen bliver kun på telefonen; der ligger ingen billeder i
+  appen eller i repoet.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.

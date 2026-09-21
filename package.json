@@ -22,6 +22,7 @@
     "@capacitor/ios": "^8.5.2"
   },
   "devDependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@capacitor/cli": "^8.5.2",
     "@types/node": "^22.20.4",
     "playwright": "^1.56.1",
