@@ -45,7 +45,11 @@ Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og 
    ikke internettet og beder ikke om nogen tilladelser.
 4. Nye versioner installeres bare oven i den gamle. Indstillinger bevares.
 
-Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under fanen **Actions** på GitHub
+**Opdatering inde fra appen:** åbn forældremenuen → *Opdatering* → **Søg efter ny version**. Er der en nyere, vises
+hvad der er nyt, og **Hent og installér** henter den og åbner Androids installationsvindue. Første gang spørger
+telefonen, om Theos Balloner må installere apps; sig ja (det gælder kun denne app). Webappen opdaterer sig selv.
+
+Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **Actions** på GitHub
 (knappen *Run workflow*).
 
 **Lås:** brug knappen *Lås appen fast på skærmen* i forældremenuen (se nedenfor), så kan små fingre ikke forlade den.
@@ -61,9 +65,10 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under 
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
-- **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen (vælg fra galleriet eller tag et
-  selfie). Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort frem
-  med hjerter og "ta-daa". Billederne gemmes kun på telefonen.
+- **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen: vælg et billede fra galleriet (gerne
+  et gruppebillede) eller tag et selfie, træk ansigtet ind i cirklen, zoom og gem; klip gerne flere ansigter fra
+  samme billede. Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort
+  frem med hjerter og "ta-daa". Billederne gemmes kun på telefonen og lægges aldrig i repoet.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.
@@ -75,7 +80,8 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under 
 ## Forældremenu og lås
 
 Hold den lille lås i øverste venstre hjørne nede i **2 sekunder** med én finger. Så åbner en menu, hvor musik og lyde
-kan slås fra og til. Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på låsen gør ingenting, og en hel
+kan slås fra og til, og hvor **tempoet** vælges: *Rolig* (få, langsomme balloner), *Normal* eller *Vild* (mange,
+hurtige). Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på låsen gør ingenting, og en hel
 hånd på skærmen åbner den heller ikke.
 
 **Lås appen fast (Android):** tryk på **Lås appen fast på skærmen** i menuen. Telefonen spørger "Fastgør?" én gang;

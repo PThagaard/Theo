@@ -98,6 +98,11 @@ body {
 
 .card {
   width: min(100%, 360px);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 28px 24px;
   border-radius: 28px;
   background: #fff;
@@ -140,6 +145,36 @@ body {
   height: 0;
 }
 
+.row-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  cursor: default;
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segmented button {
+  flex: 1;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmented button.is-selected {
+  background: #4d96ff;
+  color: #fff;
+}
+
 .switch {
   position: relative;
   flex: none;
@@ -163,7 +198,37 @@ body {
   transition: transform 0.2s;
 }
 
-.row input:checked + .switch {
+.row input:checked + .row-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  cursor: default;
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segmented button {
+  flex: 1;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmented button.is-selected {
+  background: #4d96ff;
+  color: #fff;
+}
+
+.switch {
   background: #5ed37a;
 }
 
@@ -248,6 +313,59 @@ body {
   font-weight: 700;
   text-align: center;
   cursor: pointer;
+}
+
+#update-section {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  text-align: left;
+}
+
+.photo-button-primary {
+  background: #5ed37a;
+  color: #fff;
+}
+
+#update-notes {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+#update-notes summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.update-notes {
+  margin-top: 6px;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.crop-dialog {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.crop-canvas {
+  width: 260px;
+  height: 260px;
+  max-width: 100%;
+  border-radius: 50%;
+  background: #eef2ff;
+  touch-action: none;
+  display: block;
+  margin: 0 auto;
+}
+
+#crop-zoom {
+  width: 100%;
+  margin: 12px 0 4px;
+  accent-color: #4d96ff;
 }
 
 #lock-section {

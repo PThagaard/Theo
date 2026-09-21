@@ -1,5 +1,7 @@
+import { Cropper } from './cropper';
 import type { KidLock } from './kidlock';
 import type { StoredPhoto } from './photos';
+import type { AppUpdate } from './update';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -7,17 +9,22 @@ import type { StoredPhoto } from './photos';
  * whole resting hand never does, and closes itself again after a while.
  */
 
+export type Tempo = 'rolig' | 'normal' | 'vild';
+
 export interface Settings {
   music: boolean;
   sfx: boolean;
   /** Ask to pin the app to the screen every time it starts (Android). */
   autoLock: boolean;
+  /** How busy the sky is. */
+  tempo: Tempo;
 }
 
 export interface PhotoHooks {
   max: number;
   list(): Promise<StoredPhoto[]>;
-  add(file: Blob): Promise<StoredPhoto>;
+  /** Stores a face the parent framed in the cropper (square JPEG data URL). */
+  add(dataUrl: string): Promise<StoredPhoto>;
   remove(id: string): Promise<void>;
   /** Called with the full list whenever it changes. */
   onChange(photos: StoredPhoto[]): void;
@@ -27,17 +34,23 @@ export interface ParentPanelHooks {
   onChange(settings: Settings): void;
   lock?: KidLock;
   photos?: PhotoHooks;
+  update?: AppUpdate;
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
-const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false };
+const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal' };
+const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
 const HOLD_MS = 2000;
 const AUTO_CLOSE_MS = 15000;
 
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
+    if (raw) {
+      const stored = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
+      if (!TEMPOS.includes(stored.tempo)) stored.tempo = 'normal';
+      return stored;
+    }
   } catch {
     // Storage unavailable (private mode etc.). Fall back to defaults.
   }
@@ -130,6 +143,7 @@ export class ParentPanel {
   private readonly musicToggle = element<HTMLInputElement>('opt-music');
   private readonly sfxToggle = element<HTMLInputElement>('opt-sfx');
   private readonly autoLockToggle = element<HTMLInputElement>('opt-autolock');
+  private readonly tempoButtons = Array.from(element<HTMLElement>('tempo-options').querySelectorAll<HTMLButtonElement>('button[data-tempo]'));
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
   private readonly lockStatus = element<HTMLElement>('lock-status');
@@ -139,6 +153,15 @@ export class ParentPanel {
   private readonly photoSnap = element<HTMLInputElement>('photo-snap');
   private readonly photoStatus = element<HTMLElement>('photo-status');
   private photos: StoredPhoto[] = [];
+  private cropper: Cropper | null = null;
+  private readonly updateSection = element<HTMLElement>('update-section');
+  private readonly updateStatus = element<HTMLElement>('update-status');
+  private readonly updateCheck = element<HTMLButtonElement>('update-check');
+  private readonly updateInstall = element<HTMLButtonElement>('update-install');
+  private readonly updateNotes = element<HTMLDetailsElement>('update-notes');
+  private readonly updateNotesText = element<HTMLElement>('update-notes-text');
+  private updateUrl: string | null = null;
+  private busy = false;
   private readonly pointers = new ActivePointers();
   private readonly lockHold: HoldButton;
   private locked = false;
@@ -170,13 +193,22 @@ export class ParentPanel {
     for (const toggle of [this.musicToggle, this.sfxToggle, this.autoLockToggle]) {
       toggle.addEventListener('change', () => this.changed());
     }
+    for (const button of this.tempoButtons) {
+      button.addEventListener('click', () => {
+        this.settings.tempo = button.dataset.tempo as Tempo;
+        this.renderTempo();
+        this.changed();
+      });
+    }
+    this.renderTempo();
 
     this.photoSection.hidden = !hooks.photos;
+    if (hooks.photos) this.cropper = new Cropper((dataUrl) => this.storeFace(dataUrl));
     for (const input of [this.photoPick, this.photoSnap]) {
       input.addEventListener('change', () => {
-        const files = Array.from(input.files ?? []);
+        const file = input.files?.[0];
         input.value = '';
-        void this.addPhotos(files);
+        if (file) void this.cropPhoto(file);
       });
     }
     this.photoList.addEventListener('click', (event) => {
@@ -184,6 +216,10 @@ export class ParentPanel {
       if (button?.dataset.remove) void this.removePhoto(button.dataset.remove);
     });
     void this.loadPhotos();
+
+    this.updateSection.hidden = !hooks.update?.available;
+    this.updateCheck.addEventListener('click', () => void this.checkForUpdate());
+    this.updateInstall.addEventListener('click', () => void this.installUpdate());
     element<HTMLButtonElement>('parent-close').addEventListener('click', () => this.close());
     this.panel.addEventListener('pointerdown', () => this.armAutoClose());
   }
@@ -195,12 +231,14 @@ export class ParentPanel {
   open(): void {
     this.panel.hidden = false;
     this.armAutoClose();
+    void this.showVersion();
     void this.refreshLock();
     if (this.lockPoll) clearInterval(this.lockPoll);
     this.lockPoll = setInterval(() => void this.refreshLock(), 1000);
   }
 
   close(): void {
+    this.cropper?.close();
     this.panel.hidden = true;
     if (this.autoClose) clearTimeout(this.autoClose);
     this.autoClose = null;
@@ -210,7 +248,20 @@ export class ParentPanel {
 
   private armAutoClose(): void {
     if (this.autoClose) clearTimeout(this.autoClose);
+    if (this.cropper?.isOpen) return;
     this.autoClose = setTimeout(() => this.close(), AUTO_CLOSE_MS);
+  }
+
+  private pauseAutoClose(): void {
+    if (this.autoClose) clearTimeout(this.autoClose);
+    this.autoClose = null;
+  }
+
+  private renderTempo(): void {
+    for (const button of this.tempoButtons) {
+      button.classList.toggle('is-selected', button.dataset.tempo === this.settings.tempo);
+      button.setAttribute('aria-pressed', String(button.dataset.tempo === this.settings.tempo));
+    }
   }
 
   private changed(): void {
@@ -230,22 +281,33 @@ export class ParentPanel {
     this.hooks.photos.onChange([...this.photos]);
   }
 
-  private async addPhotos(files: Blob[]): Promise<void> {
+  /** Opens the cropper for a picked picture. The menu stays open while the parent frames the face. */
+  private async cropPhoto(file: Blob): Promise<void> {
     const hooks = this.hooks.photos;
-    if (!hooks || files.length === 0) return;
+    if (!hooks || !this.cropper) return;
     this.photoStatus.textContent = 'Gør billedet klar …';
-    for (const file of files) {
-      if (this.photos.length >= hooks.max) break;
-      try {
-        this.photos.push(await hooks.add(file));
-      } catch (error) {
-        console.warn('Billede kunne ikke tilføjes', error);
-        this.photoStatus.textContent = 'Det billede kunne ikke bruges. Prøv et andet.';
-      }
+    this.pauseAutoClose();
+    try {
+      await this.cropper.open(file);
+    } catch (error) {
+      console.warn('Billede kunne ikke læses', error);
+      this.photoStatus.textContent = 'Det billede kunne ikke bruges. Prøv et andet.';
+    } finally {
+      this.renderPhotos();
+      this.armAutoClose();
     }
+  }
+
+  private async storeFace(dataUrl: string): Promise<void> {
+    const hooks = this.hooks.photos;
+    if (!hooks) return;
+    if (this.photos.length >= hooks.max) {
+      this.photoStatus.textContent = `Der er plads til ${hooks.max} billeder. Fjern et for at tilføje et nyt.`;
+      return;
+    }
+    this.photos.push(await hooks.add(dataUrl));
     this.renderPhotos();
     hooks.onChange([...this.photos]);
-    this.armAutoClose();
   }
 
   private async removePhoto(id: string): Promise<void> {
@@ -284,8 +346,71 @@ export class ParentPanel {
     this.photoStatus.textContent = full
       ? `Der er plads til ${hooks.max} billeder. Fjern et for at tilføje et nyt.`
       : this.photos.length === 0
-        ? 'Tilføj billeder af mor, far og Theo, så dukker de op på balloner. Billederne bliver kun på denne telefon.'
+        ? 'Vælg et billede og klip ansigtet ud, så dukker det op på balloner. Billederne bliver kun på denne telefon.'
         : `${this.photos.length} af ${hooks.max} billeder. Billederne bliver kun på denne telefon.`;
+  }
+
+  // ---- Updates ---------------------------------------------------------------
+
+  private async showVersion(): Promise<void> {
+    const update = this.hooks.update;
+    if (!update?.available || this.busy) return;
+    const version = await update.version();
+    if (!this.updateUrl) this.updateStatus.textContent = version ? `Du har version ${version}.` : '';
+  }
+
+  private async checkForUpdate(): Promise<void> {
+    const update = this.hooks.update;
+    if (!update?.available || this.busy) return;
+    this.busy = true;
+    this.updateStatus.textContent = 'Søger efter ny version …';
+    this.updateInstall.hidden = true;
+    this.updateNotes.hidden = true;
+    try {
+      const result = await update.check();
+      if (result.newer) {
+        this.updateUrl = result.apk;
+        this.updateStatus.textContent = `Ny version ${result.latest} (${result.date}) er klar. Du har ${result.current}.`;
+        this.updateNotesText.textContent = result.notes.trim();
+        this.updateNotes.hidden = !result.notes.trim();
+        this.updateInstall.hidden = false;
+      } else {
+        this.updateUrl = null;
+        this.updateStatus.textContent = `Du har den nyeste version (${result.current}).`;
+      }
+    } catch (error) {
+      this.updateUrl = null;
+      this.updateStatus.textContent = 'Kunne ikke søge. Er telefonen på internettet?';
+      console.warn('Opdateringstjek fejlede', error);
+    } finally {
+      this.busy = false;
+      this.armAutoClose();
+    }
+  }
+
+  private async installUpdate(): Promise<void> {
+    const update = this.hooks.update;
+    if (!update?.available || !this.updateUrl || this.busy) return;
+    this.busy = true;
+    this.updateInstall.hidden = true;
+    this.updateStatus.textContent = 'Henter opdateringen …';
+    const stop = await update.onProgress((percent) => {
+      this.updateStatus.textContent = percent >= 0 ? `Henter opdateringen … ${percent} %` : 'Henter opdateringen …';
+      this.armAutoClose();
+    });
+    try {
+      await update.install(this.updateUrl);
+      this.updateStatus.textContent =
+        'Hentet. Tryk "Installér" i telefonens vindue. Første gang skal du tillade, at appen må installere opdateringer.';
+    } catch (error) {
+      this.updateStatus.textContent = 'Opdateringen kunne ikke hentes. Prøv igen, eller hent den fra GitHub.';
+      this.updateInstall.hidden = false;
+      console.warn('Opdatering fejlede', error);
+    } finally {
+      stop();
+      this.busy = false;
+      this.armAutoClose();
+    }
   }
 
   private async refreshLock(): Promise<void> {

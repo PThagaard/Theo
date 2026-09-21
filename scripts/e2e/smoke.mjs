@@ -35,13 +35,15 @@ await page.screenshot({ path: `${OUT}/${tag}-02-pop.png` });
 // Touch empty sky -> a balloon inflates there.
 const empty = await page.evaluate((f) => {
   const g = window.__theo.game;
+  // Look for a spot with a wide margin, so a balloon drifting a few pixels can't slide under the tap.
+  const clear = (x, y) => !g.findBalloonAt(x, y, f) && !g.findCloudAt(x, y) && !g.isOnSun(x, y);
   for (let y = 120; y < g.height - 120; y += 10) {
     for (let x = 60; x < g.width - 60; x += 10) {
-      if (!g.findBalloonAt(x, y, f) && !g.findCloudAt(x, y) && !g.isOnSun(x, y)) return [x, y];
+      if (clear(x, y) && clear(x - 30, y - 30) && clear(x + 30, y + 30) && clear(x - 30, y + 30) && clear(x + 30, y - 30)) return [x, y];
     }
   }
   return null;
-}, 1.6);
+}, 2.2);
 const before = s.balloons.length;
 await page.touchscreen.tap(empty[0], empty[1]);
 await page.waitForTimeout(220);
@@ -158,8 +160,12 @@ console.log('parent panel open after hold:', open);
 if (!open) throw new Error('parent panel did not open');
 await page.screenshot({ path: `${OUT}/${tag}-06-parent.png` });
 await page.click('label:has(#opt-music)');
+await page.click('#tempo-options button[data-tempo="vild"]');
 const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
 console.log('stored settings:', stored);
+check(JSON.parse(stored).tempo === 'vild', 'tempo was not stored');
+check(await page.evaluate(() => window.__theo.game.currentTempo) === 'vild', 'tempo did not reach the game');
+check(await page.evaluate(() => document.getElementById('update-section').hidden), 'update section should be hidden on the web');
 await page.click('#parent-close');
 const closed = await page.evaluate(() => document.getElementById('parent-panel').hidden);
 console.log('closed:', closed);
@@ -184,7 +190,19 @@ const png = await page.evaluate(() => {
   return c.toDataURL('image/png').split(',')[1];
 });
 await page.setInputFiles('#photo-pick', { name: 'far.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+await page.waitForFunction(() => !document.getElementById('crop-dialog').hidden, null, { timeout: 10000 });
+// Frame the face: drag the picture a little and zoom in, then save.
+const crop = await page.locator('#crop-canvas').boundingBox();
+await page.mouse.move(crop.x + crop.width / 2, crop.y + crop.height / 2);
+await page.mouse.down();
+await page.mouse.move(crop.x + crop.width / 2 - 20, crop.y + crop.height / 2 + 10, { steps: 5 });
+await page.mouse.up();
+await page.locator('#crop-zoom').fill('1.6');
+await page.screenshot({ path: `${OUT}/${tag}-08a-cropper.png` });
+await page.click('#crop-save');
 await page.waitForFunction(() => document.querySelectorAll('#photo-list img').length === 1, null, { timeout: 10000 });
+check(await page.evaluate(() => !document.getElementById('crop-again').hidden), 'cropper did not offer another face');
+await page.click('#crop-cancel');
 console.log('photo added:', await page.evaluate(() => document.getElementById('photo-status').textContent));
 await page.screenshot({ path: `${OUT}/${tag}-08-photos-menu.png` });
 await page.click('#parent-close');

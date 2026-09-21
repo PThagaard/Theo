@@ -1,6 +1,27 @@
 # Changelog
 
-Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub).
+Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
+automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
+
+## 2026-09-21 – opdatering inde fra appen og tempo
+
+- **Søg efter ny version** i forældremenuen: appen spørger GitHub Releases, viser hvad der er nyt, og *Hent og
+  installér* henter APK'en og åbner Androids installationsvindue. Den eneste netværksadgang i appen, og kun på et tryk.
+- **Tempo** i forældremenuen: Rolig / Normal / Vild bestemmer antal balloner, hvor tit de kommer og hvor hurtigt de
+  stiger. Virker med det samme, også på balloner der allerede er i luften.
+- **Ansigts-klipper** til familie-balloner: vælg et billede (også et gruppebillede), træk ansigtet ind i cirklen,
+  zoom med skyderen eller to fingre, gem, og klip det næste ansigt fra samme billede.
+- Forældremenuen kan rulles, når den er længere end skærmen.
+- Hver udgivelse har nu et versionsnummer (1.0.<build>) og en `version.json`, som appen bruger til opdateringstjekket.
+
+**Test på telefonen:** (1) Hent og installér denne version fra GitHub én sidste gang. (2) Forældremenu → *Familie-
+balloner* → *Vælg billede* → familiebilledet: træk mors ansigt ind i cirklen, zoom, *Gem ansigtet*, tryk *Nyt ansigt*
+og gør det samme for far; luk. Tag Theo med *Tag et billede* eller fra galleriet. Ansigterne vises som runde
+miniaturer, og balloner med dem dukker op. (3) Menuen kan rulles op og ned med fingeren. (4) *Tempo* → *Vild*: der
+kommer tydeligt flere og hurtigere balloner med det samme; *Rolig* gør det roligt; valget huskes efter genstart.
+(5) *Opdatering* viser "Du har version 1.0.x"; *Søg efter ny version* svarer "Du har den nyeste version". (6) Når
+næste udgivelse kommer: *Søg efter ny version* → "Ny version … er klar" med "Hvad er nyt" → *Hent og installér* →
+tillad installation første gang → Android installerer, og appen åbner igen med indstillinger og billeder bevaret.
 
 ## 2026-09-21
 

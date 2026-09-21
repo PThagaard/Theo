@@ -44,6 +44,14 @@
           <input type="checkbox" id="opt-sfx" />
           <span class="switch" aria-hidden="true"></span>
         </label>
+        <div class="row row-stacked">
+          <span class="row-label">🎈 Tempo</span>
+          <div id="tempo-options" class="segmented" role="group" aria-label="Tempo">
+            <button type="button" data-tempo="rolig">🐢 Rolig</button>
+            <button type="button" data-tempo="normal">🙂 Normal</button>
+            <button type="button" data-tempo="vild">🚀 Vild</button>
+          </div>
+        </div>
         <div id="photo-section" hidden>
           <h2 class="section-title">📷 Familie-balloner</h2>
           <div id="photo-list" class="photo-list"></div>
@@ -58,6 +66,16 @@
             </label>
           </div>
           <p id="photo-status" class="lock-status"></p>
+          <div id="crop-dialog" class="crop-dialog" hidden>
+            <canvas id="crop-canvas" class="crop-canvas" aria-label="Klip ansigt"></canvas>
+            <input id="crop-zoom" type="range" min="1" max="5" step="0.01" value="1" aria-label="Zoom" />
+            <p id="crop-status" class="lock-status"></p>
+            <div class="photo-actions">
+              <button id="crop-save" type="button" class="photo-button photo-button-primary">✓ Gem ansigtet</button>
+              <button id="crop-again" type="button" class="photo-button" hidden>↺ Nyt ansigt</button>
+              <button id="crop-cancel" type="button" class="photo-button">✕ Luk</button>
+            </div>
+          </div>
         </div>
         <div id="lock-section" hidden>
           <button id="lock-button" type="button">🔒 Lås appen fast på skærmen</button>
@@ -67,6 +85,20 @@
             <input type="checkbox" id="opt-autolock" />
             <span class="switch" aria-hidden="true"></span>
           </label>
+        </div>
+        <div id="update-section" hidden>
+          <h2 class="section-title">⬆️ Opdatering</h2>
+          <p id="update-status" class="lock-status"></p>
+          <div class="photo-actions">
+            <button id="update-check" type="button" class="photo-button">🔎 Søg efter ny version</button>
+            <button id="update-install" type="button" class="photo-button photo-button-primary" hidden>
+              ⬇️ Hent og installér
+            </button>
+          </div>
+          <details id="update-notes" hidden>
+            <summary>Hvad er nyt</summary>
+            <div id="update-notes-text" class="update-notes"></div>
+          </details>
         </div>
         <button id="parent-close" type="button">Tilbage til ballonerne</button>
         <p class="hint">

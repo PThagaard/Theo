@@ -17,3 +17,14 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - Theo elsker at se sig selv på video og billeder → næste feature: familie-balloner med billeder af mor, far og Theo
   (billederne bliver kun på telefonen).
 - Theo bruger pegefingeren til at vælge, ud over at swipe og klappe.
+
+## 2026-09-21 – ønsker fra far (behov bag)
+
+- "Kan man justere intensiteten af balloner? Den er lidt langsom for nogen." → behov: tempoet skal passe til barnet
+  og situationen (vild leg vs. rolig stund) → tempo-valg i forældremenuen.
+- "Efter hver versions-bump skal jeg have en testliste." → behov: vide præcis hvad der skal prøves → fast testliste
+  pr. udgivelse i changelog og chat.
+- "Kan der laves in-app-opdatering?" → behov: opdatere uden at åbne GitHub → *Søg efter ny version* i menuen.
+- "En hund der går over græsset … en elefant der kigger op bag græsset." → behov: liv, overraskelser og dyr med
+  lyde, noget nyt at opdage → generelt besøgssystem (hund, elefant + egne ideer: fugl, sommerfugl, snegl, blomster
+  der vrikker, stjerneskud). Forslag er eksempler på behov, ikke krav (regel i CLAUDE.md).

@@ -17,8 +17,10 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
 
 ## Ufravigelige principper
 
-1. **Ingen reklamer, køb, konti, tracking eller analytics.** Ingen netværkskald i appen overhovedet. Ingen
-   tredjeparts-SDK'er ud over Capacitor og dets officielle plugins. Det gælder også, når appen bliver offentlig.
+1. **Ingen reklamer, køb, konti, tracking eller analytics.** Ingen netværkskald i selve spillet. Den eneste
+   netværksadgang er forældremenuens *Søg efter ny version*, som kun sker på et tryk og kun taler med projektets egne
+   GitHub Releases (sender intet andet end en almindelig HTTP-forespørgsel). Ingen tredjeparts-SDK'er ud over
+   Capacitor og dets officielle plugins. Det gælder også, når appen bliver offentlig.
 2. **Alt, barnet rører ved, reagerer** – med bevægelse *og* lyd, inden for 100 ms. Ingen døde områder, ingen "forkert",
    ingen straf, ingen tidspres, ingen "game over". Alt kan gøres med én hel hånd, ikke kun en præcis finger.
 3. **Ingen tekst, knapper eller menuer til barnet.** Alt voksen-UI ligger bag "hold nede i 2 sekunder"-porten
@@ -33,6 +35,18 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
    objekter har lofter, og alt skal køre glat (60 fps) på S21'eren og gerne på ældre telefoner.
 8. **Al musik er public domain eller original,** og al lyd syntetiseres i koden (ingen lydfiler, ingen samples med
    uklar licens). Grafik tegnes i kode eller er vores egen.
+
+## Sådan forstår vi ønsker fra forældrene
+
+Et forslag fra Theos forældre ("en hund, der går over græsset", "en elefant bag bakken") er et **eksempel på et
+behov**, ikke en kravspecifikation. Arbejdsgangen er altid:
+
+1. Find behovet bag forslaget (fx: overraskelser og liv i verdenen, dyr med lyde til ordforråd, nye ting at
+   opdage, noget der belønner opmærksomhed). Skriv behovet ned i `docs/OBSERVATIONER.md` eller roadmappen.
+2. Lav det foreslåede *og* mindst et par egne ideer, der dækker samme behov, gerne bygget som et generelt system
+   (fx "besøg" i stedet for én hund), så det er nemt at tilføje flere.
+3. Forklar kort, hvilket behov der er dækket hvordan, og foreslå selv næste skridt. Kom også selv med behov og
+   ideer, forældrene ikke har nævnt, når udviklingstrinnet (`docs/ROADMAP.md`) peger på dem.
 
 ## Sprog og stil
 
@@ -55,6 +69,8 @@ src/
   input.ts      touch/mus → press/drag/release; ryst (DeviceMotion); blokering af browser-gestus
   parent.ts     forældremenu (hold 2 sek.), indstillinger (localStorage), lås-knap
   kidlock.ts    bro til android/.../KidLockPlugin.java (Androids "fastgør vinduer")
+  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner
+  update.ts     bro til android/.../AppUpdatePlugin.java (søg/hent/installér ny version fra GitHub Releases)
   palette.ts, rng.ts, types.ts, styles.css, sw.js (service worker-skabelon; udfyldes af vite.config.ts)
 test/           Vitest-enhedstests (spillogik, sange)
 scripts/e2e/    Playwright-røgtests mod det byggede spil (se "Test")

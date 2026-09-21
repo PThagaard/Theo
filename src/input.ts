@@ -53,8 +53,15 @@ export function attachInput(element: HTMLElement, handlers: InputHandlers): void
   const block = (event: Event) => event.preventDefault();
   const blocked = ['touchstart', 'touchmove', 'touchend', 'gesturestart', 'gesturechange', 'contextmenu', 'dblclick', 'selectstart', 'dragstart'];
   for (const type of blocked) element.addEventListener(type, block, { passive: false });
-  // Stops rubber-band scrolling of the whole page on iOS.
-  document.addEventListener('touchmove', block, { passive: false });
+  // Stops rubber-band scrolling of the whole page on iOS; the parent menu may still scroll.
+  document.addEventListener(
+    'touchmove',
+    (event) => {
+      if ((event.target as Element | null)?.closest?.('#parent-panel')) return;
+      event.preventDefault();
+    },
+    { passive: false },
+  );
 }
 
 /**

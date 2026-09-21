@@ -10,13 +10,17 @@
 3. **APK** – Android SDK + JDK 21, `npx cap sync android`, `./gradlew assembleRelease` signeret med
    `android/keystore/theo.keystore`, versionsnummer `1.0.<build-nr>`. Udgives som `TheosBalloner.apk` under Releases
    med tag `latest` (slettes og genskabes ved hvert build, så linket <https://github.com/PThagaard/Theo/releases/latest>
-   altid peger på det nyeste).
+   altid peger på det nyeste). Release-noterne er det øverste afsnit i `CHANGELOG.md`, og der lægges en `version.json`
+   ved siden af APK'en (version, build, dato, noter, APK-adresse), som appens *Søg efter ny version* læser.
+4. **Røgtest i Chromium** – Playwright-testene fra `scripts/e2e/` mod den byggede webapp; skærmbilleder gemmes som
+   artefakt.
 
 Kør workflowet manuelt fra fanen *Actions* → *Byg app* → *Run workflow*, hvis der er brug for et nyt build uden ændringer.
 
 ## Checkliste på S21'eren efter en udgivelse
 
-- [ ] APK'en installerer oven i den gamle uden afinstallation (samme nøgle, højere versionsnummer).
+- [ ] APK'en installerer oven i den gamle uden afinstallation (samme nøgle, højere versionsnummer), helst via
+      *Søg efter ny version* i forældremenuen.
 - [ ] Appen starter i fuld skærm uden status- og navigationsbjælke; ikonet er rigtigt.
 - [ ] Lyd og musik virker fra første tryk; lydstyrken er behagelig.
 - [ ] Tryk, swipe (spor + harpe), ryst, sol og skyer reagerer; intet hakker (føles som 60 fps).

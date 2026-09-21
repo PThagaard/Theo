@@ -165,9 +165,28 @@ jobs:
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: 1.0.${{ github.run_number }}
         run: |
+          # Release-noterne er det øverste afsnit i CHANGELOG.md; version.json bruges af appens
+          # "Søg efter ny version" i forældremenuen.
+          awk '/^## /{n++} n==1' CHANGELOG.md > release-notes.md
+          printf '\n---\nVersion %s, build %s fra `%s` på branchen `%s`.\nHent **TheosBalloner.apk** på telefonen og åbn filen, eller brug *Søg efter ny version* i forældremenuen.\n' \
+            "$VERSION" "$GITHUB_RUN_NUMBER" "${GITHUB_SHA::7}" "$GITHUB_REF_NAME" >> release-notes.md
+          python3 - <<'PY'
+          import datetime, json, os
+          notes = open('release-notes.md', encoding='utf-8').read()
+          info = {
+              'version': os.environ['VERSION'],
+              'build': int(os.environ['GITHUB_RUN_NUMBER']),
+              'sha': os.environ['GITHUB_SHA'][:7],
+              'date': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d'),
+              'apk': 'https://github.com/PThagaard/Theo/releases/download/latest/TheosBalloner.apk',
+              'notes': notes,
+          }
+          json.dump(info, open('version.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          PY
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest TheosBalloner.apk \
+          gh release create latest TheosBalloner.apk version.json \
             --target "$GITHUB_SHA" \
-            --title "Theos Balloner – seneste build (nr. ${{ github.run_number }})" \
-            --notes "Automatisk bygget fra \`${GITHUB_SHA::7}\` på branchen \`${GITHUB_REF_NAME}\`. Hent **TheosBalloner.apk** på telefonen og åbn filen for at installere."
+            --title "Theos Balloner $VERSION" \
+            --notes-file release-notes.md

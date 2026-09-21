@@ -6,8 +6,9 @@ import { Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
-import { MAX_PHOTOS, addPhoto, listPhotos, removePhoto } from './photos';
+import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto } from './photos';
 import { Renderer } from './render';
+import { appUpdate } from './update';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const game = new Game();
@@ -89,17 +90,20 @@ game.onEvent((event) => {
 
 // ---- Parent menu and kid lock ----------------------------------------------
 
+game.setTempo(settings.tempo);
 const panel = new ParentPanel(settings, {
   onChange: (updated) => {
     saveSettings(updated);
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
+    game.setTempo(updated.tempo);
   },
   lock: kidLock,
+  update: appUpdate,
   photos: {
     max: MAX_PHOTOS,
     list: listPhotos,
-    add: addPhoto,
+    add: addCroppedPhoto,
     remove: removePhoto,
     onChange: (photos) => {
       renderer.setPhotos(photos);

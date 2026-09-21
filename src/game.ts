@@ -75,6 +75,15 @@ interface PointerState {
   trail: Trail;
 }
 
+export type Tempo = 'rolig' | 'normal' | 'vild';
+
+/** How busy the sky is: how many balloons, how often they come and how fast they rise. */
+const TEMPO: Record<Tempo, { target: number; interval: number; speed: number }> = {
+  rolig: { target: 4, interval: 1.5, speed: 0.75 },
+  normal: { target: 6, interval: 1, speed: 1 },
+  vild: { target: 9, interval: 0.55, speed: 1.35 },
+};
+
 export interface SpawnOptions {
   x?: number;
   y?: number;
@@ -103,6 +112,7 @@ export class Game {
   private spawnTimer = 0.4;
   private photoIds: string[] = [];
   private nextPhoto = 0;
+  private tempo: Tempo = 'normal';
   private listeners: Array<(event: GameEvent) => void> = [];
   private pointers = new Map<number, PointerState>();
   private rng: Rng;
@@ -122,6 +132,19 @@ export class Game {
   get sun(): { x: number; y: number; r: number } {
     const u = this.unit;
     return { x: this.width - 72 * u, y: 78 * u, r: 40 * u };
+  }
+
+  /** Rolig, normal or vild: parents pick how busy the sky should be. Takes effect at once. */
+  setTempo(tempo: Tempo): void {
+    const before = TEMPO[this.tempo].speed;
+    this.tempo = tempo;
+    const factor = TEMPO[tempo].speed / before;
+    for (const b of this.balloons) b.vy *= factor;
+    this.spawnTimer = Math.min(this.spawnTimer, this.config.spawnInterval * TEMPO[tempo].interval);
+  }
+
+  get currentTempo(): Tempo {
+    return this.tempo;
   }
 
   /** Family photos available for photo balloons (ids only; the renderer holds the pictures). */
@@ -347,7 +370,7 @@ export class Game {
       color,
       kind,
       face: this.rng.pick(FACES),
-      vy: (this.height / 800) * this.rng.range(45, 85),
+      vy: (this.height / 800) * this.rng.range(45, 85) * TEMPO[this.tempo].speed,
       swayAmp,
       swayFreq: this.rng.range(0.25, 0.5),
       swayPhase,
@@ -374,8 +397,9 @@ export class Game {
     if (this.spawnTimer <= 0) {
       // Refill quickly when the screen is nearly empty so there is always something to pop.
       const hurry = this.balloons.length < 3 ? 0.45 : 1;
-      this.spawnTimer = this.config.spawnInterval * hurry * this.rng.range(0.7, 1.3);
-      if (this.balloons.length < this.config.targetBalloons) this.spawnBalloon();
+      const tempo = TEMPO[this.tempo];
+      this.spawnTimer = this.config.spawnInterval * tempo.interval * hurry * this.rng.range(0.7, 1.3);
+      if (this.balloons.length < Math.min(tempo.target, this.config.maxBalloons)) this.spawnBalloon();
     }
 
     const damping = Math.max(0, 1 - 2.5 * dt);

@@ -78,6 +78,28 @@ export async function addPhoto(file: Blob, name = ''): Promise<StoredPhoto> {
   return photo;
 }
 
+/** Stores a picture the parent has already framed in the cropper (a square JPEG data URL). */
+export async function addCroppedPhoto(dataUrl: string, name = ''): Promise<StoredPhoto> {
+  const photo: StoredPhoto = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    dataUrl,
+    created: Date.now(),
+  };
+  if (memory) {
+    memory.push(photo);
+    return photo;
+  }
+  try {
+    const db = await openDb();
+    await requestToPromise(db.transaction(STORE, 'readwrite').objectStore(STORE).put(photo));
+    db.close();
+  } catch {
+    memory = [photo];
+  }
+  return photo;
+}
+
 export async function removePhoto(id: string): Promise<void> {
   if (memory) {
     memory = memory.filter((p) => p.id !== id);
@@ -92,7 +114,20 @@ export async function removePhoto(id: string): Promise<void> {
   }
 }
 
-async function loadImage(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
+export type LoadedImage = ImageBitmap | HTMLImageElement;
+
+export function imageSize(image: LoadedImage): { width: number; height: number } {
+  return 'naturalWidth' in image
+    ? { width: image.naturalWidth, height: image.naturalHeight }
+    : { width: image.width, height: image.height };
+}
+
+export function releaseImage(image: LoadedImage): void {
+  if ('close' in image) image.close();
+}
+
+/** Reads a picked file into something a canvas can draw, the right way up. */
+export async function loadImage(file: Blob): Promise<LoadedImage> {
   if (typeof createImageBitmap === 'function') {
     try {
       // `from-image` applies the photo's own rotation info, so selfies come out the right way up.
@@ -119,15 +154,20 @@ async function loadImage(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
 /** Centre-crops the picture to a square, shrinks it and returns a JPEG data URL. */
 async function shrinkToSquare(file: Blob): Promise<string> {
   const image = await loadImage(file);
-  const width = 'naturalWidth' in image ? image.naturalWidth : image.width;
-  const height = 'naturalHeight' in image ? image.naturalHeight : image.height;
+  const { width, height } = imageSize(image);
   const side = Math.min(width, height);
+  const dataUrl = cropToDataUrl(image, (width - side) / 2, (height - side) / 2, side);
+  releaseImage(image);
+  return dataUrl;
+}
+
+/** Cuts the square (sx, sy, side) out of the picture and returns it as a small JPEG data URL. */
+export function cropToDataUrl(image: LoadedImage, sx: number, sy: number, side: number): string {
   const canvas = document.createElement('canvas');
   canvas.width = SIZE;
   canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas er ikke understøttet');
-  ctx.drawImage(image, (width - side) / 2, (height - side) / 2, side, side, 0, 0, SIZE, SIZE);
-  if ('close' in image) image.close();
+  ctx.drawImage(image, sx, sy, side, side, 0, 0, SIZE, SIZE);
   return canvas.toDataURL('image/jpeg', 0.85);
 }

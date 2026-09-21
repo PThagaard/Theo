@@ -281,6 +281,41 @@ describe('Game', () => {
     expect(balloon.photoId).toBeUndefined();
   });
 
+  it('lets parents pick a calmer or wilder sky', () => {
+    const count = (tempo: 'rolig' | 'normal' | 'vild') => {
+      const game = new Game({}, 3);
+      game.resize(W, H);
+      game.setTempo(tempo);
+      let total = 0;
+      let samples = 0;
+      for (let t = 0; t < 40; t += 1 / 30) {
+        game.update(1 / 30);
+        if (t > 10) {
+          total += game.balloons.length;
+          samples++;
+        }
+      }
+      const speed = game.balloons.reduce((sum, b) => sum + b.vy, 0) / Math.max(1, game.balloons.length);
+      return { average: total / samples, speed };
+    };
+    const rolig = count('rolig');
+    const normal = count('normal');
+    const vild = count('vild');
+    expect(rolig.average).toBeLessThan(normal.average);
+    expect(normal.average).toBeLessThan(vild.average);
+    expect(vild.average).toBeLessThanOrEqual(DEFAULT_CONFIG.maxBalloons);
+    expect(rolig.speed).toBeLessThan(vild.speed);
+  });
+
+  it('changes the speed of balloons already on screen when the tempo changes', () => {
+    const { game } = makeGame();
+    const before = game.balloons.map((b) => b.vy);
+    game.setTempo('vild');
+    game.balloons.forEach((b, i) => expect(b.vy).toBeGreaterThan(before[i]));
+    game.setTempo('normal');
+    game.balloons.forEach((b, i) => expect(b.vy).toBeCloseTo(before[i], 6));
+  });
+
   it('celebrates every tenth pop', () => {
     const { game, events } = makeGame();
     let pops = 0;
