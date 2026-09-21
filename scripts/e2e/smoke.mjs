@@ -145,6 +145,9 @@ await page.waitForTimeout(1600);
 await page.screenshot({ path: `${OUT}/${tag}-11-visitors.png` });
 const poked = await page.evaluate(() => new Promise((resolve) => {
   const g = window.__theo.game; const events = []; g.onEvent((e) => { if (e.type === 'visitor' && e.what === 'poke') events.push(e.kind); });
+  // A balloon drifting in front of a visitor would take the touch instead (balloons are in front); clear them first.
+  g.balloons = [];
+  g.spawnTimer = 5;
   const before = g.visitors.map((v) => `${v.kind}:${v.state}@${Math.round(v.x)},${Math.round(v.y)}`).join(' ');
   for (const kind of ['dog', 'elephant', 'tractor']) {
     const v = g.visitors.find((v) => v.kind === kind);
@@ -339,8 +342,16 @@ const open = await page.evaluate(() => !document.getElementById('parent-panel').
 console.log('parent panel open after hold:', open);
 if (!open) throw new Error('parent panel did not open');
 await page.screenshot({ path: `${OUT}/${tag}-06-parent.png` });
+await page.click('#tab-leg');
 await page.click('label:has(#opt-music)');
 await page.click('#tempo-options button[data-tempo="vild"]');
+// The pages of the menu: only "Leg", "Familie" and "Theos leg" show on the web (no lock or update there).
+const tabsShown = await page.evaluate(() => Array.from(document.querySelectorAll('#parent-tabs button')).filter((b) => !b.hidden).map((b) => b.dataset.tab));
+console.log('menu pages:', tabsShown.join(', '));
+check(tabsShown.join(',') === 'leg,familie,theo', 'unexpected menu pages on the web');
+await page.click('#tab-theo');
+check(await page.evaluate(() => !document.querySelector('.tab-page[data-tab="theo"]').hidden && document.querySelector('.tab-page[data-tab="leg"]').hidden), 'the Theos leg page did not open');
+await page.click('#tab-leg');
 const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
 console.log('stored settings:', stored);
 check(JSON.parse(stored).tempo === 'vild', 'tempo was not stored');
@@ -380,6 +391,7 @@ const png = await page.evaluate(() => {
   x.strokeStyle = '#3b2a4a'; x.lineWidth = 10; x.beginPath(); x.arc(200, 160, 60, 0.2 * Math.PI, 0.8 * Math.PI); x.stroke();
   return c.toDataURL('image/png').split(',')[1];
 });
+await page.click('#tab-familie');
 await page.setInputFiles('#photo-pick', { name: 'far.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
 await page.waitForFunction(() => !document.getElementById('crop-dialog').hidden, null, { timeout: 10000 });
 // Frame the face: drag the picture a little and zoom in, then save.

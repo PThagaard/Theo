@@ -49,6 +49,10 @@ export interface ParentPanelHooks {
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
+/** The menu remembers which page it was on (a small convenience, kept in the browser only). */
+const TAB_KEY = 'theos-balloner.parentTab';
+type TabName = 'leg' | 'familie' | 'theo' | 'telefon';
+const TABS: TabName[] = ['leg', 'familie', 'theo', 'telefon'];
 const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', familyBalloons: true };
 const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
 const HOLD_MS = 2000;
@@ -174,6 +178,8 @@ export class ParentPanel {
   private readonly updateNotesText = element<HTMLElement>('update-notes-text');
   private updateUrl: string | null = null;
   private busy = false;
+  private readonly tabButtons = Array.from(element<HTMLElement>('parent-tabs').querySelectorAll<HTMLButtonElement>('button[data-tab]'));
+  private readonly tabPages = Array.from(this.panel.querySelectorAll<HTMLElement>('.tab-page'));
   private readonly statsSection = element<HTMLElement>('stats-section');
   private readonly statsBody = element<HTMLElement>('stats-body');
   private readonly statsFooter = element<HTMLElement>('stats-footer');
@@ -244,6 +250,52 @@ export class ParentPanel {
     this.updateInstall.addEventListener('click', () => void this.installUpdate());
     element<HTMLButtonElement>('parent-close').addEventListener('click', () => this.close());
     this.panel.addEventListener('pointerdown', () => this.armAutoClose());
+
+    // Pages: a tab only shows when there is something on it (no photos in some builds, no lock/update on the web).
+    const available: Record<TabName, boolean> = {
+      leg: true,
+      familie: !!hooks.photos,
+      theo: !!hooks.stats,
+      telefon: !!hooks.update?.available || !!hooks.lock?.available,
+    };
+    for (const button of this.tabButtons) {
+      const name = button.dataset.tab as TabName;
+      button.hidden = !available[name];
+      button.addEventListener('click', () => this.showTab(name, true));
+    }
+    this.showTab(this.rememberedTab(), false);
+  }
+
+  /** Shows one page of the menu and hides the others. */
+  showTab(name: TabName, remember: boolean): void {
+    const button = this.tabButtons.find((b) => b.dataset.tab === name);
+    const target = button && !button.hidden ? name : 'leg';
+    for (const b of this.tabButtons) {
+      b.classList.toggle('is-selected', b.dataset.tab === target);
+      b.setAttribute('aria-selected', String(b.dataset.tab === target));
+    }
+    for (const page of this.tabPages) page.hidden = page.dataset.tab !== target;
+    if (remember) {
+      try {
+        localStorage.setItem(TAB_KEY, target);
+      } catch {
+        // Fine without; the menu just opens on the first page next time.
+      }
+    }
+  }
+
+  get currentTab(): TabName {
+    return (this.tabButtons.find((b) => b.classList.contains('is-selected'))?.dataset.tab as TabName | undefined) ?? 'leg';
+  }
+
+  private rememberedTab(): TabName {
+    try {
+      const stored = localStorage.getItem(TAB_KEY);
+      if (stored && (TABS as string[]).includes(stored)) return stored as TabName;
+    } catch {
+      // Storage unavailable.
+    }
+    return 'leg';
   }
 
   get isOpen(): boolean {

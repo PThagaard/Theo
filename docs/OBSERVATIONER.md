@@ -58,3 +58,6 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   elsker → gården med rygende skorsten som fast kulisse, traktoren som besøg med egen lyd, hop og røg.
 - "Hvorfor kan jeg ikke skyde lyn hele tiden? Fjern delay" → behov: hvert tryk skal give et svar med det samme,
   også det tiende tryk på et sekund → lyn på hvert tryk; kun skærmglimtet holdes på højst 3 i sekundet (princip 5).
+- "Forældremenuen skal have lidt mere system, så tællere, indstillinger og billeder ikke ligger i én lang liste"
+  → behov: forældrene skal hurtigt finde det, de kom for (oftest: opdatering eller lås) → fire faner, menuen husker
+  den sidste.

@@ -3,6 +3,15 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – forældremenuen i fire faner
+
+- Forældremenuen er delt op i faner i stedet for én lang liste: **Leg** (musik, lyde, tempo), **Familie** (vis
+  familien, billeder og ansigts-klipperen), **Theos leg** (tællerne) og **Telefon** (opdatering, lås og lås ved
+  start). Menuen husker, hvilken fane du var på. Faner uden indhold vises ikke (webappen har fx ingen Telefon-fane).
+
+**Test på telefonen:** (1) Åbn forældremenuen: fire faner øverst, *Leg* først. (2) Skift til *Telefon*: opdatering
+og lås er der; luk menuen og åbn igen: den husker fanen. (3) *Familie* → vælg/tag et billede virker som før.
+
 ## 2026-09-21 – lyn på hvert tryk, og gården står på græsset
 
 - **Uvejrsskyen lyner, hver gang man trykker på den**, så hurtigt man kan trykke (før var der 1,2 sekunders pause).

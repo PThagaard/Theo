@@ -34,6 +34,13 @@
         <div class="card-balloon" aria-hidden="true">🎈</div>
         <h1 id="parent-title">Theos Balloner</h1>
         <p class="subtitle">Forældremenu</p>
+        <div id="parent-tabs" class="tabs" role="tablist" aria-label="Forældremenu">
+          <button id="tab-leg" type="button" role="tab" data-tab="leg">🎈 Leg</button>
+          <button id="tab-familie" type="button" role="tab" data-tab="familie">📷 Familie</button>
+          <button id="tab-theo" type="button" role="tab" data-tab="theo">📊 Theos leg</button>
+          <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
+        </div>
+        <section class="tab-page" data-tab="leg">
         <label class="row">
           <span class="row-label">🎵 Musik</span>
           <input type="checkbox" id="opt-music" />
@@ -52,6 +59,8 @@
             <button type="button" data-tempo="vild">🚀 Vild</button>
           </div>
         </div>
+        </section>
+        <section class="tab-page" data-tab="familie" hidden>
         <div id="photo-section" hidden>
           <h2 class="section-title">📷 Familie-balloner</h2>
           <label class="row">
@@ -82,15 +91,8 @@
             </div>
           </div>
         </div>
-        <div id="lock-section" hidden>
-          <button id="lock-button" type="button">🔒 Lås appen fast på skærmen</button>
-          <p id="lock-status" class="lock-status"></p>
-          <label class="row">
-            <span class="row-label">🔐 Lås automatisk ved start</span>
-            <input type="checkbox" id="opt-autolock" />
-            <span class="switch" aria-hidden="true"></span>
-          </label>
-        </div>
+        </section>
+        <section class="tab-page" data-tab="theo" hidden>
         <div id="stats-section">
           <h2 class="section-title">📊 Theos leg</h2>
           <table class="stats-table">
@@ -102,6 +104,8 @@
           <p id="stats-footer" class="lock-status"></p>
           <button id="stats-reset" type="button" class="photo-button">🗑️ Nulstil tællere (hold nede)</button>
         </div>
+        </section>
+        <section class="tab-page" data-tab="telefon" hidden>
         <div id="update-section" hidden>
           <h2 class="section-title">⬆️ Opdatering</h2>
           <p id="update-status" class="lock-status"></p>
@@ -116,11 +120,21 @@
             <div id="update-notes-text" class="update-notes"></div>
           </details>
         </div>
-        <button id="parent-close" type="button">Tilbage til ballonerne</button>
+        <div id="lock-section" hidden>
+          <button id="lock-button" type="button">🔒 Lås appen fast på skærmen</button>
+          <p id="lock-status" class="lock-status"></p>
+          <label class="row">
+            <span class="row-label">🔐 Lås automatisk ved start</span>
+            <input type="checkbox" id="opt-autolock" />
+            <span class="switch" aria-hidden="true"></span>
+          </label>
+        </div>
         <p class="hint">
           Låst app: Hjem, Tilbage og notifikationer virker ikke, før den låses op. På iPhone bruges
           <b>Guidet adgang</b> i stedet.
         </p>
+        </section>
+        <button id="parent-close" type="button">Tilbage til ballonerne</button>
       </div>
     </div>
 

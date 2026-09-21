@@ -232,6 +232,41 @@ body {
   font-size: 17px;
 }
 
+/* The menu is split into pages, so settings, photos, counters and phone things never become one long list. */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.tabs button {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 2px;
+  border: 0;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.tabs button.is-selected {
+  background: #4d96ff;
+  color: #fff;
+}
+
+.tabs button[hidden] {
+  display: none;
+}
+
+.tab-page[hidden] {
+  display: none;
+}
+
 .photo-list {
   display: flex;
   flex-wrap: wrap;
