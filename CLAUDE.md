@@ -159,7 +159,8 @@ kun ved uigenkaldelige indgreb (omskrivning af git-historik, sletning af brugerd
 eller aldersreglerne, ved noget der koster penge eller kræver konti, og når to læsninger af et ønske giver helt
 forskellige produkter.
 
-Git: én lang levende branch er fint i den private fase (standard-branchen). Commit-beskeder: dansk, første linje
+Git: én lang levende branch er fint i den private fase (standard-branchen). Historikken blev omskrevet 21.9.2026
+for at fjerne familiebilleder (git filter-repo); kloner fra før den dato skal hentes forfra. Commit-beskeder: dansk, første linje
 under 72 tegn, brødtekst forklarer hvorfor. Commit aldrig hemmeligheder. Signeringsnøglen i `android/keystore/` er
 bevidst i repoet, mens appen er privat; den skal skiftes til en privat nøgle før en offentlig udgivelse.
 

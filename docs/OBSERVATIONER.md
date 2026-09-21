@@ -70,3 +70,6 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - Beslutning (far: "lav alle 5"): aldersprofiler med *8–12 mdr* som standard, pause efter 10 minutter, README-afsnit
   om brug, forskningsregler i CLAUDE.md, og jeres egne stemmer som næste projekt (Anna læser ordene ind).
 - Dag/nat som indhold er droppet; "nat" bruges kun som den blide afslutning på en session.
+- Far: "rens billederne ud af historikken" → git-historikken er omskrevet med `git filter-repo` (de tre jpg'er er
+  væk fra alle commits), branchen er force-pushet, og `latest`-tagget er lavet om. GitHub kan stadig have kopier i
+  gamle CI-artefakter (kørsel 9–12) og i sin cache; det er noteret i chatten.
