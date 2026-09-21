@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { wordForVisitor } from '../src/activities/balloner/sounds';
+import { BASE_THINGS } from '../src/activities/ord/logic';
 import { VOICE_WORDS, photoVoiceKey } from '../src/engine/voices';
-import type { VisitorKind } from '../src/activities/balloner/types';
 
 describe('the parents\' voices', () => {
-  it('has a word for every creature that can be touched, and none for the star or the storm itself', () => {
-    const kinds: VisitorKind[] = ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'tractor'];
-    for (const kind of kinds) {
-      const word = wordForVisitor(kind);
-      expect(word, kind).not.toBeNull();
-      expect(VOICE_WORDS.map((w) => w.key)).toContain(word);
-    }
-    expect(wordForVisitor('star')).toBeNull();
-    expect(wordForVisitor('storm')).toBeNull();
+  it('offers exactly the things of Titte-bøh og Ord plus the question, and nothing for the other games', () => {
+    const keys = VOICE_WORDS.map((w) => w.key).sort();
+    expect(keys).toEqual([...BASE_THINGS.map((t) => t.key), 'hvor-er'].sort());
   });
 
   it('keeps word keys unique and simple, and photo keys apart from them', () => {

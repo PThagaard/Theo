@@ -3,6 +3,24 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Rigtige lyde til alle dyr og vejret, og "Theos Badekar"
+
+- **De syntetiserede dyrelyde er skiftet ud med optagelser** (forældrene: "de er helt off"): ko og kat fra jeres
+  Pixabay-filer; and, fugl (solsort), traktor (gammelt "ahooga"-horn), traktor-motor, torden, regn og bil (gammelt
+  bilhorn) fra BigSoundBank, som udgiver under CC0 og kan hentes direkte. Kilder og klip står i `src/lyde/README.md`.
+  Synthen er stadig reserve, hvis en fil mangler. Sommerfuglen og sneglen har ingen rigtig lyd og beholder deres
+  små syntetiske lyde.
+- **Spil nr. 3 hedder nu "Theos Badekar"** (forældrenes forslag).
+- **Forældrenes ord bruges kun i Titte-bøh og Ord.** Balloner og Badekarret siger ikke længere "ballon", "hund" eller
+  navnet på et familiebillede ved tryk (forældrene: "det var aldrig planen"); der er kun lyde. *Jeres stemmer* vises
+  derfor kun i menuen, mens Ord kører, og ordlisten er Ords ting plus *Hvor er …?* (regn, lyn, boble, and og vand er
+  taget ud).
+
+**Test på telefonen:** (1) Balloner: rør hunden, elefanten, fuglen, traktoren (horn), og lad traktoren køre ud
+(motor). Hold på en sky, til uvejret kommer: regn og torden er nu optagelser. Ingen ord siges. (2) Ord: rør koen,
+katten og bilen; her siges jeres ord stadig. Menu → *Familie*: *Jeres stemmer* findes kun her. (3) Badekar: rør
+anden. Sig til, hvis en lyd er for høj eller for lav i forhold til de andre.
+
 ## 2026-09-21 – Theos Bobler: badet, hvor alt svarer
 
 - **Nyt spil: Theos Bobler.** Samme greb som Balloner, fordi det er dem, en 8 måneders kan bruge (kontingens, se

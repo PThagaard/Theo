@@ -1,9 +1,8 @@
 import { ImpactStyle } from '@capacitor/haptics';
 import type { ActivityContext } from '../../engine/activity';
-import { photoVoiceKey } from '../../engine/voices';
 import type { BoblerEvent } from './logic';
 
-/** Turns the bath's events into sound, vibration, counters and the parents' words. */
+/** Turns the bath's events into sound, vibration and counters (no spoken words here: those belong to Ord). */
 export function handleBoblerEvent(event: BoblerEvent, ctx: ActivityContext): void {
   const audio = ctx.audio();
   switch (event.type) {
@@ -11,9 +10,6 @@ export function handleBoblerEvent(event: BoblerEvent, ctx: ActivityContext): voi
       audio?.plop(event.size);
       if (event.kind === 'star') audio?.chime();
       else if (event.kind === 'photo') audio?.tada();
-      // A parent's voice says who it was, or now and then "boble".
-      if (event.kind === 'photo' && event.photoId) ctx.say(photoVoiceKey(event.photoId), 0.5, 2);
-      else ctx.say('boble', 0.3, 4);
       ctx.haptic(ImpactStyle.Medium);
       ctx.stats.bump('bubblesPopped');
       if (event.kind === 'star') ctx.stats.bump('bubblesPoppedStar');
@@ -24,13 +20,11 @@ export function handleBoblerEvent(event: BoblerEvent, ctx: ActivityContext): voi
       break;
     case 'splash':
       audio?.splash(event.big);
-      ctx.say('vand', 0.4, 4);
       ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('splashes');
       break;
     case 'quack':
       audio?.quack();
-      ctx.say('and', 0.5, 2.5);
       ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('quacks');
       break;

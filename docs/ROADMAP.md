@@ -75,7 +75,7 @@ efter lyde.
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,
   imitation (Theo siger lyden efter).
-- ✅ **Bobler** – badet: sæbebobler stiger fra vandet; tryk popper, tryk på vandet plasker og sender nye bobler op,
+- ✅ **Badekar** (Bobler) – badet: sæbebobler stiger fra vandet; tryk popper, tryk på vandet plasker og sender nye bobler op,
   tryk på væggen giver sæbebobler, swipe popper alt på vejen og laver bølger, hold stille puster en boble op, ryst
   giver en byge, og gummiænderne rapper. Samme kontingens som Balloner i en ny verden ("mere af det, der virker",
   `docs/FORSKNING.md`). Træner: hånd-øje, tryk og slip, at følge noget med øjnene, årsag-virkning.

@@ -44,3 +44,16 @@ tilsvarende), og kilden skrives her:
 |---------------|-----------------------------------------------------------------------------------------|
 | `hund.mp3`    | "Free dog bark" af Dragon Studio, Pixabay (id 419014), Pixabay Content License          |
 | `elefant.mp3` | "Elephant trumpets growls" af freesound_community, Pixabay (id 6047), Pixabay Content License |
+| `ko.mp3`      | "Cow mooing" af u_jd81cxyq22, Pixabay (id 343423), Pixabay Content License              |
+| `kat.mp3`     | "Cat meow" af Dragon Studio, Pixabay (id 401729), Pixabay Content License               |
+| `and.mp3`     | "Ducks" af Joseph Sardin, BigSoundBank (s0276, klip 18,25–19,15 s), CC0                  |
+| `fugl.mp3`    | "Common Blackbird #21" af Joseph Sardin, BigSoundBank (s3494, klip 0,7–2,05 s), CC0      |
+| `traktor.mp3` | "Oogah horn #3" af Joseph Sardin, BigSoundBank (s2542), CC0                              |
+| `traktor-motor.mp3` | "Small Tractor" af Joseph Sardin, BigSoundBank (s0499, klip 9,5–12,5 s), CC0       |
+| `torden.mp3`  | "Thunder #3" af Joseph Sardin, BigSoundBank (s3114, klip 0,9–3,7 s), CC0                 |
+| `regn.mp3`    | "Rain under an umbrella" af Joseph Sardin, BigSoundBank (s2679, klip 4–12 s), CC0        |
+| `bil.mp3`     | "Old car horn #2" af Joseph Sardin, BigSoundBank (s0255), CC0                            |
+
+BigSoundBank (<https://bigsoundbank.com>) udgiver sine lyde under CC0 ("public-domain equivalent"); de kan hentes
+direkte som `https://bigsoundbank.com/UPLOAD/mp3/<nummer>.mp3`. Pixabay-lyde hentes fra pixabay.com (kræver login)
+og lægges herind af forældrene.

@@ -575,7 +575,20 @@ await page.click('label:has(#opt-family)');
 check((await page.evaluate(() => { const g = window.__theo.game; g.balloons = []; for (let i = 0; i < 30; i++) g.spawnBalloon(); const none = g.balloons.every((b) => b.kind !== 'photo'); g.balloons = []; return none; })), 'family balloons still appear when switched off');
 await page.click('label:has(#opt-family)');
 console.log('photo added:', await page.evaluate(() => document.getElementById('photo-status').textContent));
-// The parents' voices: hold the "Hund" button, say the word (a fake microphone here), release; then the dog says it.
+// The parents' voices belong to Titte-bøh og Ord only: hidden while Balloner runs, shown while Ord runs.
+check(await page.evaluate(() => document.getElementById('voice-section').hidden), 'the voices section should be hidden while Balloner runs');
+await page.click('#parent-close');
+await page.evaluate(() => window.__theo.startActivity('ord'));
+await page.waitForTimeout(400);
+const cornerForVoices = await page.locator('#parent-button').boundingBox();
+await page.mouse.move(cornerForVoices.x + cornerForVoices.width / 2, cornerForVoices.y + cornerForVoices.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(2300);
+await page.mouse.up();
+await page.waitForFunction(() => !document.getElementById('parent-panel').hidden, null, { timeout: 5000 });
+await page.click('#tab-familie');
+check(await page.evaluate(() => !document.getElementById('voice-section').hidden), 'the voices section should show while Ord runs');
+// Hold the "Hund" button, say the word (a fake microphone here), release; then the dog in Ord says it.
 const voiceRows = await page.evaluate(() => document.querySelectorAll('#voice-list .voice-row').length);
 check(voiceRows >= 13, `expected a voice row per word and per photo, got ${voiceRows}`);
 const recordButton = await page.locator('#voice-list .voice-record[data-key="hund"]').boundingBox();
@@ -588,16 +601,20 @@ console.log('voice recorded:', await page.evaluate(() => document.getElementById
 await page.waitForFunction(() => window.__theo.audio()?.hasVoice('hund'), null, { timeout: 10000 });
 await page.click('#voice-list .voice-play[data-key="hund"]');
 await page.waitForTimeout(2200); // each word is said at most every two seconds, and ▶ just said it
-const said = await page.evaluate(() => {
-  const g = window.__theo.game; const a = window.__theo.audio(); const before = a.voicesSaid;
-  g.visitors = []; g.balloons = []; const dog = g.spawnVisitor('dog'); dog.x = g.width / 2; dog.vx = 0; g.update(1 / 60);
-  const hit = g.visitorHit(dog); g.press(91, hit.x, hit.y); g.release(91); g.visitors = [];
-  return a.voicesSaid - before;
-});
-console.log('words said when the dog was touched:', said);
-check(said >= 1, 'touching the dog did not say the recorded word');
 await page.screenshot({ path: `${OUT}/${tag}-08-photos-menu.png` });
 await page.click('#parent-close');
+const said = await page.evaluate(() => {
+  const g = window.__theo.game; const a = window.__theo.audio(); const before = a.voicesSaid;
+  g.round = null; g.hidden = false; g.bushOpen = 1; g.state = 'idle'; g.stateAge = 0; g.x = g.centerX;
+  g.current = g.things.find((t) => t.key === 'hund');
+  const hit = g.hit; g.press(91, hit.x, hit.y); g.release(91);
+  return a.voicesSaid - before;
+});
+console.log('words said when the dog was touched in Ord:', said);
+check(said >= 1, 'touching the dog in Ord did not say the recorded word');
+// Back to the balloons for the rest of the checks (the photo added above follows along).
+await page.evaluate(() => window.__theo.startActivity('balloner'));
+await page.waitForTimeout(600);
 const photoBalloon = await page.evaluate(() => {
   const g = window.__theo.game;
   // Spawn until a photo balloon shows up, in the middle of the screen so it can be tapped.

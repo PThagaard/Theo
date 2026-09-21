@@ -66,7 +66,9 @@ Derfor gælder for **al kode**, nu og fremover:
 - **Korte sessioner.** Pausen (verdenen falder i søvn efter 10 minutter, forældrene kan ændre eller slå den fra) er
   en del af produktet, ikke en detalje. Den må aldrig føles som straf: solen går ned, alt lægger sig til rette.
 - **Kendte stemmer.** Forældrenes egne indtalte ord ("hund", "mor") er den sprogstøtte, der giver mening; syntetiske
-  stemmer er ikke et mål. Appen har ingen syntetisk tale og ingen tekst til barnet.
+  stemmer er ikke et mål. Appen har ingen syntetisk tale og ingen tekst til barnet. Ordene bruges kun i Titte-bøh og
+  Ord (forældrenes beslutning); Balloner og Badekarret siger ingen ord, og indstillinger, der hører til ét spil,
+  vises kun i menuen, mens det spil kører (`hasTempo`, `hasVoices` i `registry.ts`).
 - **Ikke før sengetid, aldrig som trøst** og altid sammen med en voksen: det står i README, appen kan ikke sikre det.
 - **Ingen "rigtigt/forkert" før 12 måneder.** Fra profilen *1–2 år* må en leg spørge efter noget ("Hvor er skyen?"),
   men alt, barnet rører, svarer venligt med sit eget navn, og det efterspurgte fejrer. Aldrig fejl-lyd, tidspres
@@ -125,7 +127,7 @@ src/
     ord/                  Titte-bøh og Ord: plan pr. alder (8–12: gem bag busken; fra 1 år: én ting ad gangen og
                           "Hvor er …?"-runder), ordet i forældrenes stemme (logic.ts, render.ts låner
                           balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
-    bobler/               Theos Bobler: badet (logic.ts uden DOM: bobler, vand, ænder, dråber, bølger; render.ts;
+    bobler/               Theos Badekar: badet (logic.ts uden DOM: bobler, vand, ænder, dråber, bølger; render.ts;
                           sounds.ts; index.ts). Samme kontingens-greb som Balloner
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet

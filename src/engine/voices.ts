@@ -1,9 +1,9 @@
 /**
  * The parents' own voices: short recordings of words ("hund", "ballon") and of the names on the
- * family photos ("Mor!"), made in the parent menu and kept on the phone (IndexedDB). The app says
- * the word in that voice when Theo touches the thing. A voice he knows, answering his own action,
- * is the language support the research points to (CLAUDE.md, "Alderssvarende"). Nothing leaves
- * the phone.
+ * family photos ("Mor!"), made in the parent menu and kept on the phone (IndexedDB). Titte-bøh og Ord
+ * says the word in that voice when Theo touches the thing; the other games never speak. A voice he
+ * knows, answering his own action, is the language support the research points to (CLAUDE.md,
+ * "Alderssvarende"). Nothing leaves the phone.
  */
 
 export interface StoredVoice {
@@ -15,9 +15,11 @@ export interface StoredVoice {
   created: number;
 }
 
-/** The words the app can say, in the order the parent menu shows them. */
+/**
+ * The words the app can say, in the order the parent menu shows them: the things in Titte-bøh og Ord, and the
+ * question for its "Hvor er …?" rounds. Only that game speaks; Balloner and Badekarret never say words.
+ */
 export const VOICE_WORDS: ReadonlyArray<{ key: string; label: string; emoji: string }> = [
-  { key: 'ballon', label: 'Ballon', emoji: '🎈' },
   { key: 'hund', label: 'Hund', emoji: '🐶' },
   { key: 'elefant', label: 'Elefant', emoji: '🐘' },
   { key: 'fugl', label: 'Fugl', emoji: '🐦' },
@@ -27,14 +29,10 @@ export const VOICE_WORDS: ReadonlyArray<{ key: string; label: string; emoji: str
   { key: 'kat', label: 'Kat', emoji: '🐱' },
   { key: 'traktor', label: 'Traktor', emoji: '🚜' },
   { key: 'bil', label: 'Bil', emoji: '🚗' },
+  { key: 'ballon', label: 'Ballon', emoji: '🎈' },
   { key: 'sol', label: 'Sol', emoji: '☀️' },
   { key: 'sky', label: 'Sky', emoji: '☁️' },
   { key: 'blomst', label: 'Blomst', emoji: '🌸' },
-  { key: 'boble', label: 'Boble', emoji: '🫧' },
-  { key: 'and', label: 'And', emoji: '🦆' },
-  { key: 'vand', label: 'Vand', emoji: '💧' },
-  { key: 'regn', label: 'Regn', emoji: '🌧️' },
-  { key: 'lyn', label: 'Lyn', emoji: '⚡' },
   // The question in Ord's "Hvor er …?" rounds: say just "hvor er"; the app adds the word.
   { key: 'hvor-er', label: 'Hvor er …? (spørgsmålet i Ord)', emoji: '❓' },
 ];

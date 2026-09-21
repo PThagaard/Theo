@@ -160,7 +160,7 @@ const panel = new ParentPanel(settings, {
   },
   currentGame: () => {
     const entry = activity ? findActivity(activity.id) : null;
-    return entry ? { id: entry.id, title: entry.title, hasTempo: entry.hasTempo } : null;
+    return entry ? { id: entry.id, title: entry.title, hasTempo: entry.hasTempo, hasVoices: entry.hasVoices } : null;
   },
   onSwitchGame: () => showStartPage(),
   lock: kidLock,

@@ -1,12 +1,12 @@
 import { ImpactStyle } from '@capacitor/haptics';
 import type { ActivityContext } from '../../engine/activity';
 import type { AudioEngine } from '../../engine/audio';
-import { photoVoiceKey } from '../../engine/voices';
 import type { GameEvent, VisitorKind } from './types';
 
 /**
- * Turns the balloon game's events into sound, vibration, counters and the parents' words. The game logic
- * knows nothing about audio; this is the one place that does, so the sound side stays swappable.
+ * Turns the balloon game's events into sound, vibration and counters. The game logic knows nothing about
+ * audio; this is the one place that does, so the sound side stays swappable. The parents' recorded words are
+ * not used here: they belong to Titte-bøh og Ord only.
  */
 export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): void {
   const audio = ctx.audio();
@@ -16,9 +16,6 @@ export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): voi
       if (event.kind === 'star') audio?.chime();
       else if (event.kind === 'rainbow') audio?.boing();
       else if (event.kind === 'photo') audio?.tada();
-      // A parent's voice says who it was, or now and then "ballon".
-      if (event.kind === 'photo' && event.photoId) ctx.say(photoVoiceKey(event.photoId), 0.5, 2);
-      else ctx.say('ballon', 0.3, 4);
       ctx.haptic(ImpactStyle.Medium);
       ctx.stats.bump('pops');
       if (event.kind === 'star') ctx.stats.bump('popsStar');
@@ -49,13 +46,11 @@ export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): voi
       break;
     case 'sun':
       audio?.wee();
-      ctx.say('sol', 0.4, 2.5);
       ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('sun');
       break;
     case 'cloud':
       audio?.rain();
-      ctx.say('sky', 0.4, 2.5);
       ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('clouds');
       break;
@@ -72,15 +67,11 @@ export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): voi
         audio?.pluck();
         ctx.stats.bump('flowersPlucked');
       }
-      ctx.say('blomst', 0.4, 2.5);
       ctx.haptic(ImpactStyle.Light);
       break;
     case 'visitor':
       visitorSound(audio, event.kind, event.what);
-      if (event.what === 'appear' && event.kind === 'storm') ctx.say('regn', 1.5, 20);
       if (event.what === 'poke') {
-        const word = wordForVisitor(event.kind);
-        if (word) ctx.say(word, 0.45, 2);
         ctx.haptic(ImpactStyle.Light);
         ctx.stats.bump('visitorsPoked');
         ctx.stats.bump(`visitor:${event.kind}`);
@@ -104,7 +95,6 @@ export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): voi
     case 'lightning':
       if (event.quick) audio?.zap();
       else audio?.thunder();
-      if (!event.quick) ctx.say('lyn', 0.6, 4);
       ctx.haptic(event.quick ? ImpactStyle.Light : ImpactStyle.Heavy);
       ctx.stats.bump('lightning');
       break;
@@ -172,25 +162,5 @@ function visitorSound(audio: AudioEngine | null, kind: VisitorKind, what: 'appea
       if (what === 'appear') audio.sparkle();
       else audio.chime();
       break;
-  }
-}
-
-/** The word (see engine/voices.ts) for a visitor, or null for those without one (the star, the storm itself). */
-export function wordForVisitor(kind: VisitorKind): string | null {
-  switch (kind) {
-    case 'dog':
-      return 'hund';
-    case 'elephant':
-      return 'elefant';
-    case 'bird':
-      return 'fugl';
-    case 'butterfly':
-      return 'sommerfugl';
-    case 'snail':
-      return 'snegl';
-    case 'tractor':
-      return 'traktor';
-    default:
-      return null;
   }
 }

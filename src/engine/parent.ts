@@ -66,7 +66,7 @@ export interface ParentPanelHooks {
   /** The menu opened (a parent held the corner button). */
   onOpen?(): void;
   /** The game running now (null on the start page), so the menu can show its name and its own settings. */
-  currentGame?(): { id: string; title: string; hasTempo: boolean } | null;
+  currentGame?(): { id: string; title: string; hasTempo: boolean; hasVoices: boolean } | null;
   /** "Skift spil": back to the start page. */
   onSwitchGame?(): void;
   /** One line about the pause ("falder i søvn om 7 min"), shown while the menu is open. */
@@ -466,6 +466,8 @@ export class ParentPanel {
     this.activityName.textContent = game ? `🧩 ${game.title}` : '🧩 Intet spil valgt';
     this.switchGame.hidden = !game;
     this.tempoRow.hidden = !(game?.hasTempo ?? false);
+    // The parents' words are only spoken by Titte-bøh og Ord, so recording them only shows there.
+    this.voiceSection.hidden = !this.hooks.voices || !(game?.hasVoices ?? false);
   }
 
   private changed(): void {
