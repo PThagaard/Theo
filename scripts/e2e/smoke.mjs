@@ -227,9 +227,15 @@ await page.mouse.up();
 await page.locator('#crop-zoom').fill('1.6');
 await page.screenshot({ path: `${OUT}/${tag}-08a-cropper.png` });
 await page.click('#crop-save');
-await page.waitForFunction(() => document.querySelectorAll('#photo-list img').length === 1, null, { timeout: 10000 });
+await page.waitForFunction(() => document.querySelectorAll('#photo-list .photo-item:not(.photo-item-builtin) img').length === 1, null, { timeout: 10000 });
 check(await page.evaluate(() => !document.getElementById('crop-again').hidden), 'cropper did not offer another face');
+const builtin = await page.evaluate(() => document.querySelectorAll('#photo-list .photo-item-builtin img').length);
+console.log('built-in photos shown in the menu:', builtin);
 await page.click('#crop-cancel');
+// Switching family balloons off empties the game's photo list; on again brings them back.
+await page.click('label:has(#opt-family)');
+check((await page.evaluate(() => { const g = window.__theo.game; g.balloons = []; for (let i = 0; i < 30; i++) g.spawnBalloon(); const none = g.balloons.every((b) => b.kind !== 'photo'); g.balloons = []; return none; })), 'family balloons still appear when switched off');
+await page.click('label:has(#opt-family)');
 console.log('photo added:', await page.evaluate(() => document.getElementById('photo-status').textContent));
 await page.screenshot({ path: `${OUT}/${tag}-08-photos-menu.png` });
 await page.click('#parent-close');
@@ -245,6 +251,19 @@ const photoBalloon = await page.evaluate(() => {
   return null;
 });
 check(photoBalloon, 'no photo balloon could be made');
+await page.evaluate(() => {
+  // One balloon per family member, side by side, for the screenshot.
+  const g = window.__theo.game;
+  const ids = [...new Set(g.balloons.filter((b) => b.photoId).map((b) => b.photoId))];
+  const all = ids.length ? ids : [];
+  let column = 0;
+  for (let i = 0; i < 60 && column < 4; i++) {
+    const b = g.spawnBalloon({ x: g.width * (0.2 + column * 0.2), y: g.height * 0.3 });
+    if (!b) break;
+    if (b.kind === 'photo' && !all.includes(b.photoId)) { all.push(b.photoId); column++; } else g.balloons.pop();
+  }
+  g.update(1 / 60);
+});
 await page.waitForTimeout(400);
 await page.screenshot({ path: `${OUT}/${tag}-09-photo-balloon.png` });
 await page.touchscreen.tap(photoBalloon[0], photoBalloon[1]);
@@ -284,9 +303,8 @@ const audio = await page.evaluate(async () => {
     ['rattle', 7.2, () => engine.rattle(7.2)],
     ['tada', 7.7, () => engine.tada(7.7)],
     ['bark', 8.6, () => engine.bark(8.6)],
-    ['trumpet', 9.2, () => engine.trumpet(9.2)],
-    ['chirp', 10.1, () => { engine.chirp(10.1); engine.flutter(10.4); engine.blub(10.6); engine.rumble(10.7); }],
-    ['music', 11.4, () => engine.renderMusic(11.4, 0.6)],
+    ['trumpet', 9.3, () => engine.trumpet(9.3)],
+    ['chirp', 11.3, () => { engine.chirp(11.3); engine.flutter(11.55); engine.blub(11.7); engine.rumble(11.75); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -304,6 +322,14 @@ const audio = await page.evaluate(async () => {
     const [name, t] = marks[i];
     const end = i + 1 < marks.length ? marks[i + 1][1] : 12;
     out[name] = stats(t, end);
+    // How long the sound is audible (envelope above 10 % of its peak), in seconds.
+    let first = -1, last = -1;
+    const peak = out[name].peak;
+    for (let s = Math.floor(t * sr); s < Math.min(data.length, Math.floor(end * sr)); s += 220) {
+      let m = 0; for (let k = s; k < s + 220 && k < data.length; k++) m = Math.max(m, Math.abs(data[k]));
+      if (m > peak * 0.1) { if (first < 0) first = s; last = s; }
+    }
+    out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
   out.total = stats(0, 12);
@@ -324,6 +350,8 @@ for (const [name, v] of Object.entries(audio)) {
   if (v.nan) throw new Error(`sound "${name}" produced NaN`);
   if (v.peak > 1.0) throw new Error(`sound "${name}" clips (peak ${v.peak})`);
 }
+check(audio.trumpet.seconds >= 1.3, `the elephant trumpet is too short (${audio.trumpet.seconds} s)`);
+check(audio.bark.seconds >= 0.35, `the bark is too short (${audio.bark.seconds} s)`);
 
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/${tag}-07-later.png` });

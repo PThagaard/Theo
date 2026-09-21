@@ -3,6 +3,22 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – familien som standard, til/fra-kontakt og bedre dyrelyde
+
+- Mor, far og Theo er lagt ind som indbyggede familiebilleder (renset for metadata). Foto-balloner har en blød vignet,
+  så baggrunden toner over i ballonens farve og ansigtet træder frem.
+- **Vis familien på balloner** kan slås til og fra i forældremenuen (gælder både indbyggede og egne billeder).
+- Rettet: en finger, der gled hen over hunden, fik den til at gø 60–120 gange i sekundet (lød som en hurtig brummen).
+  Alle besøgende reagerer nu højst hvert 0,35 sekund.
+- Ny gøen og ny elefant-trut: lagt højere i tonelejet, fordi telefonhøjttalere næsten ikke gengiver toner under
+  ca. 300 Hz. Elefanten trutter nu i knap 2 sekunder med messingklang og pust; hunden siger "vov vov" med bid i.
+- Script til at fjerne metadata fra billeder før de lægges i repoet (`scripts/strip-photos.mjs`).
+
+**Test på telefonen:** (1) Uden at gøre noget dukker mor, far og Theo op på balloner (ca. hver tredje); ansigtet er
+tydeligt, baggrunden toner ud i ballonfarven. (2) Forældremenu → *Vis familien på balloner* fra: der kommer ingen
+foto-balloner; til igen: de kommer tilbage. (3) Swipe frem og tilbage hen over hunden: den gør i et naturligt tempo,
+ikke som en brummen. (4) Tryk på elefanten: en lang, tydelig trut, der kan høres på telefonens højttaler.
+
 ## 2026-09-21 – besøg af dyr og indbyggede familiebilleder
 
 - **Besøg:** hvert 15.–30. sekund kommer der nogen forbi (højst to ad gangen): en hund, der går over græsset og
@@ -13,13 +29,15 @@ automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
   dyr er nemme at tilføje.
 - **Indbyggede familiebilleder:** billeder i mappen `src/familie/` bliver automatisk til familie-balloner i alle
   udgaver (se `src/familie/README.md` for format). De vises med blå kant i forældremenuen og kan ikke fjernes der.
+- Mor, far og Theo er lagt ind som indbyggede billeder (renset for metadata, 600 × 600). Foto-balloner har fået en
+  blød vignet, så billedets baggrund toner over i ballonens farve, og ansigtet træder frem.
 - Røgtesten fejler nu, hvis siden logger fejl (og fotograferer de besøgende).
 
 **Test på telefonen:** (1) Vent op til et halvt minut: der kommer et dyr. Rør det: hunden hopper og gør, elefanten
 trumpeterer, fuglen slår en kolbøtte, sneglen gemmer sig, sommerfuglen flagrer væk, stjerneskuddet springer. (2) Ryst
-telefonen mens der er besøg: de reagerer. (3) Dyrene går/svæver væk igen af sig selv, og der kommer nye. (4) Er der
-lagt billeder i `src/familie/`: de dukker op på balloner uden at gøre noget på telefonen, og vises med blå kant i
-menuen.
+telefonen mens der er besøg: de reagerer. (3) Dyrene går/svæver væk igen af sig selv, og der kommer nye. (4) Mor,
+far og Theo dukker op på balloner uden at gøre noget på telefonen (ca. hver tredje ballon), og vises med blå kant i
+menuen. Ansigterne skal være tydelige, og baggrunden tone ud i ballonens farve.
 
 ## 2026-09-21 – opdatering inde fra appen og tempo
 

@@ -494,48 +494,93 @@ export class AudioEngine {
 
   // ---- Visitors ------------------------------------------------------------
 
-  /** Two friendly "vov vov" barks. */
+  /**
+   * Two friendly "vov vov" barks. Phone speakers hardly reproduce anything below ~300 Hz, so the
+   * bark lives in the 250-500 Hz range with a bright, noisy attack that carries on a small speaker.
+   */
   bark(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
-    for (const offset of [0, 0.22]) {
+    for (const offset of [0, 0.3]) {
       const t = when + offset;
-      this.synth.tone(this.sfxBus, 'sawtooth', 190, t, 0.22, 0.01, 0.16, { to: 120, glide: 0.12, filter: 900 });
-      this.synth.noiseBurst(this.sfxBus, t, 0.25, 0.08, 'bandpass', 700, 0.8);
+      this.synth.tone(this.sfxBus, 'sawtooth', 460, t, 0.4, 0.012, 0.22, { to: 250, glide: 0.16, filter: 2400 });
+      this.synth.tone(this.sfxBus, 'square', 230, t, 0.12, 0.012, 0.16, { to: 125, glide: 0.12, filter: 1200 });
+      this.synth.noiseBurst(this.sfxBus, t, 0.35, 0.07, 'bandpass', 1500, 0.9);
     }
   }
 
-  /** An elephant trumpet: a rising, wobbling blast. */
+  /**
+   * An elephant trumpet: a long, brassy blast (about 1.6 s) that rises, wavers and falls, with two
+   * detuned sawtooth voices, formant filters for the brass colour and a breathy rasp on top.
+   */
   trumpet(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
     const ctx = this.ctx;
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(220, when);
-    osc.frequency.exponentialRampToValueAtTime(440, when + 0.25);
-    osc.frequency.exponentialRampToValueAtTime(330, when + 0.7);
+    const length = 1.95;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(0.3, when + 0.08);
+    gain.gain.setValueAtTime(0.3, when + 1.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    // Brass colour: two resonances on top of the raw sawtooth.
+    const formant1 = ctx.createBiquadFilter();
+    formant1.type = 'peaking';
+    formant1.frequency.value = 1100;
+    formant1.Q.value = 2.5;
+    formant1.gain.value = 7;
+    const formant2 = ctx.createBiquadFilter();
+    formant2.type = 'peaking';
+    formant2.frequency.value = 2300;
+    formant2.Q.value = 3;
+    formant2.gain.value = 5;
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 3800;
+    formant1.connect(formant2).connect(lowpass).connect(gain).connect(this.sfxBus);
     const vibrato = ctx.createOscillator();
     vibrato.type = 'sine';
-    vibrato.frequency.value = 11;
-    const depth = ctx.createGain();
-    depth.gain.value = 18;
-    vibrato.connect(depth).connect(osc.frequency);
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 900;
-    filter.Q.value = 1.2;
-    const gain = ctx.createGain();
-    envelope(gain.gain, when, 0.28, 0.05, 0.7);
-    osc.connect(filter).connect(gain).connect(this.sfxBus);
-    osc.start(when);
+    vibrato.frequency.setValueAtTime(5, when);
+    vibrato.frequency.linearRampToValueAtTime(7, when + length);
+    const vibratoDepth = ctx.createGain();
+    vibratoDepth.gain.setValueAtTime(0, when);
+    vibratoDepth.gain.linearRampToValueAtTime(28, when + 0.6);
+    vibrato.connect(vibratoDepth);
+    for (const detune of [-7, 7]) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.detune.value = detune;
+      osc.frequency.setValueAtTime(260, when);
+      osc.frequency.exponentialRampToValueAtTime(560, when + 0.3);
+      osc.frequency.setValueAtTime(560, when + 1.25);
+      osc.frequency.exponentialRampToValueAtTime(380, when + length);
+      vibratoDepth.connect(osc.frequency);
+      osc.connect(formant1);
+      osc.start(when);
+      osc.stop(when + length + 0.05);
+    }
     vibrato.start(when);
-    osc.stop(when + 0.8);
-    vibrato.stop(when + 0.8);
+    vibrato.stop(when + length + 0.05);
+    // Breathy rasp that follows the blast.
+    const breath = ctx.createBufferSource();
+    breath.buffer = this.synth.noise;
+    const breathFilter = ctx.createBiquadFilter();
+    breathFilter.type = 'bandpass';
+    breathFilter.frequency.value = 1800;
+    breathFilter.Q.value = 1.5;
+    const breathGain = ctx.createGain();
+    breathGain.gain.setValueAtTime(0.0001, when);
+    breathGain.gain.linearRampToValueAtTime(0.12, when + 0.1);
+    breathGain.gain.setValueAtTime(0.12, when + 1.25);
+    breathGain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    breath.connect(breathFilter).connect(breathGain).connect(this.sfxBus);
+    breath.start(when);
+    breath.stop(when + length + 0.05);
   }
 
-  /** A low, friendly rumble when the elephant peeks up. */
+  /** A friendly grumble when the elephant peeks up (kept above the range a phone speaker loses). */
   rumble(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
-    this.synth.tone(this.sfxBus, 'triangle', 70, when, 0.25, 0.1, 0.6, { to: 55, glide: 0.5, filter: 300 });
+    this.synth.tone(this.sfxBus, 'sawtooth', 180, when, 0.22, 0.08, 0.8, { to: 120, glide: 0.7, filter: 700 });
+    this.synth.tone(this.sfxBus, 'triangle', 90, when, 0.25, 0.08, 0.8, { to: 60, glide: 0.7, filter: 400 });
   }
 
   /** "Tweet tweet" for the bird. */

@@ -18,6 +18,8 @@ export interface Settings {
   autoLock: boolean;
   /** How busy the sky is. */
   tempo: Tempo;
+  /** Show family photos on balloons (built-in and own). */
+  familyBalloons: boolean;
 }
 
 export interface PhotoHooks {
@@ -38,7 +40,7 @@ export interface ParentPanelHooks {
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
-const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal' };
+const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', familyBalloons: true };
 const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
 const HOLD_MS = 2000;
 const AUTO_CLOSE_MS = 15000;
@@ -143,6 +145,7 @@ export class ParentPanel {
   private readonly musicToggle = element<HTMLInputElement>('opt-music');
   private readonly sfxToggle = element<HTMLInputElement>('opt-sfx');
   private readonly autoLockToggle = element<HTMLInputElement>('opt-autolock');
+  private readonly familyToggle = element<HTMLInputElement>('opt-family');
   private readonly tempoButtons = Array.from(element<HTMLElement>('tempo-options').querySelectorAll<HTMLButtonElement>('button[data-tempo]'));
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
@@ -175,6 +178,7 @@ export class ParentPanel {
     this.musicToggle.checked = settings.music;
     this.sfxToggle.checked = settings.sfx;
     this.autoLockToggle.checked = settings.autoLock;
+    this.familyToggle.checked = settings.familyBalloons;
 
     new HoldButton(element('parent-button'), () => this.open(), this.pointers);
 
@@ -190,7 +194,7 @@ export class ParentPanel {
     });
     this.lockSection.hidden = !hooks.lock?.available;
 
-    for (const toggle of [this.musicToggle, this.sfxToggle, this.autoLockToggle]) {
+    for (const toggle of [this.musicToggle, this.sfxToggle, this.autoLockToggle, this.familyToggle]) {
       toggle.addEventListener('change', () => this.changed());
     }
     for (const button of this.tempoButtons) {
@@ -268,6 +272,7 @@ export class ParentPanel {
     this.settings.music = this.musicToggle.checked;
     this.settings.sfx = this.sfxToggle.checked;
     this.settings.autoLock = this.autoLockToggle.checked;
+    this.settings.familyBalloons = this.familyToggle.checked;
     this.hooks.onChange({ ...this.settings });
     this.armAutoClose();
   }

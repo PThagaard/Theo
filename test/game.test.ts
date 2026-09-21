@@ -349,6 +349,23 @@ describe('Game', () => {
       });
     }
 
+    it('a finger sliding back and forth over the dog makes it bark at a natural pace, not every frame', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const dog = game.spawnVisitor('dog');
+      advance(game, 1);
+      const hit = game.visitorHit(dog);
+      game.press(1, hit.x - hit.r, hit.y);
+      for (let t = 0; t < 2; t += 1 / 120) {
+        game.drag(1, hit.x + Math.sin(t * 20) * hit.r * 0.8, hit.y);
+        game.update(1 / 120);
+      }
+      game.release(1);
+      const pokes = events.filter((e) => e.type === 'visitor' && e.what === 'poke').length;
+      expect(pokes).toBeGreaterThanOrEqual(2);
+      expect(pokes).toBeLessThanOrEqual(7);
+    });
+
     it('the dog jumps when touched and lands again', () => {
       const { game } = makeGame();
       game.balloons = [];

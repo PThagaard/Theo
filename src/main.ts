@@ -7,7 +7,7 @@ import { Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
-import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto } from './photos';
+import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto, type StoredPhoto } from './photos';
 import { Renderer } from './render';
 import type { VisitorKind } from './types';
 import { appUpdate } from './update';
@@ -133,6 +133,7 @@ const panel = new ParentPanel(settings, {
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
     game.setTempo(updated.tempo);
+    applyFamilyPhotos();
   },
   lock: kidLock,
   update: appUpdate,
@@ -142,11 +143,18 @@ const panel = new ParentPanel(settings, {
     add: addCroppedPhoto,
     remove: removePhoto,
     onChange: (photos) => {
-      renderer.setPhotos(photos);
-      game.setPhotos(photos.map((photo) => photo.id));
+      familyPhotos = photos;
+      applyFamilyPhotos();
     },
   },
 });
+
+let familyPhotos: StoredPhoto[] = [];
+/** Photo balloons only appear when the parents have them switched on. */
+function applyFamilyPhotos(): void {
+  renderer.setPhotos(familyPhotos);
+  game.setPhotos(settings.familyBalloons ? familyPhotos.map((photo) => photo.id) : []);
+}
 
 // Ask to pin the app right away if the parent wants that (the phone shows a confirm dialog).
 if (kidLock.available && settings.autoLock) {

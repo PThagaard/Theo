@@ -725,10 +725,17 @@ export class Renderer {
       ctx.clip();
       const side = Math.max(rx * 2, ry * 2);
       ctx.drawImage(photo, -side / 2, -side / 2, side, side);
+      // Soft vignette into the balloon colour: the face stays, the photo's background melts away.
+      const vignette = ctx.createRadialGradient(0, -ry * 0.05, rx * 0.45, 0, 0, rx * 1.05);
+      vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vignette.addColorStop(0.55, `${b.color.main}55`);
+      vignette.addColorStop(1, b.color.main);
+      ctx.fillStyle = vignette;
+      ctx.fill();
       const shade = ctx.createRadialGradient(-rx * 0.35, -ry * 0.4, rx * 0.1, 0, 0, rx * 1.35);
       shade.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
       shade.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
-      shade.addColorStop(1, 'rgba(40, 20, 60, 0.35)');
+      shade.addColorStop(1, 'rgba(40, 20, 60, 0.3)');
       ctx.fillStyle = shade;
       ctx.fill();
       ctx.restore();
@@ -973,6 +980,11 @@ export class Renderer {
       ctx.save();
       ctx.clip();
       ctx.drawImage(image, -radius, -radius, radius * 2, radius * 2);
+      const edge = ctx.createRadialGradient(0, 0, radius * 0.7, 0, 0, radius);
+      edge.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      edge.addColorStop(1, 'rgba(255, 255, 255, 0.85)');
+      ctx.fillStyle = edge;
+      ctx.fill();
       ctx.restore();
     } else {
       ctx.fillStyle = p.color;

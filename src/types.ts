@@ -84,6 +84,8 @@ export interface Visitor {
   size: number;
   /** How many times it has been touched. */
   pokes: number;
+  /** Game time of the last touch, so a sliding finger doesn't trigger it every few milliseconds. */
+  lastPoke: number;
   /** Butterfly colour. */
   hue: number;
   /** Where a wandering visitor is heading. */

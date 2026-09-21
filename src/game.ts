@@ -60,6 +60,8 @@ const VISITOR_WEIGHTS: Array<{ kind: VisitorKind; weight: number }> = [
   { kind: 'star', weight: 6 },
 ];
 const MAX_VISITORS = 2;
+/** Shortest time between two reactions of the same visitor (a bark takes about this long). */
+const VISITOR_POKE_INTERVAL = 0.35;
 const FIRST_VISIT_DELAY = 8;
 const VISIT_INTERVAL: [number, number] = [14, 32];
 /** Share of new balloons that carry a family photo, when photos exist. */
@@ -297,7 +299,7 @@ export class Game {
       return;
     }
     const visitor = this.findVisitorAt(x, y);
-    if (visitor && visitor.stateAge > 0.5) {
+    if (visitor) {
       this.pokeVisitor(visitor, x, y);
       return;
     }
@@ -369,6 +371,7 @@ export class Game {
       stateAge: 0,
       size: u,
       pokes: 0,
+      lastPoke: -Infinity,
       hue: this.rng.range(0, 360),
       targetX: 0,
       targetY: 0,
@@ -430,6 +433,9 @@ export class Game {
   }
 
   private pokeVisitor(v: Visitor, x: number, y: number): void {
+    // A finger sliding over a visitor sends a touch every few milliseconds; react at a natural pace instead.
+    if (this.time - v.lastPoke < VISITOR_POKE_INTERVAL) return;
+    v.lastPoke = this.time;
     const u = this.unit;
     v.pokes++;
     switch (v.kind) {

@@ -13,3 +13,7 @@ skal ændres: næste build samler dem op.
 
 **Husk:** repoet er offentligt, så billeder her kan ses af alle. Billeder, der vælges i forældremenuen på telefonen,
 bliver derimod kun på telefonen.
+
+**Metadata:** telefoner gemmer ofte GPS-position, dato og kameramodel inde i billedfilen. Fjern det, før et billede
+lægges her, fx med `node scripts/strip-photos.mjs foto.jpg=mor` (kræver `npm install` og Playwright-Chromium), som
+også beskærer til 600 × 600. De billeder, der ligger her nu, er renset på den måde.
