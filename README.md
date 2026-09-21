@@ -103,13 +103,17 @@ der deltager aktivt, og det er sådan, appen er tænkt: som et legetøj, I bruge
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Gården** til højre: en rød lade med rygende skorsten, og en gammel traktor, der af og til kører ud, holder
   lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
+- **Ord** (forældremenuen → *Leg* → *Aktivitet*): spil nr. 2. Én ting ad gangen midt på græsset (dyrene,
+  traktoren, en ballon, jeres familiebilleder). Rør den: hop, lyd og jeres ord. Swipe: den næste. Hver tredje gemmer
+  sig bag en busk: titte-bøh. Roligt og uden noget, der sker af sig selv, for de mindste.
 - **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ballon, traktor …) og navnene på
   familiebillederne med jeres egne stemmer. Når Theo rører tingen eller popper billedet, siger appen ordet med jeres
   stemme. Telefonen beder om lov til mikrofonen første gang; optagelserne bliver på telefonen.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
   ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.
   *Pause efter* 5/10/20 minutter lader verdenen falde stille i søvn: solen går ned, månen kommer frem, og kun et hold
-  på hjørneknappen vækker den igen. Kan slås fra.
+  på hjørneknappen vækker den igen. Tiden tælles fra appen åbnes (eller vækkes), uanset om der røres ved skærmen;
+  menuen viser, hvornår det sker. Kan slås fra.
 - **Hold fingeren stille** for en tredje slags leg: hold på en hvid sky, og den bliver mørk og til uvejrsskyen
   lige der; hold på tom himmel, og ballonen under fingeren vokser, til den sprænger (slip før, og kæmpeballonen
   flyver op); hold på solen, og den lader op til et solskinsbrag, hvor blomsterne skyder i vejret og ballonerne

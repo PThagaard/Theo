@@ -110,6 +110,8 @@ src/
     rng.ts                seedbar tilfældighed og små matematikhjælpere
   activities/
     registry.ts           listen over aktiviteter (id, navn, create) – forældremenuen viser den, når der er flere
+    ord/                  Ord: én ting ad gangen, ordet i forældrenes stemme, swipe, titte-bøh (logic.ts, render.ts
+                          låner balloner/render.ts' dyr og bakker, sounds.ts, index.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

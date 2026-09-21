@@ -66,8 +66,9 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 Det Theo kan: pege med én finger, tage og slippe, kigge efter det, der forsvinder, genkende navne på ting, pludre
 efter lyde.
 
-- 💡 **Titte-bøh** – dyr gemmer sig bag klapper, skyer og buske; tryk afslører dem med lyd og navn ("Ko! Muuh").
-  Træner: objektpermanens, forventning, ordforråd.
+- ✅ **Ord (spil nr. 2)** – én ting ad gangen (dyr, traktor, ballon, familiebilleder), tryk giver lyd og jeres ord,
+  swipe giver den næste, hver tredje gemmer sig bag en busk (titte-bøh). Træner: objektpermanens, ordforråd,
+  forventning, at én ting kan have ét navn. Næste: flere ting (sol, blomst, sky, ko, kat), tryk på busken flere gange.
 - 💡 **Hvor er lyden?** – en lyd kommer fra en side af skærmen, og et dyr dukker op der, når man trykker. Træner:
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,

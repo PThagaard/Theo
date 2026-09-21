@@ -278,6 +278,31 @@ const sunbursts = await page.evaluate(() => window.__theo.stats.snapshot.today.s
 console.log('sunbursts', sunbursts);
 check(sunbursts > 0, 'holding the sun did not make a sunburst');
 
+// Activity #2, "Ord": one thing at a time; touch says the word, swipe brings the next, the bush hides one.
+await page.evaluate(() => window.__theo.startActivity('ord'));
+await page.waitForTimeout(1200);
+check((await page.evaluate(() => window.__theo.activity.id)) === 'ord', 'the Ord activity did not start');
+const ordHit = await page.evaluate(() => { const g = window.__theo.game; g.setAge('8-12'); return g.hit; });
+await page.touchscreen.tap(ordHit.x, ordHit.y);
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}/${tag}-22-ord.png` });
+await page.mouse.move(viewport.width * 0.75, viewport.height * 0.4);
+await page.mouse.down();
+await page.mouse.move(viewport.width * 0.2, viewport.height * 0.4, { steps: 12 });
+await page.mouse.up();
+await page.waitForTimeout(1500);
+const ordHidden = await page.evaluate(() => { const g = window.__theo.game; g.hidden = true; g.bushOpen = 0; return g.hit; });
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/${tag}-23-ord-bush.png` });
+await page.touchscreen.tap(ordHidden.x, ordHidden.y);
+await page.waitForTimeout(300);
+const ordStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { touched: s.ordTouched ?? 0, next: s.ordNext ?? 0, peeks: s.ordPeeks ?? 0, key: window.__theo.game.current.key }; });
+console.log('ord:', JSON.stringify(ordStats));
+check(ordStats.touched >= 1 && ordStats.next >= 1 && ordStats.peeks >= 1, 'Ord did not react to touch, swipe and peek-a-boo');
+await page.evaluate(() => window.__theo.startActivity('balloner'));
+await page.waitForTimeout(500);
+check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
+
 // The pause: the world falls asleep (sun sets, night veil, moon), touches only twinkle, and a parent wakes it.
 await page.evaluate(() => window.__theo.game.sleep());
 await page.waitForTimeout(2500);
@@ -373,6 +398,10 @@ const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.se
 console.log('stored settings:', stored);
 check(JSON.parse(stored).tempo === 'vild', 'tempo was not stored');
 check(JSON.parse(stored).age === '2+' && JSON.parse(stored).pauseAfter === 5, 'age or pause was not stored');
+// Two activities: the menu offers the choice, and the pause line tells when the world will sleep.
+check((await page.evaluate(() => !document.getElementById('activity-row').hidden && document.querySelectorAll('#activity-options button').length)) === 2, 'the activity chooser should list two activities');
+console.log('pause line:', await page.evaluate(() => document.getElementById('pause-status').textContent));
+check((await page.evaluate(() => document.getElementById('pause-status').textContent)).includes('søvn'), 'the pause line is missing');
 check(await page.evaluate(() => window.__theo.game.currentTempo) === 'vild', 'tempo did not reach the game');
 check(await page.evaluate(() => document.getElementById('update-section').hidden), 'update section should be hidden on the web');
 await page.click('#parent-close');

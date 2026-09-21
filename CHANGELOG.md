@@ -3,6 +3,23 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – spil nr. 2: Ord, og pausen tæller rigtigt
+
+- **Ord** (forældremenu → *Leg* → *Aktivitet* → *Ord*): én ting ad gangen, stor og rolig midt på skærmen: hunden,
+  elefanten, fuglen, sommerfuglen, sneglen, traktoren, en ballon og jeres familiebilleder. Rør den: den hopper, siger
+  sin lyd, og så ordet med jeres stemme (hvis I har indtalt det, se *Jeres stemmer*). Swipe: den næste glider ind.
+  Hver tredje gang gemmer tingen sig bag en busk: rør busken, og "titte-bøh", der er den. For *8–12 mdr* sker intet
+  af sig selv (Theo bestemmer, hvornår den næste kommer); for de ældre kommer den næste selv efter en stund.
+- **Pausen tæller nu almindelig tid**, siden appen blev åbnet eller verdenen vækket, uanset om Theo rører skærmen
+  (før talte den kun aktiv leg, så en stille stund forsinkede søvnen). Tid i forældremenuen tæller ikke. Under
+  *Pause efter* står der nu, hvornår verdenen falder i søvn ("om ca. 7 min").
+
+**Test på telefonen:** (1) Menu → *Leg* → *Aktivitet* → *Ord*, luk menuen: en ting står midt på græsset. Rør den:
+hop, lyd og jeres ord. Swipe til siden: den næste kommer. Tredje gang: en busk; rør busken. Familiebilleder er
+med. (2) Skift tilbage til *Balloner*: alt som før. (3) *Pause efter* → *5 min*: under valget står "falder i søvn om
+ca. 5 min"; lad telefonen ligge uden at røre den, og efter fem minutter sover verdenen. Hold hjørneknappen: den
+vågner, og tælleren starter forfra.
+
 ## 2026-09-21 – under motorhjelmen: én skal, flere aktiviteter
 
 - Koden er delt i en fælles skal (`src/engine/`: lyd, input, forældremenu, lås, tællere, pause, billeder, stemmer,

@@ -67,6 +67,8 @@ export interface ParentPanelHooks {
   onOpen?(): void;
   /** The activities the shell can run; the menu shows a choice when there is more than one. */
   activities?: ReadonlyArray<{ id: string; label: string }>;
+  /** One line about the pause ("falder i søvn om 7 min"), shown while the menu is open. */
+  pauseStatus?(): string;
   lock?: KidLock;
   photos?: PhotoHooks;
   update?: AppUpdate;
@@ -197,6 +199,7 @@ export class ParentPanel {
   private readonly ageButtons = Array.from(element<HTMLElement>('age-options').querySelectorAll<HTMLButtonElement>('button[data-age]'));
   private readonly pauseButtons = Array.from(element<HTMLElement>('pause-options').querySelectorAll<HTMLButtonElement>('button[data-pause]'));
   private readonly activityRow = element<HTMLElement>('activity-row');
+  private readonly pauseStatus = element<HTMLElement>('pause-status');
   private readonly activityOptions = element<HTMLElement>('activity-options');
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
@@ -284,6 +287,7 @@ export class ParentPanel {
         this.settings.pauseAfter = Number(button.dataset.pause) as PauseAfter;
         this.renderChoices();
         this.changed();
+        this.renderPauseStatus();
       });
     }
     const activities = hooks.activities ?? [];
@@ -411,6 +415,7 @@ export class ParentPanel {
   open(): void {
     this.panel.hidden = false;
     this.hooks.onOpen?.();
+    this.renderPauseStatus();
     this.armAutoClose();
     this.renderStats();
     void this.showVersion();
@@ -444,6 +449,10 @@ export class ParentPanel {
       button.classList.toggle('is-selected', button.dataset.tempo === this.settings.tempo);
       button.setAttribute('aria-pressed', String(button.dataset.tempo === this.settings.tempo));
     }
+  }
+
+  private renderPauseStatus(): void {
+    this.pauseStatus.textContent = this.hooks.pauseStatus?.() ?? '';
   }
 
   private renderChoices(): void {

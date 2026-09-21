@@ -9,6 +9,7 @@ import { attachInput, attachShake } from './engine/input';
 import { kidLock } from './engine/kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './engine/parent';
 import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto, type StoredPhoto } from './engine/photos';
+import { SessionClock } from './engine/session';
 import { Stats } from './engine/stats';
 import { appUpdate } from './engine/update';
 import { listVoices, removeVoice, saveVoice, startRecording } from './engine/voices';
@@ -109,6 +110,12 @@ const panel = new ParentPanel(settings, {
   },
   // Opening the menu (a two second hold by a parent) wakes the world after a pause.
   onOpen: () => wakeUp(),
+  pauseStatus: () => {
+    const left = session.left(settings.pauseAfter);
+    if (left === null) return 'Verdenen falder ikke i søvn af sig selv.';
+    const minutes = Math.ceil(left / 60);
+    return minutes <= 1 ? 'Verdenen falder i søvn om under et minut.' : `Verdenen falder i søvn om ca. ${minutes} min.`;
+  },
   activities: ACTIVITIES.map((entry) => ({ id: entry.id, label: entry.label })),
   lock: kidLock,
   update: appUpdate,
@@ -185,13 +192,14 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 
 // ---- Pause after a long session -------------------------------------------
 // Short sessions are what the research asks for (CLAUDE.md, "Alderssvarende"): after the chosen number of
-// minutes of actual play, the world calmly goes to sleep until a parent wakes it by opening the menu.
-let sessionSeconds = 0;
+// minutes with the world awake in front of the child, it calmly goes to sleep until a parent wakes it by
+// opening the menu. Time in the menu does not count; a quiet stretch does (the screen is still on).
+const session = new SessionClock();
 function wakeUp(): void {
   if (!activity.asleep) return;
   activity.wake();
   audio?.wake();
-  sessionSeconds = 0;
+  session.reset();
   stats.bump('pauses');
 }
 function fallAsleep(): void {
@@ -209,12 +217,10 @@ function frame(now: number): void {
     activity.update(dt);
     activity.render(dt);
     // Play time: the half minute after every touch counts, so pauses don't inflate the numbers.
-    const playing = !panel.isOpen && now - lastTouch < 30000 && !activity.asleep;
-    if (playing) {
-      stats.addPlayTime(dt);
-      sessionSeconds += dt;
-      if (settings.pauseAfter > 0 && sessionSeconds >= settings.pauseAfter * 60) fallAsleep();
-    }
+    const awake = !panel.isOpen && !activity.asleep;
+    if (awake && now - lastTouch < 30000) stats.addPlayTime(dt);
+    session.tick(dt, awake);
+    if (awake && session.due(settings.pauseAfter)) fallAsleep();
   } catch (error) {
     // Never let one bad frame freeze the game for a small child.
     if (loggedErrors++ < 5) console.error('Fejl i spil-loopet', error);

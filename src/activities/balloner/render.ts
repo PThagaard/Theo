@@ -37,12 +37,13 @@ const CLOUD_SHAPES: ReadonlyArray<ReadonlyArray<readonly [number, number, number
 const EYE_COLOR = '#3b2a4a';
 
 export class Renderer {
-  private readonly ctx: CanvasRenderingContext2D;
-  private W = 1;
-  private H = 1;
+  /** Shared with other activities that borrow this renderer's creatures and scenery (see activities/ord). */
+  readonly ctx: CanvasRenderingContext2D;
+  W = 1;
+  H = 1;
   private sunAngle = 0;
   private sky: CanvasGradient | null = null;
-  private time = 0;
+  time = 0;
   private photos = new Map<string, HTMLImageElement>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -67,7 +68,7 @@ export class Renderer {
     this.photos = next;
   }
 
-  private photo(id: string | undefined): HTMLImageElement | null {
+  photo(id: string | undefined): HTMLImageElement | null {
     if (!id) return null;
     const image = this.photos.get(id);
     return image && image.complete && image.naturalWidth > 0 ? image : null;
@@ -82,7 +83,7 @@ export class Renderer {
     this.buildScenery();
   }
 
-  private get u(): number {
+  get u(): number {
     return Math.max(0.5, Math.min(this.W, this.H) / 400);
   }
 
@@ -92,6 +93,13 @@ export class Renderer {
     gradient.addColorStop(0.55, SKY.middle);
     gradient.addColorStop(1, SKY.bottom);
     this.sky = gradient;
+  }
+
+  /** Paints the sky and advances the clock; other activities start their frame with this. */
+  beginFrame(dt: number): void {
+    this.time += dt;
+    this.ctx.fillStyle = this.sky ?? SKY.middle;
+    this.ctx.fillRect(0, 0, this.W, this.H);
   }
 
   draw(game: Game, dt: number): void {
@@ -248,7 +256,7 @@ export class Renderer {
   }
 
   /** Night falls softly over everything: a blue veil, a moon and a few slow stars. Calm, never scary. */
-  private drawNight(dusk: number): void {
+  drawNight(dusk: number): void {
     const ctx = this.ctx;
     const u = this.u;
     ctx.save();
@@ -293,7 +301,7 @@ export class Renderer {
     return hillY(x, this.W, this.H, this.u, layer);
   }
 
-  private drawHill(layer: 0 | 1): void {
+  drawHill(layer: 0 | 1): void {
     const ctx = this.ctx;
     ctx.beginPath();
     ctx.moveTo(0, this.H);
@@ -377,7 +385,7 @@ export class Renderer {
 
   // ---- Visitors ------------------------------------------------------------
 
-  private drawVisitor(v: Visitor): void {
+  drawVisitor(v: Visitor): void {
     const ctx = this.ctx;
     ctx.save();
     if (v.state === 'falling') this.drawParachute(v);
@@ -1221,7 +1229,7 @@ export class Renderer {
     this.ctx.ellipse(0, 0, rx, ry, 0, 0, TAU);
   }
 
-  private drawBalloon(b: Balloon): void {
+  drawBalloon(b: Balloon): void {
     const ctx = this.ctx;
     const s = b.scale;
     if (s <= 0.02) return;
