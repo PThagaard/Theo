@@ -1,0 +1,102 @@
+# Bygger appen hver gang der pushes:
+#  - web:  den installerbare webapp (mappen dist/) som artefakt, klar til at lægge på et domæne
+#  - apk:  en færdig Android-app under "Releases", der kan installeres direkte på telefonen
+# Ingen Mac eller Android Studio nødvendig.
+name: Byg app
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Webapp
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent koden
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Test og byg
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Gem webappen som artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: theos-balloner-web
+          path: dist
+
+  apk:
+    name: APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent koden
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Gradle-cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test og byg web-delen
+        run: |
+          npm ci
+          npm test
+          npm run build
+          npx cap sync android
+
+      - name: Byg APK
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon \
+            -PversionCode=${{ github.run_number }} \
+            -PversionName=1.0.${{ github.run_number }}
+          cp app/build/outputs/apk/release/app-release.apk ../TheosBalloner.apk
+
+      - name: Gem APK som artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheosBalloner-apk
+          path: TheosBalloner.apk
+
+      - name: Udgiv APK under Releases
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest TheosBalloner.apk \
+            --target "$GITHUB_SHA" \
+            --title "Theos Balloner – seneste build (nr. ${{ github.run_number }})" \
+            --notes "Automatisk bygget fra \`${GITHUB_SHA::7}\` på branchen \`${GITHUB_REF_NAME}\`. Hent **TheosBalloner.apk** på telefonen og åbn filen for at installere."

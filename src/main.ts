@@ -147,6 +147,15 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// Web version only: cache the whole game so it starts instantly and works offline once visited.
+if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('./sw.js')
+      .catch((error) => console.warn('Offline-cache kunne ikke aktiveres', error));
+  });
+}
+
 // Handy for debugging and automated checks in a browser console.
 declare global {
   interface Window {

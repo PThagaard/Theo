@@ -7,8 +7,9 @@ android {
         applicationId "com.pthagaard.theoballoner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI passes -PversionCode=<build number> so every build installs as an update.
+        versionCode (project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 1)
+        versionName (project.hasProperty('versionName') ? project.property('versionName') : "1.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +17,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        // A fixed key for a personal app, so updates install over the previous version.
+        // Not secret: this app is not meant for app stores. Make a private key if you ever publish it.
+        personal {
+            storeFile file('../keystore/theo.keystore')
+            storePassword 'theoballoner'
+            keyAlias 'theo'
+            keyPassword 'theoballoner'
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.personal
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.personal
         }
     }
 }

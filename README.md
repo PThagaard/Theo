@@ -4,6 +4,47 @@ En lille app til iPhone og Android, hvor en baby kan trykke, klappe og swipe på
 Lavet til små fingre: alt på skærmen giver en reaktion, der er ingen menuer at fare vild i, og alle lyde og al
 musik laves af appen selv (ingen reklamer, intet internet).
 
+## 🌐 Anbefalet: én webapp på dit eget domæne
+
+Web-udgaven er en fuldgyldig "installerbar" app (PWA): den lægger sig på startskærmen med ikon, kører i fuld skærm,
+vibrerer, holder skærmen tændt og virker uden internet, når den først har været åbnet én gang. Fordelen frem for en
+APK er, at nye spil og rettelser er live med det samme, og at den også virker på iPhone og tablets.
+
+**Læg den på et domæne** (kræver https, hvilket alle nævnte muligheder giver gratis):
+
+- *Almindeligt webhotel:* kør `npm run build` og upload indholdet af `dist/` (fx via FTP) til domænets rod eller en
+  undermappe som `balloner/`. Mappen `dist/` kan også hentes færdigbygget som artefaktet **theos-balloner-web** under
+  fanen *Actions* på GitHub.
+- *Automatisk ved hvert push:* forbind repoet til [Cloudflare Pages](https://pages.cloudflare.com) eller
+  [Netlify](https://www.netlify.com) (build-kommando `npm run build`, output-mappe `dist`) og peg domænet derhen.
+  Begge er gratis og virker med private repos.
+- *GitHub Pages:* virker også med eget domæne, men kræver at repoet er offentligt (eller GitHub Pro).
+
+**Installér den på telefonen:**
+
+- *Android (Chrome):* åbn adressen → menuen ⋮ → **Føj til startskærm** / **Installér app**. Åbn den fra ikonet, så
+  kører den i fuld skærm uden browserlinjen.
+- *Android (Samsung Internet):* menuen ≡ → **Føj side til** → **Startskærm**.
+- *iPhone (Safari):* **Del** → **Føj til hjemmeskærm**.
+
+## 📱 Alternativ: Android-app (APK) uden udviklerværktøjer
+
+Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og lægger den under **Releases**.
+
+1. Åbn <https://github.com/PThagaard/Theo/releases/latest> i browseren **på telefonen** (log ind på GitHub, repoet er
+   privat) og tryk på **TheosBalloner.apk**.
+2. Åbn den hentede fil (fra notifikationen eller mappen *Downloads*). Siger telefonen, at browseren ikke må installere
+   ukendte apps, så tryk **Indstillinger** og slå **Tillad fra denne kilde** til. Tryk derefter **Installér**.
+3. Spørger Google Play Protect, om appen skal scannes, så vælg blot *Installér alligevel* / *Scan*. Appen bruger
+   ikke internettet og beder ikke om nogen tilladelser.
+4. Nye versioner installeres bare oven i den gamle. Indstillinger bevares.
+
+Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under fanen **Actions** på GitHub
+(knappen *Run workflow*).
+
+**Tip til Samsung:** Slå *Fastgør vinduer* til (Indstillinger → Sikkerhed og privatliv → Flere sikkerhedsindstillinger),
+og fastgør appen fra oversigten over åbne apps. Så kan små fingre ikke forlade den.
+
 ## Sådan virker spillet
 
 - **Tryk på en ballon** – den popper med konfetti, en ring og et sjovt "pop". Store balloner har en dybere lyd end små,
@@ -39,6 +80,7 @@ fra og til. Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på 
 
 ```
 src/
+  sw.js       service worker (offline-cache til web-udgaven, udfyldes af vite.config.ts ved build)
   main.ts     opstart, spil-loop, lyd-events, wake lock
   game.ts     al spillogik (balloner, tryk, pop, partikler) – ren TypeScript, testet med Vitest
   render.ts   tegning af himmel, sol, skyer, bakker, balloner og konfetti
@@ -61,7 +103,7 @@ npm run build      # byg web-delen til dist/
 
 ### iPhone / iPad
 
-Kræver en Mac med [Xcode](https://apps.apple.com/dk/app/xcode/id497799835).
+Kræver en Mac med [Xcode](https://apps.apple.com/dk/app/xcode/id497799835). Uden Mac: brug webappen (se øverst).
 
 ```bash
 npm run ios        # bygger og åbner projektet i Xcode
@@ -97,6 +139,12 @@ projekter. Vil du lave nye:
 npx @capacitor/assets generate --iconBackgroundColor '#4fb3ff' --splashBackgroundColor '#4fb3ff' \
   --iconBackgroundColorDark '#4fb3ff' --splashBackgroundColorDark '#4fb3ff'
 ```
+
+### Signering af Android-appen
+
+`android/keystore/theo.keystore` er en fast nøgle til denne private app (kodeord står i `android/app/build.gradle`).
+Den gør, at nye builds installeres som opdateringer i stedet for at kræve afinstallation. Skal appen nogensinde i
+Google Play, så lav en ny privat nøgle og hold den uden for git.
 
 ### Navn og app-id
 
