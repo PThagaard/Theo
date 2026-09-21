@@ -1,7 +1,7 @@
 import type { Game } from './game';
 import { FARM_CHIMNEY, STRING_LENGTH, TRAIL_LIFE } from './game';
 import { HILLS, RAINBOW, SKY } from './palette';
-import { TAU, clamp, easeOutBack } from './rng';
+import { TAU, clamp, easeOutBack } from '../../engine/rng';
 import { hillY } from './terrain';
 import type { Balloon, Cloud, Flower, Particle, Trail, Visitor } from './types';
 

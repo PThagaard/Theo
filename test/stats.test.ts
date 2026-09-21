@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Stats, formatMinutes, localDate } from '../src/stats';
+import { Stats, formatMinutes, localDate } from '../src/engine/stats';
 
 class MemoryStorage {
   private items = new Map<string, string>();

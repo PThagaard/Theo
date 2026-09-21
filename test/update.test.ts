@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isNewer } from '../src/update';
+import { isNewer } from '../src/engine/update';
 
 describe('isNewer', () => {
   it('compares version numbers part by part, not as text', () => {

@@ -3,7 +3,7 @@ import type { KidLock } from './kidlock';
 import type { StoredPhoto } from './photos';
 import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
 import type { AppUpdate, UpdateCheck } from './update';
-import { DEFAULT_AGE, type Age } from './game';
+import { DEFAULT_AGE, type Age } from './age';
 import { MIN_VOICE_SECONDS, VOICE_WORDS, photoVoiceKey, type Recording, type StoredVoice } from './voices';
 
 /**
@@ -28,6 +28,8 @@ export interface Settings {
   pauseAfter: PauseAfter;
   /** Show family photos on balloons. */
   familyBalloons: boolean;
+  /** Which activity runs (see src/activities/registry.ts). */
+  activity: string;
 }
 
 export interface PhotoHooks {
@@ -63,6 +65,8 @@ export interface ParentPanelHooks {
   onChange(settings: Settings): void;
   /** The menu opened (a parent held the corner button). */
   onOpen?(): void;
+  /** The activities the shell can run; the menu shows a choice when there is more than one. */
+  activities?: ReadonlyArray<{ id: string; label: string }>;
   lock?: KidLock;
   photos?: PhotoHooks;
   update?: AppUpdate;
@@ -78,7 +82,7 @@ const BACKGROUND_CHECK_KEY = 'theos-balloner.lastUpdateCheck';
 const BACKGROUND_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 type TabName = 'leg' | 'familie' | 'theo' | 'telefon';
 const TABS: TabName[] = ['leg', 'familie', 'theo', 'telefon'];
-const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', age: DEFAULT_AGE, pauseAfter: 10, familyBalloons: true };
+const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', age: DEFAULT_AGE, pauseAfter: 10, familyBalloons: true, activity: 'balloner' };
 const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
 const AGES: Age[] = ['8-12', '1-2', '2+'];
 const PAUSES: PauseAfter[] = [0, 5, 10, 20];
@@ -93,6 +97,7 @@ export function loadSettings(): Settings {
       if (!TEMPOS.includes(stored.tempo)) stored.tempo = 'normal';
       if (!AGES.includes(stored.age)) stored.age = DEFAULT_AGE;
       if (!PAUSES.includes(stored.pauseAfter)) stored.pauseAfter = 10;
+      if (typeof stored.activity !== 'string') stored.activity = DEFAULTS.activity;
       return stored;
     }
   } catch {
@@ -191,6 +196,8 @@ export class ParentPanel {
   private readonly tempoButtons = Array.from(element<HTMLElement>('tempo-options').querySelectorAll<HTMLButtonElement>('button[data-tempo]'));
   private readonly ageButtons = Array.from(element<HTMLElement>('age-options').querySelectorAll<HTMLButtonElement>('button[data-age]'));
   private readonly pauseButtons = Array.from(element<HTMLElement>('pause-options').querySelectorAll<HTMLButtonElement>('button[data-pause]'));
+  private readonly activityRow = element<HTMLElement>('activity-row');
+  private readonly activityOptions = element<HTMLElement>('activity-options');
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
   private readonly lockStatus = element<HTMLElement>('lock-status');
@@ -279,6 +286,22 @@ export class ParentPanel {
         this.changed();
       });
     }
+    const activities = hooks.activities ?? [];
+    this.activityRow.hidden = activities.length < 2;
+    this.activityOptions.replaceChildren(
+      ...activities.map((entry) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.activity = entry.id;
+        button.textContent = entry.label;
+        button.addEventListener('click', () => {
+          this.settings.activity = entry.id;
+          this.renderChoices();
+          this.changed();
+        });
+        return button;
+      }),
+    );
     this.renderChoices();
 
     this.photoSection.hidden = !hooks.photos;
@@ -431,6 +454,11 @@ export class ParentPanel {
     }
     for (const button of this.pauseButtons) {
       const selected = Number(button.dataset.pause) === this.settings.pauseAfter;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+    for (const button of this.activityOptions.querySelectorAll<HTMLButtonElement>('button[data-activity]')) {
+      const selected = button.dataset.activity === this.settings.activity;
       button.classList.toggle('is-selected', selected);
       button.setAttribute('aria-pressed', String(selected));
     }

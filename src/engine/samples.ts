@@ -4,7 +4,7 @@
  * audio.ts stays as the fallback when a file is missing or cannot be decoded.
  */
 
-const files = import.meta.glob('./lyde/*.{mp3,ogg,wav,m4a}', {
+const files = import.meta.glob('../lyde/*.{mp3,ogg,wav,m4a}', {
   eager: true,
   query: '?url',
   import: 'default',

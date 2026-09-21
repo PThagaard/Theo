@@ -3,6 +3,16 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – under motorhjelmen: én skal, flere aktiviteter
+
+- Koden er delt i en fælles skal (`src/engine/`: lyd, input, forældremenu, lås, tællere, pause, billeder, stemmer,
+  aldersprofiler) og aktiviteter (`src/activities/`), hvor Theos Balloner er den første bag et fælles
+  `Activity`-interface. Forældremenuen får en *Aktivitet*-vælger, så snart der er mere end én (spil nr. 2, *Ord*,
+  er på vej). Intet ændrer sig i selve legen.
+
+**Test på telefonen:** (1) Alt virker som i 1.0.22: balloner, dyr, uvejr, gården, hold-lege, stemmer, pause.
+(2) Forældremenuen ser ud som før (ingen aktivitetsvælger endnu).
+
 ## 2026-09-21 – jeres stemmer
 
 - **Jeres egne stemmer** (forældremenu → *Familie* → *Jeres stemmer*): hold knappen ved et ord nede, sig ordet, slip.

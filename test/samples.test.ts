@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SAMPLE_NAMES, SAMPLE_URLS } from '../src/samples';
+import { SAMPLE_NAMES, SAMPLE_URLS } from '../src/engine/samples';
 
 describe('recordings in src/lyde', () => {
   it('include the dog and the elephant', () => {

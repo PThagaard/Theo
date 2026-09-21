@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE, STORM_STAY } from '../src/game';
-import type { Balloon, GameEvent, Visitor } from '../src/types';
+import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE, STORM_STAY } from '../src/activities/balloner/game';
+import type { Balloon, GameEvent, Visitor } from '../src/activities/balloner/types';
 
 const W = 390;
 const H = 844;

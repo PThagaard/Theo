@@ -1,5 +1,3 @@
-import type { VisitorKind } from './types';
-
 /**
  * The parents' own voices: short recordings of words ("hund", "ballon") and of the names on the
  * family photos ("Mor!"), made in the parent menu and kept on the phone (IndexedDB). The app says
@@ -37,26 +35,6 @@ export const VOICE_WORDS: ReadonlyArray<{ key: string; label: string; emoji: str
 export const MAX_VOICE_SECONDS = 2.5;
 /** Shorter than this is a slip of the finger, not a word. */
 export const MIN_VOICE_SECONDS = 0.3;
-
-/** The word for a visitor, or null for those without one (the shooting star, the storm cloud itself). */
-export function wordForVisitor(kind: VisitorKind): string | null {
-  switch (kind) {
-    case 'dog':
-      return 'hund';
-    case 'elephant':
-      return 'elefant';
-    case 'bird':
-      return 'fugl';
-    case 'butterfly':
-      return 'sommerfugl';
-    case 'snail':
-      return 'snegl';
-    case 'tractor':
-      return 'traktor';
-    default:
-      return null;
-  }
-}
 
 export function photoVoiceKey(photoId: string): string {
   return `photo:${photoId}`;

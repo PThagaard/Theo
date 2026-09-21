@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SONGS, compileSong, midiToFreq, noteToMidi } from '../src/music';
+import { SONGS, compileSong, midiToFreq, noteToMidi } from '../src/engine/music';
 
 describe('noteToMidi', () => {
   it('maps note names to MIDI numbers', () => {

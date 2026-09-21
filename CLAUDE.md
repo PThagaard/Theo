@@ -92,39 +92,48 @@ behov**, ikke en kravspecifikation. Arbejdsgangen er altid:
 
 ```
 src/
-  main.ts       opstart: canvas, spil-loop (try/catch), events → lyd/haptik, wake lock, service worker
-  game.ts       Balloner: al spillogik inkl. besøg (dyr), vind, sol/skyer, foto-balloner. Ren TypeScript uden
-                DOM/canvas → enhedstestes i Node
-  render.ts     Balloner: tegning. Ingen spillogik her
-  audio.ts      Synth (stemmer), lydeffekter og musikafspiller. Kan køre offline (OfflineAudioContext) til test
-  music.ts      sange (notation + kompilering til events) – rene funktioner
-  input.ts      touch/mus → press/drag/release; ryst (DeviceMotion); blokering af browser-gestus
-  parent.ts     forældremenu (hold 2 sek.), indstillinger (localStorage), lås-knap
-  kidlock.ts    bro til android/.../KidLockPlugin.java (Androids "fastgør vinduer")
-  photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner. Ingen billeder i repoet
-  samples.ts    optagelser fra src/lyde/ (filnavn = lyd); audio.ts spiller dem og falder tilbage på synthen
-  cropper.ts    ansigts-klipper i forældremenuen
-  voices.ts     forældrenes indtalte ord og navne (MediaRecorder → IndexedDB, kun på telefonen); audio.ts siger dem
-  stats.ts      tællere for alt (i dag / i alt / legetid), gemt i localStorage; vises i forældremenuen
-  terrain.ts    bakkernes form, delt af spil (jordhøjde til besøgende) og tegning
-  update.ts     bro til android/.../AppUpdatePlugin.java (søg/hent/installér ny version fra GitHub Releases)
-  palette.ts, rng.ts, types.ts, styles.css, sw.js (service worker-skabelon; udfyldes af vite.config.ts)
-test/           Vitest-enhedstests (spillogik, sange)
+  main.ts                 skallen: canvas, spil-loop (try/catch), lyd, forældremenu, lås, tællere, pause, billeder
+                          og stemmer; starter og skifter aktivitet (settings.activity)
+  engine/                 alt, aktiviteterne deler
+    activity.ts           Activity-interfacet (resize/update/render/press/drag/release/shake/sleep/wake) og
+                          ActivityContext (audio, stats, haptic, say, settings)
+    age.ts                aldersprofiler (AGE_PROFILES) – loven for alle aktiviteter
+    audio.ts              Synth (stemmer), lydeffekter, musikafspiller, forældrenes stemmer. Kan køre offline til test
+    music.ts              sange (notation + kompilering til events) – rene funktioner
+    samples.ts            optagelser fra src/lyde/ (filnavn = lyd); audio.ts spiller dem, synthen er reserve
+    input.ts              touch/mus → press/drag/release; ryst (DeviceMotion); blokering af browser-gestus
+    parent.ts             forældremenu (hold 2 sek., faner), indstillinger (localStorage), lås-knap, opdatering
+    kidlock.ts, update.ts broer til android/.../KidLockPlugin.java og AppUpdatePlugin.java
+    photos.ts, cropper.ts familiebilleder (IndexedDB, kun på telefonen) og ansigts-klipperen
+    voices.ts             forældrenes indtalte ord og navne (MediaRecorder → IndexedDB, kun på telefonen)
+    stats.ts              tællere for alt (i dag / i alt / legetid), gemt i localStorage
+    rng.ts                seedbar tilfældighed og små matematikhjælpere
+  activities/
+    registry.ts           listen over aktiviteter (id, navn, create) – forældremenuen viser den, når der er flere
+    balloner/             Theos Balloner
+      index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
+      game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →
+                          enhedstestes i Node
+      render.ts           tegning. Ingen spillogik her
+      sounds.ts           GameEvent → lyd, vibration, tællere og forældrenes ord
+      types.ts, terrain.ts, palette.ts
+  lyde/                   rigtige optagelser (se README der)
+  styles.css, sw.js (service worker-skabelon; udfyldes af vite.config.ts)
+test/           Vitest-enhedstests (spillogik, sange, stemmer)
 scripts/e2e/    Playwright-røgtests mod det byggede spil (se "Test")
 android/, ios/  native projekter (committes). Web-filerne kopieres ind med `npx cap sync`
 assets/         kilder til app-ikon og splash (genereres med @capacitor/assets)
 ```
 
-**Målarkitektur (næste skridt, se `docs/ROADMAP.md`):** flere aktiviteter bag samme baby-sikre skal.
-`src/engine/` (audio, input, partikler, tegnehjælpere, forældremenu, lås), `src/activities/<navn>/` med et fælles
-`Activity`-interface (`resize/update/render/press/drag/release/shake`), og en aktivitetsvælger, som forældrene styrer
-fra menuen (evt. med automatisk skift). Balloner bliver den første aktivitet. Nye aktiviteter følger samme snit:
-logik uden DOM (testbar), tegning for sig, events ud til lyd/haptik.
+**Sådan laves en ny aktivitet:** en mappe under `src/activities/<navn>/` med logik uden DOM (testbar), tegning for
+sig og en `index.ts`, der giver et `Activity`; en linje i `registry.ts`. Aktiviteten får lyd, tællere, vibration,
+forældrenes ord og indstillingerne gennem `ActivityContext` og skal svare på aldersprofilen (`engine/age.ts`), søvn
+(`sleep/wake`) og familiebilleder (`setPhotos`).
 
 **Faste regler i koden**
 
-- Spillogik må ikke kende DOM, canvas eller Web Audio. Den udsender events (`GameEvent`), som `main.ts` oversætter til
-  lyd og vibration. Det holder logikken testbar og lydsiden udskiftelig.
+- Spillogik må ikke kende DOM, canvas eller Web Audio. Den udsender events (`GameEvent`), som aktivitetens
+  `sounds.ts` oversætter til lyd og vibration. Det holder logikken testbar og lydsiden udskiftelig.
 - Alle størrelser skaleres med `unit` (≈1 på en telefon, ≈2 på en tablet); hastigheder med skærmhøjden.
 - Trykflader er store (mindst 1,6× objektets omrids for tryk), og swipe rammer alt på vejen.
 - Nye lyde laves i `audio.ts` som syntetiserede stemmer og skal have en stat i røgtesten (ikke stille, ikke klip).

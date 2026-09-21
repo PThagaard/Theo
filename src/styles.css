@@ -171,6 +171,10 @@ body {
   gap: 6px;
 }
 
+.row[hidden] {
+  display: none;
+}
+
 .row-help {
   margin: 0;
   font-size: 13px;

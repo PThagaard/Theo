@@ -1,21 +1,24 @@
 import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { AudioEngine } from './audio';
-import { AGE_PROFILES, Game } from './game';
-import { attachInput, attachShake } from './input';
-import { kidLock } from './kidlock';
-import { ParentPanel, loadSettings, saveSettings } from './parent';
-import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto, type StoredPhoto } from './photos';
-import { Renderer } from './render';
-import { Stats } from './stats';
-import type { VisitorKind } from './types';
-import { appUpdate } from './update';
-import { listVoices, photoVoiceKey, removeVoice, saveVoice, startRecording, wordForVisitor } from './voices';
+import { ACTIVITIES, findActivity } from './activities/registry';
+import type { Activity, ActivityContext } from './engine/activity';
+import { AGE_PROFILES } from './engine/age';
+import { AudioEngine } from './engine/audio';
+import { attachInput, attachShake } from './engine/input';
+import { kidLock } from './engine/kidlock';
+import { ParentPanel, loadSettings, saveSettings } from './engine/parent';
+import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto, type StoredPhoto } from './engine/photos';
+import { Stats } from './engine/stats';
+import { appUpdate } from './engine/update';
+import { listVoices, removeVoice, saveVoice, startRecording } from './engine/voices';
+
+/**
+ * The shell around every activity: canvas and loop, sound, the parents' menu, the lock, counters, the
+ * pause and the family photos and voices. Activities (src/activities/) only play.
+ */
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
-const game = new Game();
-const renderer = new Renderer(canvas);
 const settings = loadSettings();
 const stats = new Stats();
 let audio: AudioEngine | null = null;
@@ -69,189 +72,44 @@ function haptic(style: ImpactStyle): void {
   Haptics.impact({ style }).catch(() => undefined);
 }
 
-game.onEvent((event) => {
-  switch (event.type) {
-    case 'pop':
-      audio?.pop(event.size);
-      if (event.kind === 'star') audio?.chime();
-      else if (event.kind === 'rainbow') audio?.boing();
-      else if (event.kind === 'photo') audio?.tada();
-      // A parent's voice says who it was, or now and then "ballon".
-      if (event.kind === 'photo' && event.photoId) audio?.say(photoVoiceKey(event.photoId), 0.5, 2);
-      else audio?.say('ballon', 0.3, 4);
-      haptic(ImpactStyle.Medium);
-      stats.bump('pops');
-      if (event.kind === 'star') stats.bump('popsStar');
-      if (event.kind === 'rainbow') stats.bump('popsRainbow');
-      if (event.kind === 'photo') {
-        stats.bump('popsPhoto');
-        if (event.photoId) stats.bump(`photo:${event.photoId}`);
-      }
-      break;
-    case 'spawn':
-      audio?.inflate();
-      stats.bump('balloonsMade');
-      break;
-    case 'sparkle':
-      audio?.sparkle();
-      haptic(ImpactStyle.Light);
-      stats.bump('skyTouches');
-      break;
-    case 'glide':
-      audio?.glide(event.note);
-      stats.bump('harpNotes');
-      break;
-    case 'blow':
-      stats.bump('blown');
-      break;
-    case 'swipe':
-      stats.bump('swipes');
-      break;
-    case 'sun':
-      audio?.wee();
-      audio?.say('sol', 0.4, 2.5);
-      haptic(ImpactStyle.Light);
-      stats.bump('sun');
-      break;
-    case 'cloud':
-      audio?.rain();
-      audio?.say('sky', 0.4, 2.5);
-      haptic(ImpactStyle.Light);
-      stats.bump('clouds');
-      break;
-    case 'shake':
-      audio?.rattle();
-      haptic(ImpactStyle.Heavy);
-      stats.bump('shakes');
-      break;
-    case 'flower':
-      if (event.what === 'spin') {
-        audio?.twirl();
-        stats.bump('flowersSpun');
-      } else {
-        audio?.pluck();
-        stats.bump('flowersPlucked');
-      }
-      audio?.say('blomst', 0.4, 2.5);
-      haptic(ImpactStyle.Light);
-      break;
-    case 'visitor':
-      visitorSound(event.kind, event.what);
-      if (event.what === 'appear' && event.kind === 'storm') audio?.say('regn', 1.5, 20);
-      if (event.what === 'poke') {
-        const word = wordForVisitor(event.kind);
-        if (word) audio?.say(word, 0.45, 2);
-        haptic(ImpactStyle.Light);
-        stats.bump('visitorsPoked');
-        stats.bump(`visitor:${event.kind}`);
-      } else if (event.what === 'appear') {
-        stats.bump(event.kind === 'storm' ? 'storms' : 'visitorsSeen');
-      }
-      break;
-    case 'carry':
-      if (event.what === 'hooked') {
-        audio?.boing();
-        stats.bump('creaturesLifted');
-      } else if (event.what === 'help') {
-        audio?.help(event.kind);
-      } else if (event.what === 'released') {
-        audio?.sparkle();
-      } else {
-        audio?.land();
-        haptic(ImpactStyle.Light);
-      }
-      break;
-    case 'lightning':
-      if (event.quick) audio?.zap();
-      else audio?.thunder();
-      if (!event.quick) audio?.say('lyn', 0.6, 4);
-      haptic(event.quick ? ImpactStyle.Light : ImpactStyle.Heavy);
-      stats.bump('lightning');
-      break;
-    case 'hold':
-      if (event.what === 'storm') {
-        audio?.thunder();
-        stats.bump('stormsSummoned');
-      } else if (event.what === 'burst') {
-        audio?.burst();
-        stats.bump('bursts');
-      } else {
-        audio?.sunburst();
-        stats.bump('sunbursts');
-      }
-      haptic(ImpactStyle.Heavy);
-      break;
-    case 'transform':
-      if (event.form === 'hotdog') audio?.sizzle();
-      else if (event.form === 'mouse') audio?.squeak();
-      else if (event.form === 'puffed') audio?.chirp();
-      else audio?.sparkle();
-      if (event.form) stats.bump('transformations');
-      break;
-    case 'celebrate':
-      audio?.fanfare();
-      haptic(ImpactStyle.Heavy);
-      stats.bump('celebrations');
-      break;
-  }
-});
+// ---- The activity ------------------------------------------------------------
 
-/** Each visitor has a sound when it appears and another when it is touched. */
-function visitorSound(kind: VisitorKind, what: 'appear' | 'poke' | 'leave'): void {
-  if (!audio) return;
-  switch (kind) {
-    case 'storm':
-      if (what === 'appear') {
-        audio.rumble();
-        audio.startRain();
-      } else if (what === 'leave') {
-        audio.stopRain();
-        audio.clearing();
-      }
-      break;
-    case 'dog':
-      audio.bark();
-      break;
-    case 'elephant':
-      if (what === 'appear') audio.rumble();
-      else audio.trumpet();
-      break;
-    case 'bird':
-      audio.chirp();
-      break;
-    case 'butterfly':
-      audio.flutter();
-      break;
-    case 'snail':
-      if (what === 'poke') audio.blub();
-      break;
-    case 'tractor':
-      if (what === 'appear') audio.putter();
-      else if (what === 'poke') audio.honk();
-      break;
-    case 'star':
-      if (what === 'appear') audio.sparkle();
-      else audio.chime();
-      break;
-  }
+const context: ActivityContext = {
+  audio: () => audio,
+  stats,
+  haptic,
+  say: (key, delay, cooldown) => void audio?.say(key, delay, cooldown),
+  settings: () => settings,
+};
+
+let familyPhotos: StoredPhoto[] = [];
+let activity: Activity = findActivity(settings.activity).create(canvas, context);
+
+function startActivity(id: string): void {
+  const entry = findActivity(id);
+  if (entry.id === activity.id) return;
+  activity.dispose();
+  activity = entry.create(canvas, context);
+  settings.activity = entry.id;
+  resize();
+  activity.applySettings(settings);
+  activity.setPhotos(familyPhotos);
 }
 
 // ---- Parent menu and kid lock ----------------------------------------------
 
-game.setTempo(settings.tempo);
-game.setAge(settings.age);
 const panel = new ParentPanel(settings, {
   onChange: (updated) => {
     saveSettings(updated);
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
     audio?.setMusicLevel(AGE_PROFILES[updated.age].music);
-    game.setTempo(updated.tempo);
-    game.setAge(updated.age);
-    applyFamilyPhotos();
+    if (updated.activity !== activity.id) startActivity(updated.activity);
+    activity.applySettings(updated);
   },
   // Opening the menu (a two second hold by a parent) wakes the world after a pause.
   onOpen: () => wakeUp(),
+  activities: ACTIVITIES.map((entry) => ({ id: entry.id, label: entry.label })),
   lock: kidLock,
   update: appUpdate,
   stats: {
@@ -274,21 +132,15 @@ const panel = new ParentPanel(settings, {
     remove: removePhoto,
     onChange: (photos) => {
       familyPhotos = photos;
-      applyFamilyPhotos();
+      activity.setPhotos(familyPhotos);
     },
   },
 });
+activity.applySettings(settings);
 
 // On the phone, a little after start, the app looks for a new version by itself (at most twice a day) and
 // fetches it in the background; a dot on the corner button then tells the parents it is ready to install.
 if (appUpdate.available) setTimeout(() => void panel.checkInBackground(), 8000);
-
-let familyPhotos: StoredPhoto[] = [];
-/** Photo balloons only appear when the parents have them switched on. */
-function applyFamilyPhotos(): void {
-  renderer.setPhotos(familyPhotos);
-  game.setPhotos(settings.familyBalloons ? familyPhotos.map((photo) => photo.id) : []);
-}
 
 // Ask to pin the app right away if the parent wants that (the phone shows a confirm dialog).
 if (kidLock.available && settings.autoLock) {
@@ -304,16 +156,16 @@ attachInput(canvas, {
     ensureAudio();
     void requestWakeLock();
     lastTouch = performance.now();
-    game.press(id, x, y);
+    activity.press(id, x, y);
   },
-  move: (id, x, y) => game.drag(id, x, y),
-  up: (id) => game.release(id),
+  move: (id, x, y) => activity.drag(id, x, y),
+  up: (id) => activity.release(id),
 });
 
 attachShake(() => {
   if (panel.isOpen) return;
   lastTouch = performance.now();
-  game.shake();
+  activity.shake();
 });
 
 // ---- Screen ----------------------------------------------------------------
@@ -324,8 +176,7 @@ function resize(): void {
   const height = Math.max(1, Math.round(rect.height || window.innerHeight));
   // Two device pixels per CSS pixel is plenty for this art style and keeps old phones smooth.
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  game.resize(width, height);
-  renderer.resize(width, height, dpr);
+  activity.resize(width, height, dpr);
 }
 resize();
 window.addEventListener('resize', resize);
@@ -337,15 +188,15 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 // minutes of actual play, the world calmly goes to sleep until a parent wakes it by opening the menu.
 let sessionSeconds = 0;
 function wakeUp(): void {
-  if (!game.asleep) return;
-  game.wake();
+  if (!activity.asleep) return;
+  activity.wake();
   audio?.wake();
   sessionSeconds = 0;
   stats.bump('pauses');
 }
 function fallAsleep(): void {
-  if (game.asleep) return;
-  game.sleep();
+  if (activity.asleep) return;
+  activity.sleep();
   audio?.sleep();
 }
 
@@ -355,10 +206,10 @@ function frame(now: number): void {
   const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
   lastFrame = now;
   try {
-    game.update(dt);
-    renderer.draw(game, dt);
+    activity.update(dt);
+    activity.render(dt);
     // Play time: the half minute after every touch counts, so pauses don't inflate the numbers.
-    const playing = !panel.isOpen && now - lastTouch < 30000 && !game.asleep;
+    const playing = !panel.isOpen && now - lastTouch < 30000 && !activity.asleep;
     if (playing) {
       stats.addPlayTime(dt);
       sessionSeconds += dt;
@@ -407,10 +258,29 @@ if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in 
   });
 }
 
-// Handy for debugging and automated checks in a browser console.
+// Handy for debugging and automated checks in a browser console. `game` is the balloon game while that
+// activity runs (the smoke test drives it directly).
 declare global {
   interface Window {
-    __theo?: { game: Game; audio: () => AudioEngine | null; AudioEngine: typeof AudioEngine; stats: Stats };
+    __theo?: {
+      readonly activity: Activity;
+      readonly game: unknown;
+      audio: () => AudioEngine | null;
+      AudioEngine: typeof AudioEngine;
+      stats: Stats;
+      startActivity: (id: string) => void;
+    };
   }
 }
-window.__theo = { game, audio: () => audio, AudioEngine, stats };
+window.__theo = {
+  get activity() {
+    return activity;
+  },
+  get game() {
+    return activity.debug.game;
+  },
+  audio: () => audio,
+  AudioEngine,
+  stats,
+  startActivity,
+};
