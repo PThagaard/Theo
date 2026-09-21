@@ -49,6 +49,10 @@ const CLOUD_SHAPES = 3;
 const WIND_REACH = 2.6;
 const SUN_HIT_FACTOR = 1.3;
 const SUN_POKE_INTERVAL = 0.6;
+/** Share of new balloons that carry a family photo, when photos exist. */
+const PHOTO_CHANCE = 0.3;
+/** How long the photo stays up after its balloon pops (seconds). */
+const PHOTO_SHOW_TIME = 2.2;
 
 const KINDS: Array<{ kind: BalloonKind; weight: number }> = [
   { kind: 'plain', weight: 40 },
@@ -97,6 +101,8 @@ export class Game {
 
   private nextId = 1;
   private spawnTimer = 0.4;
+  private photoIds: string[] = [];
+  private nextPhoto = 0;
   private listeners: Array<(event: GameEvent) => void> = [];
   private pointers = new Map<number, PointerState>();
   private rng: Rng;
@@ -116,6 +122,19 @@ export class Game {
   get sun(): { x: number; y: number; r: number } {
     const u = this.unit;
     return { x: this.width - 72 * u, y: 78 * u, r: 40 * u };
+  }
+
+  /** Family photos available for photo balloons (ids only; the renderer holds the pictures). */
+  setPhotos(ids: string[]): void {
+    this.photoIds = [...ids];
+    this.nextPhoto = 0;
+    // Balloons whose photo was removed become ordinary balloons again.
+    for (const b of this.balloons) {
+      if (b.photoId && !ids.includes(b.photoId)) {
+        b.photoId = undefined;
+        b.kind = 'plain';
+      }
+    }
   }
 
   onEvent(listener: (event: GameEvent) => void): void {
@@ -308,8 +327,11 @@ export class Game {
   spawnBalloon(options: SpawnOptions = {}): Balloon | null {
     if (this.balloons.length >= this.config.maxBalloons) return null;
     const u = this.unit;
-    const r = u * this.rng.range(40, 56);
-    const kind = this.pickKind();
+    // Photo balloons take turns between the family photos and are a little bigger, so faces are easy to see.
+    const photo = this.photoIds.length > 0 && this.rng.chance(PHOTO_CHANCE);
+    const photoId = photo ? this.photoIds[this.nextPhoto++ % this.photoIds.length] : undefined;
+    const r = u * this.rng.range(40, 56) * (photo ? 1.15 : 1);
+    const kind: BalloonKind = photo ? 'photo' : this.pickKind();
     const color = kind === 'star' ? GOLD : kind === 'rainbow' ? RAINBOW_COLOR : this.rng.pick(BALLOON_COLORS);
     const x = options.x ?? this.rng.range(r * 1.3, Math.max(r * 1.3, this.width - r * 1.3));
     const y = options.y ?? this.height + r * 1.6;
@@ -337,6 +359,7 @@ export class Game {
       tapped: !!options.inflate,
       vx: 0,
       vyImpulse: 0,
+      photoId,
     };
     this.balloons.push(balloon);
     return balloon;
@@ -440,9 +463,12 @@ export class Game {
       const offX = b.x - x;
       const offY = b.y - y;
       const distance = Math.hypot(offX, offY);
-      // Balloons right in the finger's path are about to be popped; wind only touches the ones beside it,
-      // and pushes mostly along the swipe so a balloon never dodges the finger that is about to hit it.
+      // Balloons ahead in the finger's lane are about to be popped, so the wind leaves them alone;
+      // only balloons beside the lane (or behind the finger) get blown away.
       if (distance > reach || distance < b.r * 1.3) continue;
+      const ahead = offX * dirX + offY * dirY;
+      const lateral = Math.abs(offX * dirY - offY * dirX);
+      if (ahead > 0 && lateral < b.r * DRAG_HIT_FACTOR * 1.2) continue;
       const strength = (1 - distance / reach) * push;
       b.vx = clamp(b.vx + dirX * strength * 6 + (offX / distance) * strength * 1.5, -420 * u, 420 * u);
       b.vyImpulse = clamp(b.vyImpulse + dirY * strength * 6 + (offY / distance) * strength * 1.5, -420 * u, 420 * u);
@@ -576,6 +602,49 @@ export class Game {
       drag: 1.2,
     });
 
+    // A popped photo balloon is not "gone": the family photo jumps out big, with hearts around it.
+    if (balloon.kind === 'photo' && balloon.photoId) {
+      const side = Math.min(this.width, this.height) * 0.42;
+      const x = clamp(balloon.x, side * 0.6, this.width - side * 0.6);
+      const y = clamp(balloon.y, side * 0.6 + this.sun.r, this.height - side * 0.7);
+      this.addParticle({
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        life: PHOTO_SHOW_TIME,
+        maxLife: PHOTO_SHOW_TIME,
+        size: side,
+        color: balloon.color.main,
+        shape: 'photo',
+        rot: 0,
+        spin: 0,
+        gravity: 0,
+        drag: 0,
+        photoId: balloon.photoId,
+      });
+      for (let i = 0; i < 14; i++) {
+        const angle = this.rng.range(0, TAU);
+        const speed = u * this.rng.range(60, 200);
+        const life = this.rng.range(1.2, 2);
+        this.addParticle({
+          x: x + Math.cos(angle) * side * 0.45,
+          y: y + Math.sin(angle) * side * 0.45,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - u * 120,
+          life,
+          maxLife: life,
+          size: u * this.rng.range(8, 14),
+          color: this.rng.pick(['#ff4d6d', '#ff7ad9', '#ff9db0', '#ffffff']),
+          shape: 'heart',
+          rot: this.rng.range(-0.4, 0.4),
+          spin: this.rng.range(-2, 2),
+          gravity: u * 90,
+          drag: 1.2,
+        });
+      }
+    }
+
     const size = clamp((balloon.r / u - 40) / 16, 0, 1);
     this.emit({ type: 'pop', x: balloon.x, y: balloon.y, size, kind: balloon.kind });
 
@@ -631,7 +700,11 @@ export class Game {
   }
 
   private addParticle(particle: Particle): void {
-    if (this.particles.length >= this.config.maxParticles) this.particles.shift();
+    if (this.particles.length >= this.config.maxParticles) {
+      // Drop the oldest ordinary particle; a family photo on display must not vanish early.
+      const index = this.particles.findIndex((p) => p.shape !== 'photo');
+      this.particles.splice(index < 0 ? 0 : index, 1);
+    }
     this.particles.push(particle);
   }
 }

@@ -44,6 +44,21 @@
           <input type="checkbox" id="opt-sfx" />
           <span class="switch" aria-hidden="true"></span>
         </label>
+        <div id="photo-section" hidden>
+          <h2 class="section-title">📷 Familie-balloner</h2>
+          <div id="photo-list" class="photo-list"></div>
+          <div class="photo-actions">
+            <label class="photo-button">
+              🖼️ Vælg billede
+              <input type="file" id="photo-pick" accept="image/*" multiple hidden />
+            </label>
+            <label class="photo-button">
+              🤳 Tag et billede
+              <input type="file" id="photo-snap" accept="image/*" capture="user" hidden />
+            </label>
+          </div>
+          <p id="photo-status" class="lock-status"></p>
+        </div>
         <div id="lock-section" hidden>
           <button id="lock-button" type="button">🔒 Lås appen fast på skærmen</button>
           <p id="lock-status" class="lock-status"></p>

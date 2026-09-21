@@ -1,4 +1,5 @@
 import type { KidLock } from './kidlock';
+import type { StoredPhoto } from './photos';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -13,9 +14,19 @@ export interface Settings {
   autoLock: boolean;
 }
 
+export interface PhotoHooks {
+  max: number;
+  list(): Promise<StoredPhoto[]>;
+  add(file: Blob): Promise<StoredPhoto>;
+  remove(id: string): Promise<void>;
+  /** Called with the full list whenever it changes. */
+  onChange(photos: StoredPhoto[]): void;
+}
+
 export interface ParentPanelHooks {
   onChange(settings: Settings): void;
   lock?: KidLock;
+  photos?: PhotoHooks;
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
@@ -122,6 +133,12 @@ export class ParentPanel {
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
   private readonly lockStatus = element<HTMLElement>('lock-status');
+  private readonly photoSection = element<HTMLElement>('photo-section');
+  private readonly photoList = element<HTMLElement>('photo-list');
+  private readonly photoPick = element<HTMLInputElement>('photo-pick');
+  private readonly photoSnap = element<HTMLInputElement>('photo-snap');
+  private readonly photoStatus = element<HTMLElement>('photo-status');
+  private photos: StoredPhoto[] = [];
   private readonly pointers = new ActivePointers();
   private readonly lockHold: HoldButton;
   private locked = false;
@@ -153,6 +170,20 @@ export class ParentPanel {
     for (const toggle of [this.musicToggle, this.sfxToggle, this.autoLockToggle]) {
       toggle.addEventListener('change', () => this.changed());
     }
+
+    this.photoSection.hidden = !hooks.photos;
+    for (const input of [this.photoPick, this.photoSnap]) {
+      input.addEventListener('change', () => {
+        const files = Array.from(input.files ?? []);
+        input.value = '';
+        void this.addPhotos(files);
+      });
+    }
+    this.photoList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-remove]');
+      if (button?.dataset.remove) void this.removePhoto(button.dataset.remove);
+    });
+    void this.loadPhotos();
     element<HTMLButtonElement>('parent-close').addEventListener('click', () => this.close());
     this.panel.addEventListener('pointerdown', () => this.armAutoClose());
   }
@@ -188,6 +219,73 @@ export class ParentPanel {
     this.settings.autoLock = this.autoLockToggle.checked;
     this.hooks.onChange({ ...this.settings });
     this.armAutoClose();
+  }
+
+  // ---- Family photos ---------------------------------------------------------
+
+  private async loadPhotos(): Promise<void> {
+    if (!this.hooks.photos) return;
+    this.photos = await this.hooks.photos.list();
+    this.renderPhotos();
+    this.hooks.photos.onChange([...this.photos]);
+  }
+
+  private async addPhotos(files: Blob[]): Promise<void> {
+    const hooks = this.hooks.photos;
+    if (!hooks || files.length === 0) return;
+    this.photoStatus.textContent = 'Gør billedet klar …';
+    for (const file of files) {
+      if (this.photos.length >= hooks.max) break;
+      try {
+        this.photos.push(await hooks.add(file));
+      } catch (error) {
+        console.warn('Billede kunne ikke tilføjes', error);
+        this.photoStatus.textContent = 'Det billede kunne ikke bruges. Prøv et andet.';
+      }
+    }
+    this.renderPhotos();
+    hooks.onChange([...this.photos]);
+    this.armAutoClose();
+  }
+
+  private async removePhoto(id: string): Promise<void> {
+    const hooks = this.hooks.photos;
+    if (!hooks) return;
+    await hooks.remove(id);
+    this.photos = this.photos.filter((photo) => photo.id !== id);
+    this.renderPhotos();
+    hooks.onChange([...this.photos]);
+    this.armAutoClose();
+  }
+
+  private renderPhotos(): void {
+    const hooks = this.hooks.photos;
+    if (!hooks) return;
+    this.photoList.replaceChildren(
+      ...this.photos.map((photo) => {
+        const item = document.createElement('div');
+        item.className = 'photo-item';
+        const image = document.createElement('img');
+        image.src = photo.dataUrl;
+        image.alt = photo.name || 'Familiebillede';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'photo-remove';
+        remove.dataset.remove = photo.id;
+        remove.setAttribute('aria-label', 'Fjern billede');
+        remove.textContent = '✕';
+        item.append(image, remove);
+        return item;
+      }),
+    );
+    const full = this.photos.length >= hooks.max;
+    this.photoPick.parentElement!.hidden = full;
+    this.photoSnap.parentElement!.hidden = full;
+    this.photoStatus.textContent = full
+      ? `Der er plads til ${hooks.max} billeder. Fjern et for at tilføje et nyt.`
+      : this.photos.length === 0
+        ? 'Tilføj billeder af mor, far og Theo, så dukker de op på balloner. Billederne bliver kun på denne telefon.'
+        : `${this.photos.length} af ${hooks.max} billeder. Billederne bliver kun på denne telefon.`;
   }
 
   private async refreshLock(): Promise<void> {

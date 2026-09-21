@@ -6,6 +6,7 @@ import { Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
+import { MAX_PHOTOS, addPhoto, listPhotos, removePhoto } from './photos';
 import { Renderer } from './render';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -54,6 +55,7 @@ game.onEvent((event) => {
       audio?.pop(event.size);
       if (event.kind === 'star') audio?.chime();
       else if (event.kind === 'rainbow') audio?.boing();
+      else if (event.kind === 'photo') audio?.tada();
       haptic(ImpactStyle.Medium);
       break;
     case 'spawn':
@@ -94,6 +96,16 @@ const panel = new ParentPanel(settings, {
     audio?.setMusicEnabled(updated.music);
   },
   lock: kidLock,
+  photos: {
+    max: MAX_PHOTOS,
+    list: listPhotos,
+    add: addPhoto,
+    remove: removePhoto,
+    onChange: (photos) => {
+      renderer.setPhotos(photos);
+      game.setPhotos(photos.map((photo) => photo.id));
+    },
+  },
 });
 
 // Ask to pin the app right away if the parent wants that (the phone shows a confirm dialog).

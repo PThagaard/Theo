@@ -7,7 +7,7 @@ export interface BalloonColor {
   dark: string;
 }
 
-export type BalloonKind = 'plain' | 'dots' | 'stripes' | 'star' | 'rainbow';
+export type BalloonKind = 'plain' | 'dots' | 'stripes' | 'star' | 'rainbow' | 'photo';
 
 export type Face = 'happy' | 'surprised' | 'sleepy' | 'wink';
 
@@ -43,6 +43,8 @@ export interface Balloon {
   vx: number;
   /** Vertical push from swipes (px/s, positive = down), fades out by itself. */
   vyImpulse: number;
+  /** For photo balloons: which family photo is on it. */
+  photoId?: string;
 }
 
 export interface Cloud {
@@ -75,7 +77,7 @@ export interface Trail {
   active: boolean;
 }
 
-export type ParticleShape = 'rect' | 'circle' | 'star' | 'heart' | 'ring' | 'string' | 'sparkle' | 'drop';
+export type ParticleShape = 'rect' | 'circle' | 'star' | 'heart' | 'ring' | 'string' | 'sparkle' | 'drop' | 'photo';
 
 export interface Particle {
   x: number;
@@ -92,6 +94,8 @@ export interface Particle {
   spin: number;
   gravity: number;
   drag: number;
+  /** For 'photo' particles: the family photo that jumps out of a popped photo balloon. */
+  photoId?: string;
 }
 
 export type GameEvent =

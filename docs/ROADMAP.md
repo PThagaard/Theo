@@ -20,6 +20,8 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 
 - ✅ **Balloner** – tryk/swipe popper, himlen puster balloner op, fingerspor med harpetoner, sol og skyer reagerer,
   ryst ryster alt. Træner: årsag-virkning, øje-hånd, visuel tracking, rytme.
+- ✅ **Familie-balloner** – mor, far og Theo på balloner; billedet springer frem ved pop. Træner: ansigtsgenkendelse,
+  glæde ved kendte ansigter, senere ord ("Mor!") med egen stemme.
 - 💡 **Rasle** – hele skærmen er en rangle: tryk giver klokker, ryst giver rasle-lyd og hoppende kugler, tilt får kuglerne
   til at rulle (accelerometer). Træner: årsag-virkning, kropslig kontrol, lyd-opmærksomhed.
 - 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle

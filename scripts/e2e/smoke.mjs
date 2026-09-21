@@ -170,6 +170,51 @@ await page.mouse.down(); await page.waitForTimeout(300); await page.mouse.up();
 const openAfterShort = await page.evaluate(() => !document.getElementById('parent-panel').hidden);
 console.log('open after short tap (should be false):', openAfterShort);
 
+// Family photos: add a generated picture through the parent menu, then check photo balloons appear.
+await page.mouse.move(btn.x + btn.width / 2, btn.y + btn.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(2300);
+await page.mouse.up();
+check(await page.evaluate(() => !document.getElementById('parent-panel').hidden), 'parent panel did not reopen');
+const png = await page.evaluate(() => {
+  const c = document.createElement('canvas'); c.width = 400; c.height = 300; const x = c.getContext('2d');
+  x.fillStyle = '#ffe0b3'; x.fillRect(0, 0, 400, 300);
+  x.fillStyle = '#3b2a4a'; x.beginPath(); x.arc(160, 130, 14, 0, 7); x.arc(240, 130, 14, 0, 7); x.fill();
+  x.strokeStyle = '#3b2a4a'; x.lineWidth = 10; x.beginPath(); x.arc(200, 160, 60, 0.2 * Math.PI, 0.8 * Math.PI); x.stroke();
+  return c.toDataURL('image/png').split(',')[1];
+});
+await page.setInputFiles('#photo-pick', { name: 'far.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+await page.waitForFunction(() => document.querySelectorAll('#photo-list img').length === 1, null, { timeout: 10000 });
+console.log('photo added:', await page.evaluate(() => document.getElementById('photo-status').textContent));
+await page.screenshot({ path: `${OUT}/${tag}-08-photos-menu.png` });
+await page.click('#parent-close');
+const photoBalloon = await page.evaluate(() => {
+  const g = window.__theo.game;
+  // Spawn until a photo balloon shows up, in the middle of the screen so it can be tapped.
+  for (let i = 0; i < 40; i++) {
+    g.balloons = g.balloons.filter((b) => b.kind !== 'photo');
+    const b = g.spawnBalloon({ x: g.width / 2, y: g.height * 0.5 });
+    if (b && b.kind === 'photo') { for (const o of g.balloons) if (o !== b && Math.hypot(o.x - b.x, o.y - b.y) < b.r * 4) { o.baseX = 60; o.y = g.height - 60; } g.update(1 / 60); return [b.x, b.y, b.photoId]; }
+    if (b) g.balloons.pop();
+  }
+  return null;
+});
+check(photoBalloon, 'no photo balloon could be made');
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${OUT}/${tag}-09-photo-balloon.png` });
+await page.touchscreen.tap(photoBalloon[0], photoBalloon[1]);
+await page.waitForTimeout(500);
+const card = await page.evaluate(() => window.__theo.game.particles.filter((p) => p.shape === 'photo').length);
+console.log('photo card shown after pop:', card);
+check(card === 1, 'photo did not jump out of the balloon');
+await page.screenshot({ path: `${OUT}/${tag}-10-photo-pop.png` });
+// Storage survives a reload.
+await page.reload();
+await waitForGame(page);
+const storedPhotos = await page.evaluate(async () => (await new Promise((resolve) => { const r = indexedDB.open('theos-legeplads', 1); r.onsuccess = () => { const db = r.result; const q = db.transaction('photos').objectStore('photos').getAll(); q.onsuccess = () => resolve(q.result.length); }; })));
+console.log('photos in IndexedDB after reload:', storedPhotos);
+check(storedPhotos === 1, 'photo was not stored');
+
 // Live audio state.
 const audioState = await page.evaluate(() => { const a = window.__theo.audio(); return a ? { state: a.state, song: a.currentSongName } : null; });
 console.log('live audio:', audioState);
@@ -192,7 +237,8 @@ const audio = await page.evaluate(async () => {
     ['wee', 6.0, () => engine.wee(6.0)],
     ['rain', 6.6, () => engine.rain(6.6)],
     ['rattle', 7.2, () => engine.rattle(7.2)],
-    ['music', 7.8, () => engine.renderMusic(7.8, 4.2)],
+    ['tada', 7.7, () => engine.tada(7.7)],
+    ['music', 8.6, () => engine.renderMusic(8.6, 3.4)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();

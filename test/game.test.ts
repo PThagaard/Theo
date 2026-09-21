@@ -218,6 +218,69 @@ describe('Game', () => {
     expect(game.sunHit).toBe(0);
   });
 
+  it('puts family photos on some balloons, taking turns between the photos', () => {
+    const { game } = makeGame();
+    game.balloons = [];
+    game.setPhotos(['mor', 'far', 'theo']);
+    const ids: string[] = [];
+    for (let i = 0; i < 60; i++) {
+      const b = game.spawnBalloon()!;
+      if (b.kind === 'photo') {
+        expect(b.photoId).toBeDefined();
+        ids.push(b.photoId!);
+      }
+      game.balloons = [];
+    }
+    expect(ids.length).toBeGreaterThan(8);
+    expect(new Set(ids)).toEqual(new Set(['mor', 'far', 'theo']));
+    // They take turns, so every family member shows up about equally often.
+    expect(ids.slice(0, 3).sort()).toEqual(['far', 'mor', 'theo']);
+  });
+
+  it('never makes photo balloons without photos', () => {
+    const { game } = makeGame();
+    for (let i = 0; i < 40; i++) {
+      game.balloons = [];
+      expect(game.spawnBalloon()!.kind).not.toBe('photo');
+    }
+  });
+
+  it('shows the photo big with hearts when a photo balloon pops', () => {
+    const { game, events } = makeGame();
+    game.balloons = [];
+    game.setPhotos(['theo']);
+    let balloon = game.spawnBalloon({ x: 200, y: 400 })!;
+    while (balloon.kind !== 'photo') {
+      game.balloons = [];
+      balloon = game.spawnBalloon({ x: 200, y: 400 })!;
+    }
+    game.press(1, balloon.x, balloon.y);
+    const card = game.particles.find((p) => p.shape === 'photo');
+    expect(card).toBeDefined();
+    expect(card!.photoId).toBe('theo');
+    expect(card!.x).toBeGreaterThan(card!.size * 0.5);
+    expect(card!.y).toBeGreaterThan(card!.size * 0.5);
+    expect(game.particles.filter((p) => p.shape === 'heart').length).toBeGreaterThanOrEqual(10);
+    expect(events.find((e) => e.type === 'pop')).toMatchObject({ kind: 'photo' });
+    // The photo stays on screen for a while even when lots of other particles are made.
+    for (let i = 0; i < 30; i++) game.shake();
+    expect(game.particles.some((p) => p.shape === 'photo')).toBe(true);
+  });
+
+  it('turns photo balloons back into ordinary balloons when their photo is removed', () => {
+    const { game } = makeGame();
+    game.balloons = [];
+    game.setPhotos(['mor']);
+    let balloon = game.spawnBalloon()!;
+    while (balloon.kind !== 'photo') {
+      game.balloons = [];
+      balloon = game.spawnBalloon()!;
+    }
+    game.setPhotos([]);
+    expect(balloon.kind).toBe('plain');
+    expect(balloon.photoId).toBeUndefined();
+  });
+
   it('celebrates every tenth pop', () => {
     const { game, events } = makeGame();
     let pops = 0;

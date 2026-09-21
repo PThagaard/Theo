@@ -61,6 +61,9 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg Android-app* under 
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
+- **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen (vælg fra galleriet eller tag et
+  selfie). Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort frem
+  med hjerter og "ta-daa". Billederne gemmes kun på telefonen.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.

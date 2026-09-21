@@ -118,6 +118,9 @@ bevidst i repoet, mens appen er privat; den skal skiftes til en privat nøgle f�
 - Hvert push kører `.github/workflows/build.yml`: tests, web-build, signeret **APK** til GitHub Releases (tag
   `latest`, versionsnummer `1.0.<build-nr>`), og webappen til **GitHub Pages** fra standard-branchen.
 - Forældre installerer fra Releases (se README). Webappen ligger på <https://pthagaard.github.io/Theo/>.
+- **Efter hver udgivelse skriver Claude en kort testliste til telefonen** (kun det, der er nyt eller ændret, i
+  prioriteret rækkefølge) i chatten og under versionen i `CHANGELOG.md`. Forældrene tester ud fra den og skriver
+  resultatet i `docs/OBSERVATIONER.md`.
 - Større milepæle (fx en ny aktivitet) beskrives i `CHANGELOG.md` med dato. Versionsnummeret i
   `android/app/build.gradle`/`package.json` bumpes ved milepæle (major.minor); patch følger build-nummeret.
 - Proces og checkliste: `docs/RELEASE.md`.

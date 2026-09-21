@@ -185,6 +185,71 @@ body {
   cursor: pointer;
 }
 
+#photo-section {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  text-align: left;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.photo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.photo-item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.photo-item img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffd93d;
+  display: block;
+}
+
+.photo-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: #ff4d6d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.photo-button {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
 #lock-section {
   border-top: 1px solid #eee;
   padding-top: 16px;

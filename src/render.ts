@@ -1,7 +1,7 @@
 import type { Game } from './game';
 import { TRAIL_LIFE } from './game';
 import { FLOWER_COLORS, HILLS, RAINBOW, SKY } from './palette';
-import { Rng, TAU, clamp } from './rng';
+import { Rng, TAU, clamp, easeOutBack } from './rng';
 import type { Balloon, Cloud, Particle, Trail } from './types';
 
 /**
@@ -53,11 +53,34 @@ export class Renderer {
   private sky: CanvasGradient | null = null;
   private rng = new Rng(20240101);
   private time = 0;
+  private photos = new Map<string, HTMLImageElement>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Canvas 2D er ikke understøttet');
     this.ctx = ctx;
+  }
+
+  /** Family photos for the photo balloons, keyed by id. */
+  setPhotos(photos: Array<{ id: string; dataUrl: string }>): void {
+    const next = new Map<string, HTMLImageElement>();
+    for (const photo of photos) {
+      const existing = this.photos.get(photo.id);
+      if (existing) {
+        next.set(photo.id, existing);
+        continue;
+      }
+      const image = new Image();
+      image.src = photo.dataUrl;
+      next.set(photo.id, image);
+    }
+    this.photos = next;
+  }
+
+  private photo(id: string | undefined): HTMLImageElement | null {
+    if (!id) return null;
+    const image = this.photos.get(id);
+    return image && image.complete && image.naturalWidth > 0 ? image : null;
   }
 
   resize(width: number, height: number, dpr: number): void {
@@ -341,8 +364,27 @@ export class Renderer {
     const rx = b.r;
     const ry = b.r * 1.15;
 
+    const photo = b.kind === 'photo' ? this.photo(b.photoId) : null;
     this.bodyPath(rx, ry);
-    if (b.kind === 'rainbow') {
+    if (photo) {
+      // The photo fills the balloon, with a gentle shade so it still looks round.
+      ctx.save();
+      ctx.clip();
+      const side = Math.max(rx * 2, ry * 2);
+      ctx.drawImage(photo, -side / 2, -side / 2, side, side);
+      const shade = ctx.createRadialGradient(-rx * 0.35, -ry * 0.4, rx * 0.1, 0, 0, rx * 1.35);
+      shade.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+      shade.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
+      shade.addColorStop(1, 'rgba(40, 20, 60, 0.35)');
+      ctx.fillStyle = shade;
+      ctx.fill();
+      ctx.restore();
+      // A coloured rim so it reads as a balloon and not a loose picture.
+      this.bodyPath(rx, ry);
+      ctx.strokeStyle = b.color.main;
+      ctx.lineWidth = rx * 0.1;
+      ctx.stroke();
+    } else if (b.kind === 'rainbow') {
       const stripes = ctx.createLinearGradient(0, -ry, 0, ry);
       RAINBOW.forEach((color, i) => stripes.addColorStop(i / (RAINBOW.length - 1), color));
       ctx.fillStyle = stripes;
@@ -353,7 +395,7 @@ export class Renderer {
       shade.addColorStop(1, b.color.dark);
       ctx.fillStyle = shade;
     }
-    ctx.fill();
+    if (!photo) ctx.fill();
 
     if (b.kind === 'dots' || b.kind === 'stripes' || b.kind === 'star') {
       ctx.save();
@@ -373,10 +415,10 @@ export class Renderer {
       ctx.fill();
     }
 
-    // Glint.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    // Glint (smaller on a photo, so it doesn't hide an eye).
+    ctx.fillStyle = photo ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.6)';
     ctx.beginPath();
-    ctx.ellipse(-rx * 0.42, -ry * 0.45, rx * 0.16, ry * 0.26, -0.55, 0, TAU);
+    ctx.ellipse(-rx * 0.42, -ry * 0.45, rx * (photo ? 0.1 : 0.16), ry * (photo ? 0.16 : 0.26), -0.55, 0, TAU);
     ctx.fill();
 
     // Knot.
@@ -388,7 +430,7 @@ export class Renderer {
     ctx.closePath();
     ctx.fill();
 
-    this.drawFace(b, rx, ry);
+    if (!photo) this.drawFace(b, rx, ry);
     ctx.restore();
   }
 
@@ -503,6 +545,12 @@ export class Renderer {
       return;
     }
 
+    if (p.shape === 'photo') {
+      this.drawPhotoCard(p, lifeRatio);
+      ctx.restore();
+      return;
+    }
+
     if (p.shape === 'string') {
       const wobble = Math.sin(this.time * 6) * 8 * u;
       ctx.strokeStyle = p.color;
@@ -548,6 +596,35 @@ export class Renderer {
         break;
     }
     ctx.restore();
+  }
+
+  /** A family photo bouncing in as a round picture with a white border, then fading out. */
+  private drawPhotoCard(p: Particle, lifeRatio: number): void {
+    const ctx = this.ctx;
+    const image = this.photo(p.photoId);
+    const shown = 1 - lifeRatio;
+    const bounce = shown < 0.3 ? easeOutBack(shown / 0.3) : 1;
+    const alpha = p.life < 0.4 ? p.life / 0.4 : 1;
+    const radius = (p.size / 2) * bounce;
+    if (radius <= 1) return;
+    ctx.globalAlpha = alpha;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.sin(shown * 9) * 0.06 * (1 - shown));
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.07, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, TAU);
+    if (image) {
+      ctx.save();
+      ctx.clip();
+      ctx.drawImage(image, -radius, -radius, radius * 2, radius * 2);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
   }
 
   private starPath(x: number, y: number, r: number, points: number, innerRatio = 0.5): void {

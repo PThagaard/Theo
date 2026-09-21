@@ -472,6 +472,17 @@ export class AudioEngine {
     this.sparkle(when + 0.12);
   }
 
+  /** Bright "ta-daa!" when a family photo jumps out of a balloon. */
+  tada(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.musicBox(this.sfxBus, 79, when, 0.25, 0.4);
+    this.synth.musicBox(this.sfxBus, 84, when + 0.16, 1.0, 0.45);
+    for (const midi of [72, 76, 79]) {
+      this.synth.tone(this.sfxBus, 'sine', midiToFreq(midi), when + 0.16, 0.1, 0.02, 0.9);
+    }
+    this.sparkle(when + 0.3);
+  }
+
   /** Maraca-like rattle with a little bell when the phone is shaken. */
   rattle(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
