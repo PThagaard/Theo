@@ -5,9 +5,9 @@ import { ACTIVITIES, findActivity, type ActivityEntry } from './activities/regis
 import type { Activity, ActivityContext } from './engine/activity';
 import { AGE_PROFILES } from './engine/age';
 import { AudioEngine } from './engine/audio';
-import { attachInput, attachShake } from './engine/input';
+import { attachInput, attachShake, attachTilt } from './engine/input';
 import { kidLock } from './engine/kidlock';
-import { ParentPanel, loadSettings, saveSettings } from './engine/parent';
+import { MUSIC_SPEEDS, ParentPanel, loadSettings, saveSettings } from './engine/parent';
 import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto, type StoredPhoto } from './engine/photos';
 import { SessionClock } from './engine/session';
 import { Stats } from './engine/stats';
@@ -37,6 +37,8 @@ function ensureAudio(): void {
       audio = AudioEngine.create();
       audio.setSfxEnabled(settings.sfx);
       audio.setMusicLevel(AGE_PROFILES[settings.age].music);
+      audio.setSongsOff(settings.songsOff);
+      audio.setMusicSpeed(MUSIC_SPEEDS[settings.musicSpeed]);
       audio.setMusicEnabled(settings.music);
       void loadVoicesIntoAudio();
     } catch (error) {
@@ -148,8 +150,12 @@ const panel = new ParentPanel(settings, {
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
     audio?.setMusicLevel(AGE_PROFILES[updated.age].music);
+    audio?.setSongsOff(updated.songsOff);
+    audio?.setMusicSpeed(MUSIC_SPEEDS[updated.musicSpeed]);
     activity?.applySettings(updated);
   },
+  currentSong: () => audio?.currentSongName ?? null,
+  onSkipSong: () => audio?.skipSong(),
   // Opening the menu (a two second hold by a parent) wakes the world after a pause.
   onOpen: () => wakeUp(),
   pauseStatus: () => {
@@ -160,7 +166,7 @@ const panel = new ParentPanel(settings, {
   },
   currentGame: () => {
     const entry = activity ? findActivity(activity.id) : null;
-    return entry ? { id: entry.id, title: entry.title, hasTempo: entry.hasTempo, hasVoices: entry.hasVoices } : null;
+    return entry ? { id: entry.id, title: entry.title, hasTempo: entry.hasTempo, hasVoices: entry.hasVoices, familyWhere: entry.familyWhere } : null;
   },
   onSwitchGame: () => showStartPage(),
   lock: kidLock,
@@ -219,6 +225,8 @@ attachShake(() => {
   lastTouch = performance.now();
   activity.shake();
 });
+// Tilting the phone: the bath's water stays level with the world.
+attachTilt((roll) => activity?.tilt?.(roll));
 
 // ---- Screen ----------------------------------------------------------------
 
@@ -240,6 +248,17 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 // minutes with the world awake in front of the child, it calmly goes to sleep until a parent wakes it by
 // opening the menu. Time in the menu does not count; a quiet stretch does (the screen is still on).
 const session = new SessionClock();
+// A small, faint countdown in the corner while a pause is set, so the parents can see how long there is left.
+const countdown = document.getElementById('pause-countdown') as HTMLElement;
+let countdownShown = '';
+function renderCountdown(): void {
+  const left = activity && !activity.asleep && !panel.isOpen && startPage.hidden ? session.left(settings.pauseAfter) : null;
+  const text = left === null ? '' : `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+  if (text === countdownShown) return;
+  countdownShown = text;
+  countdown.hidden = text === '';
+  countdown.textContent = text;
+}
 function wakeUp(): void {
   if (!activity?.asleep) return;
   activity.wake();
@@ -260,6 +279,7 @@ function frame(now: number): void {
   lastFrame = now;
   try {
     if (!activity) {
+      renderCountdown();
       requestAnimationFrame(frame);
       return;
     }
@@ -270,6 +290,7 @@ function frame(now: number): void {
     if (awake && now - lastTouch < 30000) stats.addPlayTime(dt);
     session.tick(dt, awake);
     if (awake && session.due(settings.pauseAfter)) fallAsleep();
+    renderCountdown();
   } catch (error) {
     // Never let one bad frame freeze the game for a small child.
     if (loggedErrors++ < 5) console.error('Fejl i spil-loopet', error);

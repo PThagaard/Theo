@@ -27,7 +27,8 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
 3. **Ingen tekst, knapper eller menuer til barnet.** Alt voksen-UI ligger bag "hold nede i 2 sekunder"-porten
    (forældremenuen), som også afbrydes, hvis flere fingre rører skærmen. Undtagelsen er forsiden "Theos spil", som
    kun vises, når appen åbnes eller forældrene vælger *Skift spil*; inde i et spil findes der ingen vej tilbage til
-   den.
+   den. Den anden undtagelse er en lille, mat nedtælling til pausen nederst til højre (kun tal, intet at trykke på),
+   som forældrene bad om.
 4. **Barnet kan ikke forlade eller ødelægge noget.** Tilbage ignoreres, zoom/scroll/langt-tryk er blokeret, skærmen
    slukker ikke, og appen kan låses fast på skærmen (KidLock). Indstillinger kan kun ændres fra forældremenuen.
 5. **Roligt og trygt.** Moderat lydstyrke og et kompressor-sikret miks; ingen pludselige høje eller skræmmende lyde;

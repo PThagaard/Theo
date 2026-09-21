@@ -103,9 +103,11 @@ if (!(sunHit < 0.5)) throw new Error('sun did not react');
 await page.screenshot({ path: `${OUT}/${tag}-03c-sun.png`, clip: { x: viewport.width - 160, y: 0, width: 160, height: 160 } });
 const cloud = await page.evaluate(() => {
   const g = window.__theo.game;
-  // A visitor (bird, butterfly) flying in front of the cloud would take the touch instead; clear the sky first.
+  // A visitor (bird, butterfly) flying in front of the cloud would take the touch instead; clear the sky first,
+  // and keep away from the corner button, which would swallow the tap.
   g.visitors = [];
-  const c = g.clouds.find((c) => c.x > 60 && c.x < g.width - 60 && c.y > 60 && !g.findBalloonAt(c.x, c.y, 1.6));
+  g.visitorTimer = 30;
+  const c = g.clouds.find((c) => c.x > 150 && c.x < g.width - 60 && c.y > 60 && !g.findBalloonAt(c.x, c.y, 1.6));
   return c ? [c.x, c.y] : null;
 });
 if (cloud) {
@@ -356,6 +358,27 @@ await page.waitForTimeout(150);
 await page.touchscreen.tap(bath.duck.x, bath.duck.y);
 await page.waitForTimeout(200);
 await page.screenshot({ path: `${OUT}/${tag}-32-bobler-splash.png` });
+check((await page.evaluate(() => window.__theo.game.ducks[0].color)) === 1, 'touching the duck should give it its next colour');
+// A long press on the duck: rainbow colours and a dash across the bath.
+const duckNow = await page.evaluate(() => { const g = window.__theo.game; const d = g.ducks[0]; return { x: d.x, y: g.duckY(d) - g.duckSize * 0.5 }; });
+await page.mouse.move(duckNow.x, duckNow.y);
+await page.mouse.down();
+await page.waitForTimeout(700);
+await page.mouse.up();
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/${tag}-32b-bobler-rainbow-duck.png` });
+check(await page.evaluate(() => window.__theo.game.ducks[0].rainbow > 0), 'a long press should send the duck on a rainbow dash');
+// Tilting the phone (synthetic motion readings, right side down, enough of them for the smoothing to follow):
+// the water climbs the right side.
+for (let i = 0; i < 12; i++) {
+  await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: -5, y: 8.4, z: 0 } })));
+  await page.waitForTimeout(45);
+}
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `${OUT}/${tag}-32c-bobler-tilt.png` });
+check(await page.evaluate(() => { const g = window.__theo.game; return g.tilt > 0.05 && g.surfaceY(g.width * 0.9) < g.surfaceY(g.width * 0.1); }), 'tilting the phone should tilt the water');
+await page.evaluate(() => { window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.8, z: 0 } })); window.__theo.game.setTilt(0); });
+await page.waitForTimeout(800);
 // A swipe across the wall pops what it crosses and leaves a trail of tiny bubbles.
 await page.evaluate(() => { const g = window.__theo.game; for (const f of [0.3, 0.5, 0.7]) g.spawnBubble({ x: g.width * f, y: g.height * 0.3, r: g.baseR, kind: 'plain' }); });
 await page.waitForTimeout(400);
@@ -365,7 +388,7 @@ await page.mouse.move(bath.w * 0.9, bath.h * 0.3, { steps: 24 });
 await page.mouse.up();
 await page.waitForTimeout(200);
 // Hold still on the water (the ducks are moved aside): a bubble grows under the finger and floats off when let go.
-await page.evaluate(() => { const g = window.__theo.game; g.ducks.forEach((d, i) => { d.x = g.width * (i === 0 ? 0.12 : 0.88); }); });
+await page.evaluate(() => { const g = window.__theo.game; g.ducks.forEach((d, i) => { d.rainbow = 0; d.vx = 0; d.x = g.width * (i === 0 ? 0.12 : 0.88); }); });
 await page.mouse.move(bath.w * 0.5, bath.h * 0.82);
 await page.mouse.down();
 await page.waitForTimeout(1500);
@@ -381,6 +404,35 @@ const bathShook = await page.evaluate(() => {
 });
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}/${tag}-34-bobler-shake.png` });
+// Guests: the whale surfaces and spouts when touched, the cow in the speedboat moos, the shower sprays from above.
+await page.evaluate(() => {
+  const g = window.__theo.game; g.guests = []; g.spawnTimer = 30;
+  // One bubble parked in the top corner keeps the "never empty" rule from dropping a new one onto the whale.
+  g.bubbles = []; g.spawnBubble({ x: 40, y: 80, r: 18, kind: 'plain' });
+  g.spawnGuest('whale');
+  const boat = g.spawnGuest('boat'); boat.dir = -1; boat.vx = -Math.abs(boat.vx); boat.x = g.width * 0.85;
+  g.spawnGuest('shower');
+});
+await page.waitForTimeout(1600);
+const whaleHit = await page.evaluate(() => { const w = window.__theo.game.guests.find((g) => g.kind === 'whale'); return w ? { x: w.x, y: w.y - w.size * 0.3 } : null; });
+check(whaleHit, 'the whale did not stay at the surface');
+await page.touchscreen.tap(whaleHit.x, whaleHit.y);
+await page.waitForTimeout(250);
+await page.screenshot({ path: `${OUT}/${tag}-35-bobler-guests.png` });
+const boatHit = await page.evaluate(() => { const b = window.__theo.game.guests.find((g) => g.kind === 'boat'); return b ? { x: b.x, y: b.y - b.size * 0.3 } : null; });
+if (boatHit && boatHit.x > 10 && boatHit.x < bath.w - 10) await page.touchscreen.tap(boatHit.x, boatHit.y);
+await page.waitForTimeout(300);
+await page.evaluate(() => {
+  const g = window.__theo.game; g.guests = [];
+  const fish = g.spawnGuest('fish'); fish.x = g.width * 0.3;
+  const ski = g.spawnGuest('jetski'); ski.dir = 1; ski.vx = Math.abs(ski.vx); ski.x = g.width * 0.15;
+});
+await page.waitForTimeout(1300);
+await page.screenshot({ path: `${OUT}/${tag}-36-bobler-fish.png` });
+const guestStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { seen: s.bathGuests ?? 0, poked: s.bathGuestsPoked ?? 0, whale: s['guest:whale'] ?? 0 }; });
+console.log('guests:', JSON.stringify(guestStats));
+check(guestStats.seen >= 5 && guestStats.whale >= 1, 'the bath guests did not appear or answer');
+await page.evaluate(() => { window.__theo.game.guests = []; window.__theo.audio()?.stopRain(); });
 const bathStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { popped: s.bubblesPopped ?? 0, splashes: s.splashes ?? 0, quacks: s.quacks ?? 0, blown: s.bubblesBlown ?? 0, swipes: s.bubbleSwipes ?? 0, shakes: s.bubbleShakes ?? 0, bubbles: window.__theo.game.bubbles.length }; });
 console.log('bobler:', JSON.stringify(bathStats), 'shook', bathShook);
 check(bathStats.popped >= 3 && bathStats.splashes >= 1 && bathStats.quacks >= 1 && bathStats.blown >= 1 && bathStats.swipes >= 1 && bathShook >= 1, 'Bobler did not answer tap, splash, duck, swipe, hold and shake');
@@ -502,12 +554,26 @@ check(await page.evaluate(() => window.__theo.game.currentAge) === '2+', 'the ag
 await page.click('#pause-options button[data-pause="5"]');
 await page.click('label:has(#opt-music)');
 await page.click('#tempo-options button[data-tempo="vild"]');
-// The pages of the menu: only "Leg", "Familie" and "Theos leg" show on the web (no lock or update there).
+// The pages of the menu: "Leg", "Musik", "Familie" and "Theos leg" show on the web (no lock or update there).
 const tabsShown = await page.evaluate(() => Array.from(document.querySelectorAll('#parent-tabs button')).filter((b) => !b.hidden).map((b) => b.dataset.tab));
 console.log('menu pages:', tabsShown.join(', '));
-check(tabsShown.join(',') === 'leg,familie,theo', 'unexpected menu pages on the web');
+check(tabsShown.join(',') === 'leg,musik,familie,theo', 'unexpected menu pages on the web');
 await page.click('#tab-theo');
 check(await page.evaluate(() => !document.querySelector('.tab-page[data-tab="theo"]').hidden && document.querySelector('.tab-page[data-tab="leg"]').hidden), 'the Theos leg page did not open');
+await page.click('#tab-leg');
+// The Musik page: every song has a switch, Baby Shark first; a song can be switched off, and the speed changed.
+await page.click('#tab-musik');
+const songRows = await page.evaluate(() => Array.from(document.querySelectorAll('#song-list input[data-song]')).map((i) => i.dataset.song));
+console.log('songs:', songRows.join(', '));
+check(songRows.length >= 7 && songRows[0] === 'baby-shark', 'the song list should start with Baby Shark');
+await page.click('#song-list label:has(input[data-song="mary"])');
+await page.click('#music-speed-options button[data-speed="hurtig"]');
+await page.waitForTimeout(150);
+const musicSettings = await page.evaluate(() => JSON.parse(localStorage.getItem('theos-balloner.settings')));
+check(musicSettings.songsOff.includes('mary') && musicSettings.musicSpeed === 'hurtig', 'switching a song off or changing the speed was not saved');
+await page.click('#music-speed-options button[data-speed="normal"]');
+await page.click('#song-list label:has(input[data-song="mary"])');
+await page.screenshot({ path: `${OUT}/${tag}-06c-music.png` });
 await page.click('#tab-leg');
 const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
 console.log('stored settings:', stored);
@@ -612,6 +678,11 @@ const said = await page.evaluate(() => {
 });
 console.log('words said when the dog was touched in Ord:', said);
 check(said >= 1, 'touching the dog in Ord did not say the recorded word');
+// With a pause set (5 min above), a small countdown sits in the corner while a game runs and the menu is closed.
+await page.waitForTimeout(300);
+const countdownText = await page.evaluate(() => { const c = document.getElementById('pause-countdown'); return c.hidden ? null : c.textContent; });
+console.log('pause countdown:', countdownText);
+check(countdownText && /^\d+:\d\d$/.test(countdownText), 'the pause countdown should show m:ss in the corner');
 // Back to the balloons for the rest of the checks (the photo added above follows along).
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(600);
@@ -666,7 +737,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 27, sr);
+  const ctx = new OfflineAudioContext(1, sr * 30, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -698,6 +769,9 @@ const audio = await page.evaluate(async () => {
     ['splash', 24.6, () => { engine.splash(false, 24.6); engine.splash(true, 25.0); }],
     ['quack', 25.6, () => engine.quack(25.6)],
     ['gurgle', 26.2, () => engine.gurgle(26.2)],
+    ['whale', 26.9, () => { engine.whaleCall(26.9); engine.spout(28.0); }],
+    ['squawk', 28.9, () => engine.squawk(28.9)],
+    ['whine', 29.3, () => engine.whine(29.3)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -713,7 +787,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 27;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 30;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -725,7 +799,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 27);
+  out.total = stats(0, 30);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

@@ -40,6 +40,9 @@
       </div>
     </div>
 
+    <!-- A small, faint countdown to the pause (parents glance at it; nothing for the child to press). -->
+    <div id="pause-countdown" hidden aria-hidden="true"></div>
+
     <div id="parent-panel" hidden>
       <div class="card" role="dialog" aria-labelledby="parent-title">
         <div class="card-balloon" aria-hidden="true">🎈</div>
@@ -47,6 +50,7 @@
         <p class="subtitle">Forældremenu</p>
         <div id="parent-tabs" class="tabs" role="tablist" aria-label="Forældremenu">
           <button id="tab-leg" type="button" role="tab" data-tab="leg">🎈 Leg</button>
+          <button id="tab-musik" type="button" role="tab" data-tab="musik">🎵 Musik</button>
           <button id="tab-familie" type="button" role="tab" data-tab="familie">📷 Familie</button>
           <button id="tab-theo" type="button" role="tab" data-tab="theo">📊 Theos leg</button>
           <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
@@ -95,11 +99,31 @@
           <p id="pause-status" class="row-help"></p>
         </div>
         </section>
+        <section class="tab-page" data-tab="musik" hidden>
+          <div class="row row-stacked">
+            <span class="row-label">🎵 Sangene</span>
+            <p class="row-help">
+              Alle sange er gamle børnesange (fri musik) eller vores egne, spillet af appens egen spilledåse. Slå fra dem,
+              I er trætte af; Baby Shark spiller først. Musikken er lavere for de mindste, så jeres stemmer vinder.
+            </p>
+            <p id="song-status" class="row-help"></p>
+            <button id="song-skip" type="button" class="photo-button">⏭️ Næste sang</button>
+          </div>
+          <div class="row row-stacked">
+            <span class="row-label">🐢 Hastighed</span>
+            <div id="music-speed-options" class="segmented" role="group" aria-label="Musikkens hastighed">
+              <button type="button" data-speed="langsom">Langsom</button>
+              <button type="button" data-speed="normal">Normal</button>
+              <button type="button" data-speed="hurtig">Hurtig</button>
+            </div>
+          </div>
+          <div id="song-list"></div>
+        </section>
         <section class="tab-page" data-tab="familie" hidden>
         <div id="photo-section" hidden>
-          <h2 class="section-title">📷 Familie-balloner</h2>
+          <h2 class="section-title" id="family-title">📷 Familien i spillene</h2>
           <label class="row">
-            <span class="row-label">Vis familien på balloner</span>
+            <span class="row-label" id="family-label">Vis familien i spillene</span>
             <input type="checkbox" id="opt-family" />
             <span class="switch" aria-hidden="true"></span>
           </label>

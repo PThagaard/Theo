@@ -4,6 +4,7 @@ import type { StoredPhoto } from './photos';
 import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
 import type { AppUpdate, UpdateCheck } from './update';
 import { DEFAULT_AGE, type Age } from './age';
+import { SONGS } from './music';
 import { MIN_VOICE_SECONDS, VOICE_WORDS, photoVoiceKey, type Recording, type StoredVoice } from './voices';
 
 /**
@@ -13,6 +14,9 @@ import { MIN_VOICE_SECONDS, VOICE_WORDS, photoVoiceKey, type Recording, type Sto
  */
 
 export type Tempo = 'rolig' | 'normal' | 'vild';
+export type MusicSpeed = 'langsom' | 'normal' | 'hurtig';
+/** Playback speed per setting: the songs are written at a calm pace already. */
+export const MUSIC_SPEEDS: Record<MusicSpeed, number> = { langsom: 0.8, normal: 1, hurtig: 1.2 };
 export type PauseAfter = 0 | 5 | 10 | 20;
 
 export interface Settings {
@@ -30,6 +34,10 @@ export interface Settings {
   familyBalloons: boolean;
   /** Which activity runs (see src/activities/registry.ts). */
   activity: string;
+  /** How fast the songs play. */
+  musicSpeed: MusicSpeed;
+  /** Songs the parents have switched off (ids from engine/music.ts). */
+  songsOff: string[];
 }
 
 export interface PhotoHooks {
@@ -66,7 +74,11 @@ export interface ParentPanelHooks {
   /** The menu opened (a parent held the corner button). */
   onOpen?(): void;
   /** The game running now (null on the start page), so the menu can show its name and its own settings. */
-  currentGame?(): { id: string; title: string; hasTempo: boolean; hasVoices: boolean } | null;
+  currentGame?(): { id: string; title: string; hasTempo: boolean; hasVoices: boolean; familyWhere: string } | null;
+  /** The name of the song playing right now, for the Musik page. */
+  currentSong?(): string | null;
+  /** The parents' "next song" button. */
+  onSkipSong?(): void;
   /** "Skift spil": back to the start page. */
   onSwitchGame?(): void;
   /** One line about the pause ("falder i søvn om 7 min"), shown while the menu is open. */
@@ -84,9 +96,10 @@ const TAB_KEY = 'theos-balloner.parentTab';
 /** The background check after start happens at most this often. */
 const BACKGROUND_CHECK_KEY = 'theos-balloner.lastUpdateCheck';
 const BACKGROUND_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
-type TabName = 'leg' | 'familie' | 'theo' | 'telefon';
-const TABS: TabName[] = ['leg', 'familie', 'theo', 'telefon'];
-const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', age: DEFAULT_AGE, pauseAfter: 10, familyBalloons: true, activity: 'balloner' };
+type TabName = 'leg' | 'musik' | 'familie' | 'theo' | 'telefon';
+const TABS: TabName[] = ['leg', 'musik', 'familie', 'theo', 'telefon'];
+const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', age: DEFAULT_AGE, pauseAfter: 10, familyBalloons: true, activity: 'balloner', musicSpeed: 'normal', songsOff: [] };
+const MUSIC_SPEED_NAMES: MusicSpeed[] = ['langsom', 'normal', 'hurtig'];
 const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
 const AGES: Age[] = ['8-12', '1-2', '2+'];
 const PAUSES: PauseAfter[] = [0, 5, 10, 20];
@@ -102,6 +115,9 @@ export function loadSettings(): Settings {
       if (!AGES.includes(stored.age)) stored.age = DEFAULT_AGE;
       if (!PAUSES.includes(stored.pauseAfter)) stored.pauseAfter = 10;
       if (typeof stored.activity !== 'string') stored.activity = DEFAULTS.activity;
+      if (!MUSIC_SPEED_NAMES.includes(stored.musicSpeed)) stored.musicSpeed = 'normal';
+      if (!Array.isArray(stored.songsOff)) stored.songsOff = [];
+      stored.songsOff = stored.songsOff.filter((id): id is string => typeof id === 'string');
       return stored;
     }
   } catch {
@@ -194,6 +210,9 @@ class HoldButton {
 export class ParentPanel {
   private readonly panel = element<HTMLElement>('parent-panel');
   private readonly musicToggle = element<HTMLInputElement>('opt-music');
+  private readonly musicSpeedButtons = Array.from(element<HTMLElement>('music-speed-options').querySelectorAll<HTMLButtonElement>('button[data-speed]'));
+  private readonly songList = element<HTMLElement>('song-list');
+  private readonly songStatus = element<HTMLElement>('song-status');
   private readonly sfxToggle = element<HTMLInputElement>('opt-sfx');
   private readonly autoLockToggle = element<HTMLInputElement>('opt-autolock');
   private readonly familyToggle = element<HTMLInputElement>('opt-family');
@@ -270,6 +289,28 @@ export class ParentPanel {
     for (const toggle of [this.musicToggle, this.sfxToggle, this.autoLockToggle, this.familyToggle]) {
       toggle.addEventListener('change', () => this.changed());
     }
+    for (const button of this.musicSpeedButtons) {
+      button.addEventListener('click', () => {
+        this.settings.musicSpeed = button.dataset.speed as MusicSpeed;
+        this.renderChoices();
+        this.changed();
+      });
+    }
+    this.renderSongs();
+    this.songList.addEventListener('change', (event) => {
+      const input = (event.target as HTMLInputElement).closest<HTMLInputElement>('input[data-song]');
+      if (!input?.dataset.song) return;
+      const id = input.dataset.song;
+      const off = new Set(this.settings.songsOff);
+      if (input.checked) off.delete(id);
+      else off.add(id);
+      this.settings.songsOff = [...off];
+      this.changed();
+    });
+    element<HTMLButtonElement>('song-skip').addEventListener('click', () => {
+      this.hooks.onSkipSong?.();
+      window.setTimeout(() => this.renderSongStatus(), 400);
+    });
     for (const button of this.tempoButtons) {
       button.addEventListener('click', () => {
         this.settings.tempo = button.dataset.tempo as Tempo;
@@ -355,6 +396,7 @@ export class ParentPanel {
     // Pages: a tab only shows when there is something on it (no photos in some builds, no lock/update on the web).
     const available: Record<TabName, boolean> = {
       leg: true,
+      musik: true,
       familie: !!hooks.photos,
       theo: !!hooks.stats,
       telefon: !!hooks.update?.available || !!hooks.lock?.available,
@@ -447,7 +489,41 @@ export class ParentPanel {
     this.pauseStatus.textContent = this.hooks.pauseStatus?.() ?? '';
   }
 
+  /** One row per song, with a switch; the songs come from engine/music.ts. */
+  private renderSongs(): void {
+    const off = new Set(this.settings.songsOff);
+    this.songList.replaceChildren(
+      ...SONGS.map((song) => {
+        const row = document.createElement('label');
+        row.className = 'row';
+        const label = document.createElement('span');
+        label.className = 'row-label';
+        label.textContent = `🎵 ${song.name}`;
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.dataset.song = song.id;
+        input.checked = !off.has(song.id);
+        const toggle = document.createElement('span');
+        toggle.className = 'switch';
+        toggle.setAttribute('aria-hidden', 'true');
+        row.append(label, input, toggle);
+        return row;
+      }),
+    );
+    this.renderSongStatus();
+  }
+
+  private renderSongStatus(): void {
+    const name = this.hooks.currentSong?.() ?? null;
+    this.songStatus.textContent = name ? `Spiller nu: ${name}` : 'Musikken er slået fra.';
+  }
+
   private renderChoices(): void {
+    for (const button of this.musicSpeedButtons) {
+      const selected = button.dataset.speed === this.settings.musicSpeed;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
     for (const button of this.ageButtons) {
       const selected = button.dataset.age === this.settings.age;
       button.classList.toggle('is-selected', selected);
@@ -468,6 +544,11 @@ export class ParentPanel {
     this.tempoRow.hidden = !(game?.hasTempo ?? false);
     // The parents' words are only spoken by Titte-bøh og Ord, so recording them only shows there.
     this.voiceSection.hidden = !this.hooks.voices || !(game?.hasVoices ?? false);
+    // The family photos are used by every game, but the wording says where they show up in this one.
+    const where = game?.familyWhere ?? 'i spillene';
+    element<HTMLElement>('family-title').textContent = `📷 Familien ${where}`;
+    element<HTMLElement>('family-label').textContent = `Vis familien ${where}`;
+    this.renderSongStatus();
   }
 
   private changed(): void {

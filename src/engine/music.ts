@@ -7,6 +7,8 @@
  */
 
 export interface Song {
+  /** Stable id for the settings (which songs are switched off). */
+  id: string;
   name: string;
   bpm: number;
   /** 4 for 4/4, 3 for a waltz, 2 for a 6/8 song counted in two. */
@@ -117,9 +119,35 @@ export function compileSong(song: Song): CompiledSong {
   return { events, totalBeats: Math.max(melodyBeats, chordBeat), melodyBeats, chordBeats: chordBeat };
 }
 
-/** All songs are traditional public-domain children's tunes, plus one original waltz. */
+/**
+ * All songs are traditional public-domain children's tunes, plus one original waltz. Baby Shark's melody is a
+ * traditional campfire song (the words and tune predate every recording of it); this is our own notation of it,
+ * played by the app's music box, no recording and no lyrics. It comes first because it is Theo's favourite.
+ */
 export const SONGS: Song[] = [
   {
+    id: 'baby-shark',
+    name: 'Baby Shark',
+    bpm: 116,
+    beatsPerBar: 4,
+    subdivision: 2,
+    melody:
+      // A one-beat pickup ("ba-by"), then "SHARK, doo doo doo doo doo doo" three times with the next pickup
+      // tucked into the end of each bar, then "Ba-by SHARK!"; then once more a step up.
+      'G4/1/2 A4/1/2 ' +
+      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
+      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
+      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
+      'C5/2 R/1 ' +
+      'A4/1/2 B4/1/2 ' +
+      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
+      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
+      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
+      'D5/2 R/1',
+    chords: 'C/1 C F G C/3 D/1 D G A D/3',
+  },
+  {
+    id: 'lille-stjerne',
     name: 'Lille stjerne (Twinkle Twinkle)',
     bpm: 100,
     beatsPerBar: 4,
@@ -131,6 +159,7 @@ export const SONGS: Song[] = [
     chords: 'C F/2 C/2 F/2 C/2 G/2 C/2 C/2 F/2 C/2 G/2 C/2 F/2 C/2 G/2 C F/2 C/2 F/2 C/2 G/2 C/2',
   },
   {
+    id: 'mary',
     name: 'Mary havde et lille lam',
     bpm: 112,
     beatsPerBar: 4,
@@ -139,6 +168,7 @@ export const SONGS: Song[] = [
     chords: 'C C G C C C G C',
   },
   {
+    id: 'ro-ro',
     name: 'Ro, ro, ro din båd',
     bpm: 84,
     beatsPerBar: 2,
@@ -150,6 +180,7 @@ export const SONGS: Song[] = [
     chords: 'C C C C C C G C',
   },
   {
+    id: 'mester-jakob',
     name: 'Mester Jakob',
     bpm: 104,
     beatsPerBar: 4,
@@ -161,6 +192,7 @@ export const SONGS: Song[] = [
     chords: 'C C C C C C C/1 G/1 C/2 C/1 G/1 C/2',
   },
   {
+    id: 'jens-hansen',
     name: 'Jens Hansen havde en bondegård',
     bpm: 112,
     beatsPerBar: 4,
@@ -174,6 +206,7 @@ export const SONGS: Song[] = [
     chords: 'C F/2 C/2 G C C F/2 C/2 G C C C C C C F/2 C/2 G C',
   },
   {
+    id: 'ballonvalsen',
     name: 'Ballonvalsen',
     bpm: 150,
     beatsPerBar: 3,

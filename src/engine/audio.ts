@@ -155,6 +155,11 @@ class MusicPlayer {
   private order: number[] = [];
   private orderIndex = 0;
   private playing = false;
+  /** Playback speed, 1 = the song's own tempo. */
+  private speed = 1;
+  /** Ids of the songs the parents have switched off. */
+  private off = new Set<string>();
+  private firstRun = true;
 
   constructor(
     private readonly synth: Synth,
@@ -170,8 +175,37 @@ class MusicPlayer {
     return this.song;
   }
 
+  /** The songs the parents have left on (all of them when they switch off every one, so music is never silent). */
+  private get enabled(): number[] {
+    const on = this.songs.map((_, i) => i).filter((i) => !this.off.has(this.songs[i].id));
+    return on.length > 0 ? on : this.songs.map((_, i) => i);
+  }
+
+  setOff(ids: Iterable<string>): void {
+    this.off = new Set(ids);
+    this.order = this.order.filter((i) => this.enabled.includes(i));
+    this.orderIndex = Math.min(this.orderIndex, this.order.length);
+  }
+
+  /** Changes the speed now, keeping the place in the song. */
+  setSpeed(speed: number, now: number): void {
+    const next = clamp(speed, 0.5, 1.6);
+    if (this.song) {
+      const beatsElapsed = (now - this.songStart) / this.secPerBeat;
+      this.secPerBeat = 60 / this.song.bpm / next;
+      this.songStart = now - beatsElapsed * this.secPerBeat;
+    }
+    this.speed = next;
+  }
+
   start(at: number): void {
     this.playing = true;
+    this.load(at);
+  }
+
+  /** Jumps to the next song (what is already scheduled of the current one finishes playing). */
+  skip(at: number): void {
+    if (!this.playing) return;
     this.load(at);
   }
 
@@ -204,18 +238,24 @@ class MusicPlayer {
     this.compiled = compileSong(song);
     this.cursor = 0;
     this.songStart = at;
-    this.secPerBeat = 60 / song.bpm;
+    this.secPerBeat = 60 / song.bpm / this.speed;
   }
 
   private shuffle(): void {
     const previous = this.order.length ? this.order[this.order.length - 1] : -1;
-    const order = this.songs.map((_, i) => i);
+    const order = [...this.enabled];
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [order[i], order[j]] = [order[j], order[i]];
     }
     // Don't play the same song twice in a row when the playlist wraps around.
     if (order.length > 1 && order[0] === previous) [order[0], order[1]] = [order[1], order[0]];
+    // The first song of a session is the first in the list (Baby Shark), when it is on.
+    if (this.firstRun) {
+      this.firstRun = false;
+      const favourite = order.indexOf(this.enabled[0]);
+      if (favourite > 0) [order[0], order[favourite]] = [order[favourite], order[0]];
+    }
     this.order = order;
     this.orderIndex = 0;
   }
@@ -446,6 +486,22 @@ export class AudioEngine {
     this.musicOn = on;
     if (on) this.startMusic();
     else this.stopMusic();
+  }
+
+  /** Which songs the parents have switched off (by id). */
+  setSongsOff(ids: Iterable<string>): void {
+    this.music.setOff(ids);
+  }
+
+  /** Playback speed for every song, 1 = as written. */
+  setMusicSpeed(speed: number): void {
+    this.music.setSpeed(speed, this.ctx.currentTime);
+  }
+
+  /** The parents' "next song" button. */
+  skipSong(): void {
+    if (!this.timer) return;
+    this.music.skip(this.ctx.currentTime + 0.1);
   }
 
   /** 0–1 on top of the normal music level (age profiles turn the music down for the youngest). */
@@ -1058,6 +1114,76 @@ export class AudioEngine {
     for (let i = 0; i < 7; i++) {
       const f = 380 + i * 95 + (i % 2) * 40;
       this.synth.tone(this.sfxBus, 'sine', f, when + i * 0.06, 0.22, 0.004, 0.12, { to: f * 1.5, glide: 0.08 });
+    }
+  }
+
+  /** The toy whale surfacing: a soft, friendly two-note call with a slow vibrato. */
+  whaleCall(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('hval', when)) return;
+    const ctx = this.ctx;
+    const length = 1.4;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(0.22, when + 0.2);
+    gain.gain.setValueAtTime(0.22, when + 0.9);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 1400;
+    lowpass.connect(gain).connect(this.sfxBus);
+    const vibrato = ctx.createOscillator();
+    vibrato.frequency.value = 5.5;
+    const depth = ctx.createGain();
+    depth.gain.value = 12;
+    vibrato.connect(depth);
+    for (const [type, base] of [
+      ['sine', 330],
+      ['triangle', 165],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(base * 0.8, when);
+      osc.frequency.exponentialRampToValueAtTime(base * 1.25, when + 0.5);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.9, when + length);
+      depth.connect(osc.frequency);
+      osc.connect(lowpass);
+      osc.start(when);
+      osc.stop(when + length + 0.05);
+    }
+    vibrato.start(when);
+    vibrato.stop(when + length + 0.05);
+  }
+
+  /** The whale's spout: a breathy "pfff-shhh" with a few drops pattering down afterwards. */
+  spout(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.noiseBurst(this.sfxBus, when, 0.4, 0.12, 'highpass', 2500, 0.7);
+    this.synth.noiseBurst(this.sfxBus, when + 0.08, 0.3, 0.6, 'bandpass', 1800, 0.8);
+    [0.5, 0.62, 0.7, 0.85].forEach((offset, i) => {
+      this.synth.tone(this.sfxBus, 'sine', [1500, 1200, 1700, 1300][i], when + offset, 0.1, 0.003, 0.12, { to: 900, glide: 0.08 });
+    });
+  }
+
+  /** The penguin: two short, bright squawks. */
+  squawk(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('pingvin', when)) return;
+    for (const [offset, base] of [
+      [0, 760],
+      [0.16, 900],
+    ] as const) {
+      this.synth.tone(this.sfxBus, 'sawtooth', base, when + offset, 0.2, 0.01, 0.12, { to: base * 1.3, glide: 0.06, filter: 2600 });
+      this.synth.noiseBurst(this.sfxBus, when + offset, 0.1, 0.05, 'bandpass', 2200, 1.2);
+    }
+  }
+
+  /** A jet ski buzzing past: the tractor engine recording sped up, or a quick synthetic buzz. */
+  whine(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('traktor-motor', when, { rate: 1.7, gain: 0.7 })) return;
+    for (let i = 0; i < 12; i++) {
+      this.synth.tone(this.sfxBus, 'sawtooth', 220 + i * 6, when + i * 0.07, 0.12, 0.004, 0.06, { filter: 1500 });
     }
   }
 

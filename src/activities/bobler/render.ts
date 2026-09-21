@@ -1,11 +1,11 @@
 import { TAU } from '../../engine/rng';
 import { Renderer } from '../balloner/render';
-import type { BoblerGame, Bubble, Droplet, Duck } from './logic';
+import type { BoblerGame, Bubble, Droplet, Duck, Guest } from './logic';
 
 /**
- * Draws the bath: a tiled wall, blue water with foam and waves, the rubber ducks, the bubbles with their
- * rainbow sheen, and the drops and tiny bubbles that touches leave behind. Borrows the balloon renderer's
- * canvas handling, photo cache and night overlay. No game logic here.
+ * Draws the bath: a tiled wall, blue water with foam and waves, the guests (whale, boat, jet ski, fish, shower),
+ * the rubber ducks, the bubbles with their rainbow sheen, and the drops and tiny bubbles that touches leave
+ * behind. Borrows the balloon renderer's canvas handling, photo cache and night overlay. No game logic here.
  */
 
 const WALL = '#46b8ea';
@@ -14,10 +14,20 @@ const GROUT = '#97dcf8';
 const WATER = '#2f8fdc';
 const WATER_DEEP = '#2470c4';
 const SURFACE = '#a8e0ff';
-const RIM = '#f7fbff';
-const RIM_SHADOW = 'rgba(40, 90, 140, 0.25)';
-const DUCK = '#ffd23f';
-const DUCK_DARK = '#f2b705';
+/** The duck's colours, in the order touches cycle through them (yellow first). */
+const DUCK_COLORS: Array<[string, string]> = [
+  ['#ffd23f', '#f2b705'],
+  ['#ff7ad9', '#d63ea8'],
+  ['#4d96ff', '#2456c9'],
+  ['#5ed37a', '#2f9e4f'],
+  ['#b56cff', '#7b2fd6'],
+  ['#ff8c42', '#d1600f'],
+];
+const WHALE = '#4d96ff';
+const WHALE_DARK = '#3b7fe0';
+const COW_WHITE = '#f7f4ee';
+const COW_BLACK = '#3a3a3a';
+const PENGUIN = '#2b2b3a';
 const BEAK = '#ff8c42';
 const EYE = '#3b2a4a';
 
@@ -42,12 +52,13 @@ export class BoblerRenderer {
     this.drawWall(game);
     this.drawWater(game);
     for (const duck of game.ducks) this.drawDuck(game, duck);
+    // Guests in front of the ducks: the boats are bigger and closer, and the whale must not hide.
+    for (const g of game.guests) this.drawGuest(game, g);
     // Small bubbles behind big ones; the one growing under a finger on top of everything.
     const free = game.bubbles.filter((b) => b.heldBy === null).sort((a, b) => a.r - b.r);
     for (const b of free) this.drawBubble(b, base.time, false);
     for (const d of game.droplets) this.drawDroplet(d);
     for (const b of game.bubbles) if (b.heldBy !== null) this.drawBubble(b, base.time, true);
-    this.drawRim();
     if (game.dusk > 0) base.drawNight(game.dusk);
   }
 
@@ -129,16 +140,376 @@ export class BoblerRenderer {
     }
   }
 
-  /** The front edge of the tub along the bottom. */
-  private drawRim(): void {
-    const { ctx, W, H, u } = this.base;
-    const y = H - 0.055 * H;
-    ctx.fillStyle = RIM_SHADOW;
-    ctx.fillRect(0, y - 5 * u, W, 6 * u);
-    ctx.fillStyle = RIM;
+  private drawGuest(game: BoblerGame, g: Guest): void {
+    switch (g.kind) {
+      case 'whale':
+        this.drawWhale(game, g);
+        break;
+      case 'fish':
+        this.drawFish(game, g);
+        break;
+      case 'boat':
+        this.drawBoat(game, g);
+        break;
+      case 'jetski':
+        this.drawJetski(game, g);
+        break;
+      case 'shower':
+        this.drawShower(g);
+        break;
+    }
+  }
+
+  /** Tints what was just drawn below the water line in this strip, so a guest looks like it sits in the water. */
+  private submerge(game: BoblerGame, x: number, halfWidth: number): void {
+    const { ctx, H, u } = this.base;
+    const step = 6 * u;
+    ctx.save();
     ctx.beginPath();
-    ctx.roundRect(-20 * u, y, W + 40 * u, H - y + 40 * u, 16 * u);
+    ctx.moveTo(x - halfWidth, game.surfaceY(x - halfWidth));
+    for (let sx = x - halfWidth; sx <= x + halfWidth; sx += step) ctx.lineTo(sx, game.surfaceY(sx));
+    ctx.lineTo(x + halfWidth, game.surfaceY(x + halfWidth));
+    ctx.lineTo(x + halfWidth, H);
+    ctx.lineTo(x - halfWidth, H);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(47, 143, 220, 0.42)';
     ctx.fill();
+    ctx.restore();
+  }
+
+  private eye(x: number, y: number, r: number): void {
+    const ctx = this.base.ctx;
+    ctx.fillStyle = EYE;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, TAU);
+    ctx.fill();
+  }
+
+  /** A blue toy whale standing at the surface, quivering; a white plume when it spouts. */
+  private drawWhale(game: BoblerGame, g: Guest): void {
+    const { ctx, time } = this.base;
+    const s = g.size;
+    const quiver = g.state === 'stay' || g.state === 'act' ? Math.sin(time * 38 + g.phase) * s * 0.025 : 0;
+    const bob = Math.sin(g.phase) * s * 0.05;
+    ctx.save();
+    ctx.translate(g.x + quiver, g.y + bob);
+    ctx.scale(g.dir, 1);
+    // Tail flukes.
+    ctx.fillStyle = WHALE_DARK;
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.3, s * 0.05);
+    ctx.quadraticCurveTo(-s * 2.1, -s * 0.9, -s * 2.35, -s * 0.45);
+    ctx.quadraticCurveTo(-s * 2.0, -s * 0.15, -s * 2.3, s * 0.35);
+    ctx.quadraticCurveTo(-s * 1.9, s * 0.25, -s * 1.3, s * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    // Body, belly and fin.
+    ctx.fillStyle = WHALE;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 1.6, s * 0.85, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#cfe6ff';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.15, s * 0.4, s * 1.15, s * 0.38, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = WHALE_DARK;
+    ctx.beginPath();
+    ctx.ellipse(s * 0.1, s * 0.45, s * 0.45, s * 0.2, 0.5, 0, TAU);
+    ctx.fill();
+    // Blowhole, eye, cheek and smile.
+    ctx.fillStyle = '#2a5fb0';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.3, -s * 0.8, s * 0.12, s * 0.06, 0, 0, TAU);
+    ctx.fill();
+    this.eye(s * 0.95, -s * 0.2, s * 0.11);
+    ctx.fillStyle = 'rgba(255, 120, 150, 0.35)';
+    ctx.beginPath();
+    ctx.arc(s * 1.0, s * 0.08, s * 0.12, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = EYE;
+    ctx.lineWidth = s * 0.05;
+    ctx.beginPath();
+    ctx.arc(s * 1.15, s * 0.12, s * 0.25, 0.15 * Math.PI, 0.75 * Math.PI);
+    ctx.stroke();
+    if (g.state === 'act') {
+      // The spout: a fan of white plumes rising from the blowhole (the drops fly on their own).
+      const p = Math.min(1, g.stateAge / 0.9);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = s * 0.09;
+      ctx.lineCap = 'round';
+      for (let k = -2; k <= 2; k++) {
+        ctx.beginPath();
+        ctx.moveTo(s * 0.3, -s * 0.85);
+        ctx.quadraticCurveTo(s * 0.3 + k * s * 0.25, -s * 0.85 - s * 0.9 * p, s * 0.3 + k * s * 0.5, -s * 0.85 - s * 1.5 * p);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    this.submerge(game, g.x, s * 2.6);
+  }
+
+  /** A big goldfish, mostly under the water; it leaps in an arc when it jumps. */
+  private drawFish(game: BoblerGame, g: Guest): void {
+    const ctx = this.base.ctx;
+    const s = g.size * 0.9;
+    const jumping = g.state === 'act';
+    const t = jumping ? Math.min(1, g.stateAge / 1.1) : 0;
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.scale(g.dir, 1);
+    if (jumping) ctx.rotate(-(0.5 - t) * 1.4);
+    ctx.fillStyle = '#ff8c42';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 1.1, s * 0.62, 0, 0, TAU);
+    ctx.fill();
+    // Tail, wagging.
+    ctx.save();
+    ctx.translate(-s * 1.0, 0);
+    ctx.rotate(Math.sin(g.phase) * 0.35);
+    ctx.fillStyle = '#ff6b3d';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-s * 0.75, -s * 0.6);
+    ctx.lineTo(-s * 0.55, 0);
+    ctx.lineTo(-s * 0.75, s * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // Dorsal fin and scales.
+    ctx.fillStyle = '#ff6b3d';
+    ctx.beginPath();
+    ctx.moveTo(s * 0.1, -s * 0.55);
+    ctx.quadraticCurveTo(-s * 0.25, -s * 1.05, -s * 0.7, -s * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#ffb27a';
+    ctx.lineWidth = s * 0.05;
+    for (const dx of [-0.4, -0.1, 0.2]) {
+      ctx.beginPath();
+      ctx.arc(dx * s, 0, s * 0.3, Math.PI * 0.6, Math.PI * 1.4);
+      ctx.stroke();
+    }
+    this.eye(s * 0.6, -s * 0.15, s * 0.12);
+    ctx.strokeStyle = EYE;
+    ctx.lineWidth = s * 0.05;
+    ctx.beginPath();
+    ctx.arc(s * 0.85, s * 0.12, s * 0.14, 0.2 * Math.PI, 0.8 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+    if (!jumping) this.submerge(game, g.x, s * 2.0);
+  }
+
+  /** A red speedboat with a cow at the wheel, bouncing over the waves. */
+  private drawBoat(game: BoblerGame, g: Guest): void {
+    const { ctx, u } = this.base;
+    const s = g.size;
+    const slope = (game.surfaceY(g.x + 20 * u) - game.surfaceY(g.x - 20 * u)) / (40 * u);
+    const hopTilt = g.hop > 0 ? Math.sin((1 - g.hop) * Math.PI) * 0.22 : 0;
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.rotate(Math.atan(slope) * 0.7 - hopTilt * g.dir);
+    ctx.scale(g.dir, 1);
+    // Hull with a white stripe, a cream deck and a windscreen.
+    ctx.fillStyle = '#ff4d6d';
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.6, -s * 0.15);
+    ctx.lineTo(s * 1.5, -s * 0.15);
+    ctx.quadraticCurveTo(s * 2.0, -s * 0.05, s * 1.6, s * 0.35);
+    ctx.lineTo(-s * 1.3, s * 0.5);
+    ctx.quadraticCurveTo(-s * 1.75, s * 0.4, -s * 1.6, -s * 0.15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = s * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.5, s * 0.05);
+    ctx.lineTo(s * 1.7, s * 0.05);
+    ctx.stroke();
+    ctx.fillStyle = '#fff1d6';
+    ctx.beginPath();
+    ctx.roundRect(-s * 1.25, -s * 0.45, s * 2.55, s * 0.32, s * 0.1);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(223, 243, 255, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(s * 0.55, -s * 0.45);
+    ctx.lineTo(s * 0.8, -s * 1.05);
+    ctx.lineTo(s * 1.1, -s * 1.05);
+    ctx.lineTo(s * 1.15, -s * 0.45);
+    ctx.closePath();
+    ctx.fill();
+    // The cow at the wheel.
+    ctx.fillStyle = COW_WHITE;
+    ctx.beginPath();
+    ctx.roundRect(-s * 1.0, -s * 0.95, s * 1.05, s * 0.55, s * 0.2);
+    ctx.fill();
+    ctx.fillStyle = COW_BLACK;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.7, -s * 0.7, s * 0.2, s * 0.14, 0.3, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#e4e0d6';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.2 + side * s * 0.4, -s * 1.3, s * 0.16, s * 0.09, side * 0.5, 0, TAU);
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#e8d5a6';
+    ctx.lineWidth = s * 0.07;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.2 + side * s * 0.2, -s * 1.5);
+      ctx.quadraticCurveTo(-s * 0.2 + side * s * 0.3, -s * 1.7, -s * 0.2 + side * s * 0.22, -s * 1.85);
+      ctx.stroke();
+    }
+    ctx.fillStyle = COW_WHITE;
+    ctx.beginPath();
+    ctx.arc(-s * 0.2, -s * 1.2, s * 0.42, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = COW_BLACK;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.38, -s * 1.48, s * 0.18, s * 0.1, 0.2, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffb3c6';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.02, -s * 1.05, s * 0.28, s * 0.18, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#d9788f';
+    for (const dx of [-0.06, 0.12]) {
+      ctx.beginPath();
+      ctx.ellipse(s * dx, -s * 1.1, s * 0.04, s * 0.03, 0, 0, TAU);
+      ctx.fill();
+    }
+    this.eye(-s * 0.32, -s * 1.28, s * 0.07);
+    this.eye(-s * 0.02, -s * 1.3, s * 0.07);
+    ctx.strokeStyle = EYE;
+    ctx.lineWidth = s * 0.06;
+    ctx.beginPath();
+    ctx.arc(s * 0.4, -s * 0.8, s * 0.18, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+    this.submerge(game, g.x, s * 2.2);
+  }
+
+  /** A yellow jet ski with a penguin holding the handlebar, spray flying. */
+  private drawJetski(game: BoblerGame, g: Guest): void {
+    const { ctx, u } = this.base;
+    const s = g.size;
+    const slope = (game.surfaceY(g.x + 20 * u) - game.surfaceY(g.x - 20 * u)) / (40 * u);
+    const hopTilt = g.hop > 0 ? Math.sin((1 - g.hop) * Math.PI) * 0.35 : 0;
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.rotate(Math.atan(slope) * 0.5 - hopTilt * g.dir);
+    ctx.scale(g.dir, 1);
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.5, s * 0.15);
+    ctx.lineTo(s * 1.8, s * 0.15);
+    ctx.quadraticCurveTo(s * 2.1, -s * 0.15, s * 1.6, -s * 0.4);
+    ctx.lineTo(-s * 0.5, -s * 0.6);
+    ctx.quadraticCurveTo(-s * 1.6, -s * 0.5, -s * 1.5, s * 0.15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = WHALE;
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.3, -s * 0.1);
+    ctx.lineTo(s * 1.5, -s * 0.1);
+    ctx.lineTo(s * 1.4, s * 0.05);
+    ctx.lineTo(-s * 1.3, s * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = EYE;
+    ctx.beginPath();
+    ctx.roundRect(-s * 1.1, -s * 0.78, s * 1.3, s * 0.25, s * 0.1);
+    ctx.fill();
+    ctx.strokeStyle = EYE;
+    ctx.lineWidth = s * 0.09;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(s * 0.9, -s * 0.4);
+    ctx.lineTo(s * 0.75, -s * 1.15);
+    ctx.moveTo(s * 0.5, -s * 1.15);
+    ctx.lineTo(s * 1.0, -s * 1.15);
+    ctx.stroke();
+    // The penguin on the seat.
+    ctx.save();
+    ctx.translate(-s * 0.45, -s * 0.75);
+    ctx.fillStyle = PENGUIN;
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.35, s * 0.42, s * 0.55, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.05, -s * 0.3, s * 0.26, s * 0.4, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = PENGUIN;
+    ctx.beginPath();
+    ctx.arc(s * 0.08, -s * 1.0, s * 0.32, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.17, -s * 0.95, s * 0.2, s * 0.22, 0, 0, TAU);
+    ctx.fill();
+    this.eye(s * 0.2, -s * 1.02, s * 0.06);
+    ctx.fillStyle = BEAK;
+    ctx.beginPath();
+    ctx.moveTo(s * 0.35, -s * 0.98);
+    ctx.lineTo(s * 0.62, -s * 0.9);
+    ctx.lineTo(s * 0.35, -s * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = PENGUIN;
+    ctx.beginPath();
+    ctx.ellipse(s * 0.38, -s * 0.42, s * 0.34, s * 0.12, -0.6, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = BEAK;
+    ctx.beginPath();
+    ctx.ellipse(s * 0.15, s * 0.15, s * 0.2, s * 0.08, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    ctx.restore();
+    this.submerge(game, g.x, s * 2.3);
+  }
+
+  /** The shower head swinging in from above on its hose, spraying. */
+  private drawShower(g: Guest): void {
+    const { ctx, u } = this.base;
+    const s = g.size;
+    ctx.save();
+    ctx.strokeStyle = '#9aa7b4';
+    ctx.lineWidth = s * 0.16;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(g.x + s * 0.9, -20 * u);
+    ctx.quadraticCurveTo(g.x + s * 0.9, g.y - s * 1.2, g.x + s * 0.25, g.y - s * 0.55);
+    ctx.stroke();
+    ctx.fillStyle = '#c9d3de';
+    ctx.beginPath();
+    ctx.ellipse(g.x, g.y, s * 1.05, s * 0.38, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#e9eef3';
+    ctx.beginPath();
+    ctx.ellipse(g.x - s * 0.15, g.y - s * 0.1, s * 0.7, s * 0.18, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#7f8c99';
+    for (let k = -3; k <= 3; k++) {
+      ctx.beginPath();
+      ctx.arc(g.x + k * s * 0.25, g.y + s * 0.22, s * 0.05, 0, TAU);
+      ctx.fill();
+    }
+    if (g.state === 'stay') {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 2 * u;
+      for (let k = -3; k <= 3; k++) {
+        ctx.beginPath();
+        ctx.moveTo(g.x + k * s * 0.2, g.y + s * 0.3);
+        ctx.lineTo(g.x + k * s * 0.45, g.y + s * 2.6);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   private drawDuck(game: BoblerGame, duck: Duck): void {
@@ -149,12 +520,14 @@ export class BoblerRenderer {
     const slope = (game.surfaceY(duck.x + 10 * u) - game.surfaceY(duck.x - 10 * u)) / (20 * u);
     const asleep = game.dusk > 0.5;
     const quacking = duck.quackAge < 0.35;
+    // Its colour: the one touches gave it, or the rainbow sliding round while it dashes (no flashing).
+    const [body, wing] = duck.rainbow > 0 ? [`hsl(${duck.hue}, 90%, 62%)`, `hsl(${duck.hue}, 80%, 45%)`] : DUCK_COLORS[duck.color % DUCK_COLORS.length];
     ctx.save();
     ctx.translate(duck.x, y);
     ctx.rotate(Math.atan(slope) * 0.6 + spin * duck.dir);
     ctx.scale(duck.dir, 1);
     // Body and tail.
-    ctx.fillStyle = DUCK;
+    ctx.fillStyle = body;
     ctx.beginPath();
     ctx.ellipse(0, -s * 0.35, s * 1.05, s * 0.6, 0, 0, TAU);
     ctx.fill();
@@ -165,12 +538,12 @@ export class BoblerRenderer {
     ctx.closePath();
     ctx.fill();
     // Wing.
-    ctx.fillStyle = DUCK_DARK;
+    ctx.fillStyle = wing;
     ctx.beginPath();
     ctx.ellipse(-s * 0.15, -s * 0.3, s * 0.5, s * 0.28, -0.2, 0, TAU);
     ctx.fill();
     // Head, beak (open while quacking), eye and cheek.
-    ctx.fillStyle = DUCK;
+    ctx.fillStyle = body;
     ctx.beginPath();
     ctx.arc(s * 0.6, -s * 1.0, s * 0.48, 0, TAU);
     ctx.fill();
@@ -310,6 +683,13 @@ export class BoblerRenderer {
       ctx.fill();
       if (image) ctx.drawImage(image, -s * 0.5, -s * 0.5, s, s);
       ctx.restore();
+      return;
+    }
+    if (d.kind === 'foam') {
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * t})`;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, TAU);
+      ctx.fill();
       return;
     }
     if (d.kind === 'soap') {

@@ -3,6 +3,62 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Musik-fanen, Baby Shark, nedtælling til pausen og håndflade-værn
+
+- **Ny fane i forældremenuen: Musik.** Hver sang har sin egen kontakt (slå fra dem, I er trætte af), *Hastighed*
+  (Langsom / Normal / Hurtig) gælder alle sange, *Næste sang* springer videre, og der står, hvad der spiller. Slår
+  man alle sange fra, spiller appen alligevel dem alle (musikken har sin egen kontakt under *Leg*).
+- **Baby Shark er første sang.** Den traditionelle melodi er skrevet ind som noder og spilles af appens egen
+  spilledåse (ingen optagelse, ingen sang). Den spiller først, hver gang musikken starter.
+- **Nedtælling til pausen**: når *Pause efter* er slået til, står der en lille, mat tid nederst til højre (fx 7:12),
+  så I kan se, hvor længe der er igen. Den forsvinder i menuen, på forsiden og når verdenen sover. Det er den
+  eneste tekst på Theos skærm, og der er intet at trykke på.
+- **To hænder på skærmen**: en håndflade eller en hel hånd i hjørnet kan ikke længere åbne forældremenuen (store
+  kontaktflader starter ikke porten; flere fingre afbrød den i forvejen). Alle tryk svarer stadig hver for sig.
+
+**Test på telefonen:** (1) Menu → *Musik*: Baby Shark øverst; slå en sang fra; sæt *Hurtig*; tryk *Næste sang*.
+Luk menuen: musikken starter med Baby Shark. (2) *Leg* → *Pause efter* → *5 min*, luk menuen: en lille tid tæller
+ned nederst til højre. (3) Læg håndfladen på hjørneknappen i tre sekunder: menuen åbner ikke; en fingerspids i to
+sekunder åbner den stadig.
+
+## 2026-09-21 – Gæster i badekarret: hvalen, koen i speedbåden, pingvinen på vandscooteren, fisken og bruseren
+
+- **Badekarret får besøg**, ligesom Balloner: nu og da kommer en gæst, i vandet eller i luften, og alle svarer på
+  et tryk. *Hvalen* dukker op med et plask, står og ryster ved overfladen og sprøjter en fontæne ud af toppen, når
+  man trykker på den; efter en stund dykker den. *Koen i speedbåden* kører hen over vandet, hopper over bølgerne
+  og efterlader skum; tryk, og den siger muh og dytter. *Pingvinen på vandscooteren* suser forbi med sprøjt; tryk,
+  og den skræpper og laver et hop. *Fisken* svømmer lige under overfladen og springer i en bue med plask, når man
+  trykker (fra 1 år også af sig selv). *Bruseren* svinger ned fra oven og sprøjter dråber, der bølger vandet og
+  skubber til boblerne; tryk, og den sprøjter ekstra. Ryst telefonen, når badet er tomt, og en gæst kommer straks
+  (Theos egen handling kalder hvalen op). For *8–12 mdr* kommer der én gæst ad gangen og sjældent, fisken
+  springer kun, når han rører den, og bruseren drypper roligt.
+- Hvalens kald og pingvinens skræp er syntetiske indtil videre; læg `hval.mp3` og `pingvin.mp3` i `src/lyde/`
+  (fx fra Pixabay), så bruges de. Speedbåden bruger traktorens motor og horn, vandscooteren motoren i højt tempo.
+- **Familien oftere i boblerne**: hver anden-tredje nye boble bærer et billede (før hver femte), og de bobler, Theo
+  selv laver ved at plaske på vandet, kan også være familien. Billedbobler er altid store nok til, at ansigtet ses.
+- **Stjernebobler er nu en lille godbid**: pop en, og der kommer guldgnister, en pust af små guldbobler, og ænderne
+  snurrer. Tællere for bobler, stjerner, billeder, plask, ænder, gæster m.m. står under *Theos leg*.
+- **Menuen følger spillet**: familie-afsnittet hedder "Familien i boblerne", "på balloner" eller "i Ord" alt efter
+  det spil, der kører (før stod der "balloner" i alle spil). Billederne bruges i alle tre.
+- **Aldrig et tomt badekar** (forældrene: "der sker ikke noget i 10 sekunder"): i det øjeblik den sidste boble er
+  poppet, stiger en ny op med det samme, i den modsatte side af der, hvor han poppede. Er under halvdelen tilbage,
+  kommer den næste hurtigere.
+- **Vandet følger telefonen**: drej telefonen, og vandet hælder som rigtigt vand, med et lille skvulp; ænderne
+  driver ned mod den lave side, og boblerne trækker mod den høje. Aldrig mere end ca. 25 graders hældning.
+- **Anden skifter farve ved tryk** (gul, lyserød, blå, grøn, lilla, orange), og **holder man fingeren på den**, går
+  den i regnbuefarver (glidende, ingen blink) og suser frem og tilbage i badet i seks sekunder med plask i enderne,
+  mens dens kølvand skubber til boblerne. Ænderne svømmer også lidt raskere til daglig.
+- Den hvide kant i bunden af skærmen (badekarrets forkant, som lignede en fejl) er væk; vandet går helt ned.
+- Nye tællere under *Theos leg*: gæster i badekarret, og hvem der er rørt.
+
+**Test på telefonen:** (1) Badekar: vent et halvt minut, eller ryst telefonen, når der ingen gæst er. Rør hvalen,
+når den står og ryster: fontænen. Rør koen i speedbåden: muh og dyt. Rør pingvinen: skræp og hop. Rør fisken: den
+springer. Rør bruseren: ekstra sprøjt. (2) Plask på vandet nogle gange: familien dukker op i boblerne. Pop en
+stjerneboble: guldbobler og snurrende ænder. (3) Menu → *Familie*: overskriften siger "Familien i boblerne". (4) Pop alle bobler: en ny kommer straks i den
+anden side. Tryk på anden: ny farve. Hold fingeren på anden: regnbuetur. (5) Drej telefonen langsomt til siden:
+vandet hælder og skvulper; løber det den forkerte vej, så sig til. (6) Alder *8–12 mdr*: kun én gæst ad gangen, og
+fisken springer kun ved tryk. Sig til, hvilke gæster Theo kigger efter.
+
 ## 2026-09-21 – Rigtige lyde til alle dyr og vejret, og "Theos Badekar"
 
 - **De syntetiserede dyrelyde er skiftet ud med optagelser** (forældrene: "de er helt off"): ko og kat fra jeres

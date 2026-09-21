@@ -112,8 +112,12 @@ titte-bøh, jeres ansigter og jeres ord.
   til forsiden; forældremenuen → *Leg* → *Skift spil* fører tilbage.
 - **Theos Badekar** (spil nr. 3): badet. Sæbebobler stiger langsomt op fra vandet. Tryk på en boble: plop. Tryk på
   vandet: plask, bølger og nye bobler. Swipe: popper alt på vejen og laver bølger. Hold fingeren stille: en boble
-  vokser og svæver væk, når du slipper. Ryst telefonen: alt hopper, og en byge af bobler stiger op. Gummiænderne
-  rapper. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og *Alder* gælder her også.
+  vokser og svæver væk, når du slipper. Ryst telefonen: alt hopper, og en byge af bobler stiger op. Drej telefonen,
+  og vandet hælder som rigtigt vand. Gummiænderne rapper og skifter farve ved tryk; hold fingeren på en and, og den
+  suser i regnbuefarver frem og tilbage. Der er altid mindst én boble. Nu og da kommer en gæst: hvalen, der står og ryster og sprøjter ved tryk, koen i speedbåden (muh og dyt),
+  pingvinen på vandscooteren, fisken, der springer, og bruseren, der sprøjter fra oven. Ryst telefonen, når badet er
+  tomt, og en gæst kommer. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og *Alder*
+  gælder her også (for de mindste én gæst ad gangen og sjældent).
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:
@@ -126,6 +130,10 @@ titte-bøh, jeres ansigter og jeres ord.
   og navnene på familiebillederne med jeres egne stemmer. Når Theo rører tingen i Ord, siger appen ordet med jeres
   stemme. Balloner og Badekarret siger ingen ord; der er kun lyde. Telefonen beder om lov til mikrofonen første
   gang; optagelserne bliver på telefonen.
+- **Musik** (forældremenuen → *Musik*): hver sang kan slås til og fra, hastigheden kan sættes (langsom, normal,
+  hurtig), og *Næste sang* springer videre. Baby Shark (den traditionelle melodi, spillet af appens egen spilledåse)
+  spiller først. Alle sange er gamle børnesange eller vores egne; ingen optagelser.
+- **Nedtælling til pausen**: er *Pause efter* slået til, står der en lille, mat tid nederst til højre i spillet.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
   ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.
   *Pause efter* 5/10/20 minutter lader verdenen falde stille i søvn: solen går ned, månen kommer frem, og kun et hold

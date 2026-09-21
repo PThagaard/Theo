@@ -14,14 +14,16 @@ export interface ActivityEntry {
   hasTempo: boolean;
   /** Whether the game says the parents' recorded words (so the menu shows "Jeres stemmer"). */
   hasVoices: boolean;
+  /** Where the family photos appear in this game, for the menu's wording ("på balloner", "i boblerne"). */
+  familyWhere: string;
   create(canvas: HTMLCanvasElement, ctx: ActivityContext): Activity;
 }
 
 /** Every game the shell can run, in the order the start page shows them. */
 export const ACTIVITIES: ReadonlyArray<ActivityEntry> = [
-  { id: 'balloner', title: 'Theos Balloner', emoji: '🎈', blurb: 'Pop og swipe, dyr, uvejr og gården', hasTempo: true, hasVoices: false, create: createBalloner },
-  { id: 'bobler', title: 'Theos Badekar', emoji: '🛁', blurb: 'Bobler, plask og ænder: tryk, swipe, ryst og hold', hasTempo: true, hasVoices: false, create: createBobler },
-  { id: 'ord', title: 'Theos Titte-bøh og Ord', emoji: '🙈', blurb: '8–12 mdr: titte-bøh med familien. Fra 1 år: ord og "hvor er …?"', hasTempo: false, hasVoices: true, create: createOrd },
+  { id: 'balloner', title: 'Theos Balloner', emoji: '🎈', blurb: 'Pop og swipe, dyr, uvejr og gården', hasTempo: true, hasVoices: false, familyWhere: 'på balloner', create: createBalloner },
+  { id: 'bobler', title: 'Theos Badekar', emoji: '🛁', blurb: 'Bobler, plask og ænder: tryk, swipe, ryst og hold', hasTempo: true, hasVoices: false, familyWhere: 'i boblerne', create: createBobler },
+  { id: 'ord', title: 'Theos Titte-bøh og Ord', emoji: '🙈', blurb: '8–12 mdr: titte-bøh med familien. Fra 1 år: ord og "hvor er …?"', hasTempo: false, hasVoices: true, familyWhere: 'i Ord', create: createOrd },
 ];
 
 export const DEFAULT_ACTIVITY = ACTIVITIES[0].id;

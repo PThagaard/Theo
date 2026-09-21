@@ -639,3 +639,24 @@ body {
   line-height: 1.4;
   opacity: 0.65;
 }
+
+/* A small, faint countdown to the pause in the corner: for the parents' eyes, nothing for the child to press. */
+#pause-countdown {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  z-index: 4;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: rgba(20, 40, 80, 0.18);
+  color: rgba(255, 255, 255, 0.72);
+  font: 600 12px/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+#pause-countdown[hidden] {
+  display: none;
+}

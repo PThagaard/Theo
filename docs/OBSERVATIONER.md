@@ -83,5 +83,38 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   (familien og få dyr bag busken), "Hvor er …?"-runder fra 1 år uden fejl, og fem regler i CLAUDE.md.
 - "Vores ballonspil er sjovt og lærer ham at koordinere hænder og fingre. Jeg har brug for et spil med samme sjove
   gameplay for en 8 måneders: sjovt at trykke, ryste, swipe" → behov: mere af det, der virker (kontingens med hele
-  hånden), i en ny verden, så det er friskt → *Theos Bobler* (badet: pop, plask, ænder, swipe-bølger, hold-og-pust,
+  hånden), i en ny verden, så det er friskt → *Theos Badekar* (badet: pop, plask, ænder, swipe-bølger, hold-og-pust,
   ryst-byge), og ideerne *Trommer* og *Bolde* i roadmappen som de næste af samme slags.
+- "Sindssyg god idé med Theos badekar (bedre navn). Lad os få flere ting ind ligesom i den anden: ting, der kommer
+  i vandet, i luften. En pingvin på en vandscooter, en ko i en speedbåd, en hval, der kommer til overfladen, står og
+  ryster, og sprøjter vand ud af toppen, når man trykker" → behov: overraskelser og liv, noget at vente på og kigge
+  efter, og en tydelig belønning for at røre → gæster i badekarret (hval, ko i speedbåd, pingvin på vandscooter,
+  fisk, bruser), få og rolige for de mindste, alle svarer på tryk; ryst kalder en gæst, når badet er tomt.
+- "Muh lyder helt off. Det er det samme for alle dine lyde" → behov: dyrene skal lyde som dyr → rigtige optagelser
+  til alle dyr og vejret (forældrenes Pixabay-filer + BigSoundBank, CC0); synthen kun som reserve.
+- "Forældrenes ord skal kun bruges i ord-spillet; det var aldrig planen, at 'ballon' siges ved pop" → behov: hvert
+  spil har sit formål, og indstillinger skal følge spillet → ord kun i Titte-bøh og Ord; *Jeres stemmer* vises kun
+  der.
+- Badekarret, 8 mdr, normal tempo: "det ender tit med, at der ingen bobler er; han popper de 1–2, og så sker der
+  intet i 10 sekunder" → behov: der skal altid være noget at række ud efter → aldrig tomt: en ny boble stiger straks
+  i modsat side.
+- "Anden skal skifte farve on-click; longpress → farveskift og sejle hurtigt frem og tilbage; og svømme lidt
+  hurtigere" → gjort som beskrevet (glidende regnbue, ingen blink).
+- "Kan vandet følge, når jeg drejer telefonen, som rigtigt vand? Det ville være så cool" → tilt fra accelerometeret;
+  vandet hælder med et skvulp; ænder driver ned mod den lave side.
+- "30–35 px hvid baggrund i bunden" → badekarrets forkant lignede en fejl; fjernet.
+- "Hvorfor står der 'ansigter på ballonerne' i Badekarret?" → menuens familie-tekst fulgte ikke spillet; nu
+  "Familien i boblerne / på balloner / i Ord".
+- "Kun set familiebillede én gang på 5 minutter; hvad er stjernerne til? Jeg elsker, at billederne falder i vandet"
+  → billeder oftere (også fra Theos egne plask), stjernebobler som godbid, tællere i Theos leg.
+- "Theo har tit begge hænder på skærmen og er ikke 100% koordineret" → behov: alt skal tåle håndflader og mange
+  samtidige tryk → porten til forældremenuen skal ignorere store kontaktflader; lyden må ikke blive en mur (planlagt).
+- "Musikken: en settings-fane, hvor jeg kan slå sange til/fra, justere hastigheden, og Baby Shark som den primære"
+  og "Baby Shark i badekarret: Theo-haj, Da-Da-haj, Ma-Ma-haj" → planlagt (Musik-fane, notation af den traditionelle
+  melodi, hajfamilien som gæst).
+- Far: "skriv alle de her ting ind i planen, og vis mig den" → opgavelisten i sidepanelet holdes ajour med hvert
+  ønske (færdig / i gang / kommende), og roadmappen har et "Næste"-afsnit under hvert spil.
+- "Fælles funktioner som musik og pause: vis en lille nedtælling nederst til højre, når pausen er sat; ikke noget
+  voldsomt synligt. Og jeg savner virkelig musik-indstillinger og Baby Shark" → nedtælling (mat, kun tal), Musik-fane
+  (sange til/fra, hastighed, næste sang) og Baby Shark som første sang. Undtagelsen fra "ingen tekst til barnet" er
+  skrevet ind i CLAUDE.md.

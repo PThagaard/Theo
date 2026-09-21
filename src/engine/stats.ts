@@ -178,10 +178,18 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['bubbleBursts', '… heraf sprængt (holdt til de revnede)'],
   ['splashes', 'Plask i vandet'],
   ['quacks', 'Ænder rørt'],
+  ['duckDashes', 'Ænder sendt på regnbuetur (holdt)'],
   ['soapTouches', 'Sæbe på væggen'],
   ['bubbleSwipes', 'Swipes i badet'],
   ['bubbleShakes', 'Rystet (bobler)'],
   ['bubbleCelebrations', 'Boble-fester'],
+  ['bathGuests', 'Gæster i badekarret'],
+  ['bathGuestsPoked', 'Gæster rørt'],
+  ['guest:whale', '… hvalen'],
+  ['guest:boat', '… koen i speedbåden'],
+  ['guest:jetski', '… pingvinen på vandscooteren'],
+  ['guest:fish', '… fisken'],
+  ['guest:shower', '… bruseren'],
 ];
 
 export function formatMinutes(seconds: number): string {

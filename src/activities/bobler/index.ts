@@ -29,6 +29,7 @@ export function createBobler(canvas: HTMLCanvasElement, ctx: ActivityContext): A
     drag: (id, x, y) => game.drag(id, x, y),
     release: (id) => game.release(id),
     shake: () => game.shake(),
+    tilt: (roll) => game.setTilt(roll),
     applySettings: (settings: Settings) => {
       game.setTempo(settings.tempo);
       game.setAge(settings.age);
@@ -45,6 +46,7 @@ export function createBobler(canvas: HTMLCanvasElement, ctx: ActivityContext): A
       return game.asleep;
     },
     debug: { game },
-    dispose: () => undefined,
+    // The shower head's spray is a loop in the audio engine; it must not outlive the bath.
+    dispose: () => ctx.audio()?.stopRain(),
   };
 }

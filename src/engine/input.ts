@@ -69,6 +69,27 @@ export function attachInput(element: HTMLElement, handlers: InputHandlers): void
  * DeviceMotion API (works in the Android app and in browsers; iOS asks for permission on
  * the first touch).
  */
+/**
+ * The phone's roll, a few times a second, from the same motion sensor: how far the right side is held down
+ * (radians, positive), smoothed so the water it drives moves calmly. Nothing without a sensor (desktop).
+ */
+export function attachTilt(onTilt: (roll: number) => void): void {
+  if (typeof window.DeviceMotionEvent === 'undefined') return;
+  let smoothed = 0;
+  let last = 0;
+  window.addEventListener('devicemotion', (event) => {
+    const a = event.accelerationIncludingGravity;
+    if (!a || a.x === null || a.y === null) return;
+    // Upright, the reaction to gravity points up the screen (+y); tilting the right side down leans it to -x.
+    const roll = Math.atan2(-a.x, Math.max(1, a.y));
+    smoothed += (roll - smoothed) * 0.25;
+    const now = performance.now();
+    if (now - last < 40) return;
+    last = now;
+    onTilt(smoothed);
+  });
+}
+
 export function attachShake(onShake: () => void): void {
   if (typeof window.DeviceMotionEvent === 'undefined') return;
   const THRESHOLD = 24; // m/s² change between two readings, summed over the axes

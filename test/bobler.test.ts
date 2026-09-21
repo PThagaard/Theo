@@ -135,18 +135,19 @@ describe('Bobler: the bath', () => {
     const b = game.spawnBubble({ x: W / 2, y: H * 0.3, r: 30, kind: 'plain' });
     if (!b) throw new Error('no bubble');
     advance(game, 0.1);
+    const before = game.bubbles.length;
     game.shake();
     expect(events.filter((e) => e.type === 'shake')).toHaveLength(1);
     expect(b.wobbleAmp).toBe(1);
-    expect(game.bubbles).toHaveLength(1 + 14);
+    expect(game.bubbles.length - before).toBe(14);
     expect(game.ducks[0].bobV).toBeLessThan(0);
     game.shake();
     expect(events.filter((e) => e.type === 'shake')).toHaveLength(1);
     const { game: young } = makeBath('8-12');
-    young.bubbles = [];
     advance(young, 0.1);
+    const youngBefore = young.bubbles.length;
     young.shake();
-    expect(young.bubbles).toHaveLength(6);
+    expect(young.bubbles.length - youngBefore).toBe(6);
   });
 
   it('lets the family ride inside bubbles; popping one drops the photo into the water with a splash', () => {
@@ -169,6 +170,152 @@ describe('Bobler: the bath', () => {
     }
     expect(landed).toBe(true);
     expect(game.ripples.length).toBeGreaterThan(0);
+  });
+
+  it('lets guests come by themselves (one at a time for the youngest), every kind once before any repeats', () => {
+    const { game } = makeBath('8-12');
+    advance(game, 60);
+    expect(game.guestsSeen).toBeGreaterThanOrEqual(1);
+    expect(game.guests.length).toBeLessThanOrEqual(1);
+    const { game: older } = makeBath('2+');
+    const kinds = new Set<string>();
+    for (let i = 0; i < 5; i++) kinds.add(older.spawnGuest().kind);
+    expect(kinds.size).toBe(5);
+  });
+
+  it('the whale surfaces, quivers, spouts when touched and dives after a while', () => {
+    const { game, events } = makeBath('2+');
+    game.bubbles = [];
+    const whale = game.spawnGuest('whale');
+    expect(whale.state).toBe('enter');
+    advance(game, 1.5);
+    expect(whale.state).toBe('stay');
+    game.bubbles = [];
+    const drops = game.droplets.length;
+    tap(game, whale.x, whale.y - whale.size * 0.3);
+    expect(whale.state).toBe('act');
+    advance(game, 0.3);
+    expect(game.droplets.length).toBeGreaterThan(drops);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'whale' && e.what === 'poke')).toBe(true);
+    advance(game, 16);
+    expect(game.guests).not.toContain(whale);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'whale' && e.what === 'leave')).toBe(true);
+  });
+
+  it('the cow in the speedboat crosses the bath, hops and moos when touched, and leaves a wake', () => {
+    const { game, events } = makeBath('2+');
+    game.bubbles = [];
+    const boat = game.spawnGuest('boat');
+    advance(game, 1);
+    const x0 = boat.x;
+    advance(game, 1);
+    expect(Math.sign(boat.x - x0)).toBe(boat.dir);
+    expect(game.droplets.some((d) => d.kind === 'foam')).toBe(true);
+    boat.x = W / 2;
+    advance(game, 0.1);
+    game.bubbles = [];
+    tap(game, boat.x, boat.y - boat.size * 0.3);
+    expect(boat.hop).toBeGreaterThan(0);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'boat' && e.what === 'poke')).toBe(true);
+    advance(game, 20);
+    expect(game.guests).not.toContain(boat);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'boat' && e.what === 'leave')).toBe(true);
+  });
+
+  it('the fish jumps when touched, and by itself only from 1 year; the shower sprays and leaves', () => {
+    const { game, events } = makeBath('8-12');
+    game.bubbles = [];
+    const fish = game.spawnGuest('fish');
+    advance(game, 1.5);
+    expect(fish.state).toBe('stay');
+    advance(game, 12);
+    expect(events.filter((e) => e.type === 'guest' && e.kind === 'fish' && e.what === 'act')).toHaveLength(0);
+    game.bubbles = [];
+    tap(game, fish.x, fish.y - fish.size * 0.3);
+    expect(fish.state).toBe('act');
+    const { game: older, events: olderEvents } = makeBath('2+');
+    older.spawnGuest('fish');
+    advance(older, 9);
+    expect(olderEvents.some((e) => e.type === 'guest' && e.kind === 'fish' && e.what === 'act')).toBe(true);
+    const shower = older.spawnGuest('shower');
+    advance(older, 2);
+    expect(shower.state).toBe('stay');
+    expect(older.droplets.filter((d) => d.kind === 'drop').length).toBeGreaterThan(5);
+    advance(older, 10);
+    expect(older.guests).not.toContain(shower);
+    expect(olderEvents.some((e) => e.type === 'guest' && e.kind === 'shower' && e.what === 'leave')).toBe(true);
+  });
+
+  it('a shake brings a guest when the bath is empty, and asleep the guests leave', () => {
+    const { game } = makeBath('2+');
+    advance(game, 1);
+    expect(game.guests).toHaveLength(0);
+    game.shake();
+    advance(game, 2);
+    expect(game.guests.length).toBeGreaterThanOrEqual(1);
+    game.sleep();
+    advance(game, 3);
+    expect(game.guests.every((g) => g.state === 'leave')).toBe(true);
+    advance(game, 20);
+    expect(game.guests).toHaveLength(0);
+  });
+
+  it('never leaves the bath empty: when the last bubble pops, a new one rises at once on the other side', () => {
+    const { game } = makeBath('8-12');
+    advance(game, 0.5);
+    game.bubbles = [];
+    const only = game.spawnBubble({ x: W * 0.2, y: H * 0.4, r: 30, kind: 'plain' });
+    if (!only) throw new Error('no bubble');
+    game.spawnTimer = 10;
+    tap(game, only.x, only.y);
+    expect(game.bubbles).toHaveLength(0);
+    game.update(1 / 60);
+    expect(game.bubbles).toHaveLength(1);
+    expect(game.bubbles[0].x).toBeGreaterThan(W / 2);
+  });
+
+  it('the duck changes colour when touched, and a long press sends it dashing in rainbow colours', () => {
+    const { game, events } = makeBath('8-12');
+    game.bubbles = [];
+    const duck = game.ducks[0];
+    expect(duck.color).toBe(0);
+    tap(game, duck.x, game.duckY(duck) - game.duckSize * 0.5);
+    expect(duck.color).toBe(1);
+    expect(duck.rainbow).toBe(0);
+    game.press(2, duck.x, game.duckY(duck) - game.duckSize * 0.5);
+    expect(duck.color).toBe(2);
+    advance(game, HOLD_START + 0.1);
+    expect(duck.rainbow).toBeGreaterThan(0);
+    expect(events.some((e) => e.type === 'dash')).toBe(true);
+    game.release(2);
+    const speed = Math.abs(duck.vx);
+    expect(speed).toBeGreaterThan(100);
+    advance(game, 7);
+    expect(duck.rainbow).toBe(0);
+    expect(Math.abs(duck.vx)).toBeLessThan(speed);
+    // Moving the finger away before the hold is up does not start a dash.
+    game.press(3, duck.x, game.duckY(duck) - game.duckSize * 0.5);
+    game.drag(3, duck.x + 40, game.duckY(duck) - game.duckSize * 0.5);
+    advance(game, 1);
+    expect(duck.rainbow).toBe(0);
+    game.release(3);
+  });
+
+  it('tilting the phone tilts the water, with a slosh, and the ducks drift to the low side', () => {
+    const { game } = makeBath('2+');
+    game.setTilt(0.3);
+    advance(game, 2);
+    expect(game.tilt).toBeCloseTo(0.3, 1);
+    expect(game.surfaceY(W * 0.9)).toBeLessThan(game.surfaceY(W * 0.1));
+    const before = game.ducks.map((d) => d.x);
+    advance(game, 3);
+    expect(game.ducks.some((d, i) => d.x > before[i])).toBe(true);
+    game.setTilt(0);
+    advance(game, 3);
+    expect(Math.abs(game.tilt)).toBeLessThan(0.02);
+    game.setTilt(2);
+    advance(game, 3);
+    expect(game.tilt).toBeLessThanOrEqual(0.46);
   });
 
   it('keeps the drops under the cap however wild the play', () => {
