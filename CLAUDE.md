@@ -49,7 +49,7 @@ eneste, forskningen finder virker for små børn på en skærm, er *kontingens* 
 det samme) sammen med en voksen, der sætter ord på. Højt tempo, mange samtidige stimuli, pludselige lyde, lange
 sessioner og skærm før sengetid er det, der skader. Kilder: Sundhedsstyrelsens anbefalinger om skærmbrug (2023/24),
 WHO's retningslinjer for 0–5 år (2019), AAP's medieanbefalinger, Choi & Kirkorian (2016) og Kirkorian m.fl. (2021)
-om kontingens og "video deficit".
+om kontingens og "video deficit". Uddybning med links og en plan pr. alder: `docs/FORSKNING.md`.
 
 Derfor gælder for **al kode**, nu og fremover:
 
@@ -113,7 +113,7 @@ src/
   activities/
     registry.ts           listen over spil (id, titel, emoji, blurb, hasTempo, create) – forsiden og menuen bruger den
     ord/                  Ord: én ting ad gangen, ordet i forældrenes stemme, swipe, titte-bøh (logic.ts, render.ts
-                          låner balloner/render.ts' dyr og bakker, sounds.ts, index.ts)
+                          låner balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

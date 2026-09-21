@@ -3,6 +3,24 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Forskningsnote og revideret plan; ko, kat og bil i Ord
+
+- **`docs/FORSKNING.md`**: hvad forskningen faktisk siger om skærm og apps til børn under to år (Sundhedsstyrelsen,
+  WHO, AAP, Kuhl 2003, DeLoache 2010, Kirkorian 2016, Takahashi 2023 m.fl.), og hvad det betyder for Theos spil.
+  Kort: ingen app lærer en 8 måneders noget i sig selv; det, der virker, er kontingens (Balloner), titte-bøh,
+  familiens ansigter og jer, der sætter ord på. Ord i sin nuværende form er en talende billedbog, ikke et
+  læringsspil. En plan pr. alder, med forslag til Ord, ligger i noten og i `docs/ROADMAP.md` og afventer forældrene.
+- **Tre nye ting i Ord**: en ko (siger muh og løfter hovedet, klokken dingler), en kat (mjaver med glade, lukkede
+  øjne og logrer med halen) og en lille blå bil (dytter, lyser med lygten og hopper på hjulene). Ordene *ko*,
+  *kat* og *bil* kan indtales under *Jeres stemmer*. Rigtige lyde kan lægges i `src/lyde/` som `ko.mp3`, `kat.mp3`
+  og `bil.mp3`; ellers laver appen dem selv.
+- **Busken driller lidt** for *1–2 år* og *2+ år*: første tryk får den til at rasle og hoppe ("hmm?"), andet tryk
+  åbner den. For *8–12 mdr* åbner den stadig ved første tryk: her skal svaret på Theos tryk komme med det samme.
+
+**Test på telefonen:** ingen test nødvendig i denne version; planen skal besluttes først. Vil I se koen, katten og
+bilen: Ord → swipe, til de kommer; rør dem (muh, mjav, dyt-dyt). Med alder *2+ år* rasler busken ved første tryk og
+åbner ved andet.
+
 ## 2026-09-21 – Theos spil: en forside, og flere ting i Ord
 
 - **Forsiden "Theos spil"**: når appen åbner, vælger man spillet på store felter: *Theos Balloner* eller *Theos Ord

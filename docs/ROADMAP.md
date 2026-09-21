@@ -66,10 +66,13 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 Det Theo kan: pege med én finger, tage og slippe, kigge efter det, der forsvinder, genkende navne på ting, pludre
 efter lyde.
 
-- ✅ **Ord (spil nr. 2)** – én ting ad gangen (dyr, traktor, ballon, familiebilleder), tryk giver lyd og jeres ord,
-  swipe giver den næste, hver tredje gemmer sig bag en busk (titte-bøh). Træner: objektpermanens, ordforråd,
-  forventning, at én ting kan have ét navn. Har også sol, sky og blomst. Næste: ko, kat, bil (nye tegninger), tryk
-  på busken flere gange, før den åbner.
+- 🔁 **Ord (spil nr. 2)** – findes: én ting ad gangen (hund, elefant, fugl, sommerfugl, snegl, ko, kat, traktor, bil,
+  ballon, sol, sky, blomst, familiebilleder), tryk giver lyd og jeres ord, swipe giver den næste, hver tredje gemmer
+  sig bag en busk (titte-bøh; for 1–2 og 2+ rasler busken først). **Ærlig status (`docs/FORSKNING.md`):** ved 8
+  måneder er det en talende billedbog, ikke et læringsspil; det, der har dokumentation i alderen, er titte-bøh,
+  familiens ansigter og jeres stemmer. **Forslag, der afventer forældrene:** i profilen 8–12 mdr bliver Ord til
+  *Titte-bøh*: busken det meste af tiden, bag den familiens ansigter med navnet i jeres stemme og få dyr; resten af
+  tingene venter til profilen 1–2 år. "Hvor er skyen?" flyttes til 12–18 måneder (se der).
 - 💡 **Hvor er lyden?** – en lyd kommer fra en side af skærmen, og et dyr dukker op der, når man trykker. Træner:
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,
@@ -80,8 +83,10 @@ efter lyde.
 
 - 💡 **Put klodsen i hullet** – træk en form til det matchende hul (stor tolerance, snap-hjælp). Træner: form-genkendelse,
   træk-og-slip, tålmodighed.
-- 💡 **Find den røde** – "Hvor er den røde ballon?" med dansk tale (vores egen indtalte stemme eller syntetisk),
-  al respons positiv. Træner: farver, sprogforståelse.
+- 💡 **Hvor er skyen?** – to–tre ting på skærmen; jeres indtalte stemme spørger efter én. Alt, han rører, siger sit
+  eget navn (jeres stemme); den efterspurgte fejrer med lyd og hop. Ingen fejl, ingen tid, ingen score. Det er den
+  mekanik, der har dokumentation for ordlæring fra skærm (Kirkorian, Choi & Pempek 2016, hos toårige), uden det,
+  der ville gøre den til en prøve. Senere med farver ("den røde"). Træner: sprogforståelse, pegen.
 - 💡 **Kroppen** – tryk på en figurs næse/mave/fødder; figuren siger navnet og reagerer sjovt. Træner: kropsdele, ord.
 - 💡 **Byg og vælt** – stabl klodser med tryk, swipe vælter tårnet med brag og latter. Træner: årsag-virkning-kæder,
   forventningsglæde.

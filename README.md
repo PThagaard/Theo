@@ -62,6 +62,10 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 Skærmen lærer ikke en baby noget i sig selv. Sundhedsstyrelsen anbefaler ingen skærm under to år uden en voksen,
 der deltager aktivt, og det er sådan, appen er tænkt: som et legetøj, I bruger sammen, i korte stunder.
 
+Hvad forskningen faktisk siger om skærm og apps under to år, og hvad det betyder for hvert spil, står i
+`docs/FORSKNING.md`. Kort: appen kan ikke lære Theo noget i sig selv; det kan hans egen hånd, der får et svar,
+titte-bøh, jeres ansigter og jeres ord.
+
 - **Sammen.** Sid med ham, peg og sæt ord på det, han rører: "Hund! Vov vov." "Ballon, pop!" Det er jeres ord, han
   lærer af, ikke appens lyde.
 - **Kort.** 5–10 minutter ad gangen. Pausen i forældremenuen sørger for, at verdenen selv falder i søvn.
@@ -106,10 +110,11 @@ der deltager aktivt, og det er sådan, appen er tænkt: som et legetøj, I bruge
   lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
 - **Forsiden "Theos spil"**: når appen åbner, vælger I spillet på store felter. Spillene har ingen vej tilbage
   til forsiden; forældremenuen → *Leg* → *Skift spil* fører tilbage.
-- **Theos Ord og Billeder** (spil nr. 2): Én ting ad gangen midt på græsset (dyrene,
-  traktoren, en ballon, jeres familiebilleder). Rør den: hop, lyd og jeres ord. Swipe: den næste. Hver tredje gemmer
-  sig bag en busk: titte-bøh. Roligt og uden noget, der sker af sig selv, for de mindste.
-- **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ballon, traktor …) og navnene på
+- **Theos Ord og Billeder** (spil nr. 2): Én ting ad gangen midt på græsset (hund, elefant, fugl, sommerfugl, snegl,
+  ko, kat, traktor, bil, ballon, sol, sky, blomst og jeres familiebilleder). Rør den: hop, lyd og jeres ord. Swipe:
+  den næste. Hver tredje gemmer sig bag en busk: titte-bøh (for *1–2 år* og *2+ år* rasler busken ved første tryk og
+  åbner ved andet). Roligt og uden noget, der sker af sig selv, for de mindste.
+- **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ko, kat, ballon, bil, traktor …) og navnene på
   familiebillederne med jeres egne stemmer. Når Theo rører tingen eller popper billedet, siger appen ordet med jeres
   stemme. Telefonen beder om lov til mikrofonen første gang; optagelserne bliver på telefonen.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
