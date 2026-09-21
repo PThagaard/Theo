@@ -316,6 +316,93 @@ describe('Game', () => {
     game.balloons.forEach((b, i) => expect(b.vy).toBeCloseTo(before[i], 6));
   });
 
+  describe('visitors', () => {
+    const kinds = ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star'] as const;
+
+    it('drops by on its own after a while, never more than two at a time', () => {
+      const { game, events } = makeGame();
+      advance(game, 12);
+      expect(game.visitors.length).toBeGreaterThanOrEqual(1);
+      expect(events.some((e) => e.type === 'visitor' && e.what === 'appear')).toBe(true);
+      advance(game, 120);
+      expect(game.visitors.length).toBeLessThanOrEqual(2);
+    });
+
+    for (const kind of kinds) {
+      it(`${kind}: appears, can be touched and leaves again by itself`, () => {
+        const { game, events } = makeGame();
+        game.balloons = [];
+        const visitor = game.spawnVisitor(kind);
+        expect(game.visitors).toContain(visitor);
+        // The shooting star is gone in a couple of seconds; everyone else takes their time.
+        advance(game, kind === 'star' ? 0.3 : 2);
+        const hit = game.visitorHit(visitor);
+        expect(game.findVisitorAt(hit.x, hit.y)).toBe(visitor);
+        game.press(1, hit.x, hit.y);
+        game.release(1);
+        const poke = events.find((e) => e.type === 'visitor' && e.what === 'poke');
+        expect(poke).toMatchObject({ kind });
+        expect(visitor.pokes).toBe(1);
+        // Everybody leaves in the end (the dog walks off, the snail sinks into the grass, the star flies away ...).
+        advance(game, 90);
+        expect(game.visitors).not.toContain(visitor);
+      });
+    }
+
+    it('the dog jumps when touched and lands again', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const dog = game.spawnVisitor('dog');
+      advance(game, 1);
+      const hit = game.visitorHit(dog);
+      game.press(1, hit.x, hit.y);
+      advance(game, 0.15);
+      expect(dog.lift).toBeGreaterThan(5);
+      advance(game, 1.5);
+      expect(dog.lift).toBe(0);
+    });
+
+    it('the elephant rises, trumpets when touched and sinks back down', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const elephant = game.spawnVisitor('elephant');
+      expect(elephant.lift).toBe(0);
+      advance(game, 2);
+      expect(elephant.state).toBe('idle');
+      expect(elephant.lift).toBeGreaterThan(elephant.size);
+      const hit = game.visitorHit(elephant);
+      game.press(1, hit.x, hit.y);
+      expect(elephant.state).toBe('react');
+      advance(game, 1.5);
+      expect(elephant.state).toBe('idle');
+      advance(game, 14);
+      expect(game.visitors).not.toContain(elephant);
+    });
+
+    it('touching between two visitors picks the closest one', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const dog = game.spawnVisitor('dog');
+      const snail = game.spawnVisitor('snail');
+      dog.x = 150;
+      snail.x = 190;
+      advance(game, 0.6);
+      const hit = game.visitorHit(snail);
+      game.press(1, hit.x + 5, hit.y);
+      expect(events.find((e) => e.type === 'visitor' && e.what === 'poke')).toMatchObject({ kind: 'snail' });
+    });
+
+    it('a shake makes the dog jump and the elephant trumpet', () => {
+      const { game } = makeGame();
+      const dog = game.spawnVisitor('dog');
+      const elephant = game.spawnVisitor('elephant');
+      advance(game, 2);
+      game.shake();
+      expect(dog.vy).toBeLessThan(0);
+      expect(elephant.state).toBe('react');
+    });
+  });
+
   it('celebrates every tenth pop', () => {
     const { game, events } = makeGame();
     let pops = 0;

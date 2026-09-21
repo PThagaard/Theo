@@ -61,6 +61,38 @@ export interface Cloud {
   wobble: number;
 }
 
+export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star';
+
+export type VisitorState = 'enter' | 'idle' | 'react' | 'leave' | 'gone';
+
+/** A creature that drops by now and then: walks, flies or peeks, and reacts when touched. */
+export interface Visitor {
+  id: number;
+  kind: VisitorKind;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Facing direction: 1 = to the right. */
+  dir: 1 | -1;
+  /** Seconds since it appeared. */
+  age: number;
+  state: VisitorState;
+  /** Seconds in the current state. */
+  stateAge: number;
+  /** Body size, in unit px. */
+  size: number;
+  /** How many times it has been touched. */
+  pokes: number;
+  /** Butterfly colour. */
+  hue: number;
+  /** Where a wandering visitor is heading. */
+  targetX: number;
+  targetY: number;
+  /** Height above ground while jumping (dog), or how far up it has risen (elephant). */
+  lift: number;
+}
+
 export interface TrailPoint {
   x: number;
   y: number;
@@ -108,4 +140,6 @@ export type GameEvent =
   | { type: 'sun'; x: number; y: number }
   | { type: 'cloud'; x: number; y: number }
   /** The phone was shaken. */
-  | { type: 'shake' };
+  | { type: 'shake' }
+  /** A visitor arrived, or was touched. */
+  | { type: 'visitor'; kind: VisitorKind; x: number; y: number; what: 'appear' | 'poke' };

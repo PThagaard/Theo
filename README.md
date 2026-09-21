@@ -65,10 +65,15 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
+- **Besøg** – med jævne mellemrum kommer der nogen forbi: en hund, der går hen over græsset og hopper og gør, når
+  man rører den; en elefant, der kigger op bag bakken og trumpeterer; en fugl, der slår en kolbøtte; en sommerfugl,
+  der flagrer mellem blomsterne; en snegl, der gemmer sig i sit hus; og af og til et stjerneskud, der eksploderer i
+  stjerner. Alle reagerer også, når telefonen rystes.
 - **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen: vælg et billede fra galleriet (gerne
   et gruppebillede) eller tag et selfie, træk ansigtet ind i cirklen, zoom og gem; klip gerne flere ansigter fra
   samme billede. Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort
-  frem med hjerter og "ta-daa". Billederne gemmes kun på telefonen og lægges aldrig i repoet.
+  frem med hjerter og "ta-daa". Billeder valgt på telefonen bliver kun på telefonen. Billeder, der skal være med i
+  alle udgaver, lægges i mappen `src/familie/` (se README der; bemærk at repoet er offentligt).
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.

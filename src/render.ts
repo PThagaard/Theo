@@ -2,7 +2,8 @@ import type { Game } from './game';
 import { TRAIL_LIFE } from './game';
 import { FLOWER_COLORS, HILLS, RAINBOW, SKY } from './palette';
 import { Rng, TAU, clamp, easeOutBack } from './rng';
-import type { Balloon, Cloud, Particle, Trail } from './types';
+import { hillY } from './terrain';
+import type { Balloon, Cloud, Particle, Trail, Visitor } from './types';
 
 /**
  * Draws the world on a 2D canvas: sky, smiling sun, rainbow, clouds, flowery
@@ -125,7 +126,12 @@ export class Renderer {
     this.drawSun(game, dt);
     this.drawRainbow();
     for (const cloud of game.clouds) this.drawCloud(cloud);
-    this.drawHills();
+    this.drawHill(0);
+    // The elephant peeks up from between the hills, so it is drawn before the front hill.
+    for (const v of game.visitors) if (v.kind === 'elephant') this.drawVisitor(v);
+    this.drawHill(1);
+    this.drawFlowers();
+    for (const v of game.visitors) if (v.kind !== 'elephant') this.drawVisitor(v);
     for (const b of game.balloons) this.drawString(b);
     for (const b of game.balloons) this.drawBalloon(b);
     for (const trail of game.trails) this.drawTrail(trail, game.time);
@@ -234,30 +240,27 @@ export class Renderer {
   }
 
   private hillY(x: number, layer: 0 | 1): number {
-    const u = this.u;
-    const { W, H } = this;
-    return layer === 0
-      ? H - H * 0.17 - u * 24 * Math.sin((x / W) * Math.PI * 2.1 + 1.2)
-      : H - H * 0.1 - u * 16 * Math.sin((x / W) * Math.PI * 1.5 + 0.3);
+    return hillY(x, this.W, this.H, this.u, layer);
   }
 
-  private drawHills(): void {
+  private drawHill(layer: 0 | 1): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(0, this.H);
+    const steps = 32;
+    for (let i = 0; i <= steps; i++) {
+      const x = (i / steps) * this.W;
+      ctx.lineTo(x, this.hillY(x, layer));
+    }
+    ctx.lineTo(this.W, this.H);
+    ctx.closePath();
+    ctx.fillStyle = layer === 0 ? HILLS.back : HILLS.front;
+    ctx.fill();
+  }
+
+  private drawFlowers(): void {
     const ctx = this.ctx;
     const u = this.u;
-    for (const layer of [0, 1] as const) {
-      ctx.beginPath();
-      ctx.moveTo(0, this.H);
-      const steps = 32;
-      for (let i = 0; i <= steps; i++) {
-        const x = (i / steps) * this.W;
-        ctx.lineTo(x, this.hillY(x, layer));
-      }
-      ctx.lineTo(this.W, this.H);
-      ctx.closePath();
-      ctx.fillStyle = layer === 0 ? HILLS.back : HILLS.front;
-      ctx.fill();
-    }
-
     for (const flower of this.flowers) {
       const x = flower.fx * this.W;
       const y = this.hillY(x, 1) + 4 * u;
@@ -286,6 +289,356 @@ export class Renderer {
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  // ---- Visitors ------------------------------------------------------------
+
+  private drawVisitor(v: Visitor): void {
+    const ctx = this.ctx;
+    ctx.save();
+    switch (v.kind) {
+      case 'dog':
+        this.drawDog(v);
+        break;
+      case 'elephant':
+        this.drawElephant(v);
+        break;
+      case 'bird':
+        this.drawBird(v);
+        break;
+      case 'butterfly':
+        this.drawButterfly(v);
+        break;
+      case 'snail':
+        this.drawSnail(v);
+        break;
+      case 'star':
+        this.drawShootingStar(v);
+        break;
+    }
+    ctx.restore();
+  }
+
+  private eye(x: number, y: number, r: number): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = EYE_COLOR;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, TAU);
+    ctx.fill();
+  }
+
+  /** Side view, facing `dir`, feet on the ground; jumps when touched. */
+  private drawDog(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const jumping = v.lift > 0;
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    const stride = jumping ? 0 : Math.sin(v.age * 9);
+    ctx.strokeStyle = '#c8863c';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.22;
+    // Legs (back pair slightly darker so the walk reads).
+    for (const [x, phase, shade] of [
+      [-0.45, 0, '#a86e2e'],
+      [0.45, Math.PI, '#a86e2e'],
+      [-0.3, Math.PI, '#c8863c'],
+      [0.6, 0, '#c8863c'],
+    ] as const) {
+      const swing = jumping ? 0 : Math.sin(v.age * 9 + phase) * s * 0.25;
+      ctx.strokeStyle = shade;
+      ctx.beginPath();
+      ctx.moveTo(x * s, -s * 0.6);
+      ctx.lineTo(x * s + swing, jumping ? -s * 0.25 : 0);
+      ctx.stroke();
+    }
+    // Tail, wagging faster when happy.
+    ctx.strokeStyle = '#c8863c';
+    ctx.lineWidth = s * 0.14;
+    const wag = Math.sin(v.age * (jumping || v.pokes > 0 ? 18 : 10)) * s * 0.25;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.7, -s * 0.95);
+    ctx.quadraticCurveTo(-s * 1.0, -s * 1.25, -s * 1.1 + wag * 0.3, -s * 1.35 + wag);
+    ctx.stroke();
+    // Body.
+    ctx.fillStyle = '#c8863c';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.78 + stride * s * 0.02, s * 0.78, s * 0.42, 0, 0, TAU);
+    ctx.fill();
+    // Head, snout, ear, nose, eye.
+    ctx.beginPath();
+    ctx.arc(s * 0.78, -s * 1.18, s * 0.4, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#e8b072';
+    ctx.beginPath();
+    ctx.ellipse(s * 1.06, -s * 1.06, s * 0.26, s * 0.19, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#8a5a2b';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.56, -s * 1.3, s * 0.14, s * 0.3, jumping ? -0.5 : 0.25, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = EYE_COLOR;
+    ctx.beginPath();
+    ctx.arc(s * 1.28, -s * 1.12, s * 0.09, 0, TAU);
+    ctx.fill();
+    this.eye(s * 0.86, -s * 1.28, s * 0.07);
+    // Happy mouth (and tongue when jumping).
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineWidth = s * 0.05;
+    ctx.beginPath();
+    ctx.arc(s * 1.05, -s * 1.0, s * 0.12, 0.1 * Math.PI, 0.8 * Math.PI);
+    ctx.stroke();
+    if (jumping) {
+      ctx.fillStyle = '#ff7a9a';
+      ctx.beginPath();
+      ctx.ellipse(s * 1.1, -s * 0.86, s * 0.07, s * 0.12, 0, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  /** Front view: head and ears rising from behind the front hill; trumpets with the trunk up. */
+  private drawElephant(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const cy = s * 0.1 - v.lift;
+    const trumpeting = v.state === 'react';
+    const flap = Math.sin(v.age * 3) * 0.08 + (trumpeting ? Math.sin(v.stateAge * 20) * 0.2 : 0);
+    ctx.translate(v.x, v.y);
+    // Ears.
+    for (const side of [-1, 1]) {
+      ctx.save();
+      ctx.translate(side * s * 0.6, cy - s * 0.05);
+      ctx.rotate(side * flap);
+      ctx.fillStyle = '#8f9bab';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s * 0.42, s * 0.5, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#e8b6c8';
+      ctx.beginPath();
+      ctx.ellipse(side * -s * 0.05, 0, s * 0.28, s * 0.36, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Head.
+    ctx.fillStyle = '#9aa5b1';
+    ctx.beginPath();
+    ctx.arc(0, cy, s * 0.62, 0, TAU);
+    ctx.fill();
+    // Trunk: hangs down and curls, or lifts high when trumpeting.
+    ctx.strokeStyle = '#9aa5b1';
+    ctx.lineWidth = s * 0.24;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, cy + s * 0.32);
+    if (trumpeting) {
+      ctx.bezierCurveTo(s * 0.1, cy + s * 0.9, s * 0.9, cy + s * 0.6, s * 0.75, cy - s * 0.45);
+    } else {
+      const sway = Math.sin(v.age * 1.5) * s * 0.12;
+      ctx.bezierCurveTo(0, cy + s * 0.85, s * 0.05 + sway, cy + s * 1.15, s * 0.35 + sway, cy + s * 1.05);
+    }
+    ctx.stroke();
+    // Tusks, cheeks and eyes.
+    ctx.strokeStyle = '#fff8e6';
+    ctx.lineWidth = s * 0.1;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * s * 0.22, cy + s * 0.42);
+      ctx.quadraticCurveTo(side * s * 0.32, cy + s * 0.62, side * s * 0.4, cy + s * 0.5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255, 105, 140, 0.3)';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(side * s * 0.38, cy + s * 0.12, s * 0.11, 0, TAU);
+      ctx.fill();
+    }
+    if (trumpeting) {
+      ctx.strokeStyle = EYE_COLOR;
+      ctx.lineWidth = s * 0.05;
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(side * s * 0.22, cy - s * 0.1, s * 0.09, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+      }
+    } else {
+      for (const side of [-1, 1]) this.eye(side * s * 0.22, cy - s * 0.14, s * 0.07);
+    }
+  }
+
+  /** A little blue bird flapping across the sky; loops the loop when touched. */
+  private drawBird(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y);
+    ctx.scale(v.dir, 1);
+    if (v.state === 'react') ctx.rotate(-(v.stateAge / 0.9) * TAU);
+    const flapY = -Math.sin(v.age * 14) * s * 1.1;
+    // Far wing.
+    ctx.fillStyle = '#2b6fd9';
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.1, -s * 0.2);
+    ctx.lineTo(-s * 1.1, flapY - s * 0.2);
+    ctx.lineTo(s * 0.4, -s * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    // Body, tail, head.
+    ctx.fillStyle = '#4d96ff';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 1.1, s * 0.7, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.9, -s * 0.1);
+    ctx.lineTo(-s * 1.6, -s * 0.5);
+    ctx.lineTo(-s * 1.5, s * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(s * 0.95, -s * 0.45, s * 0.52, 0, TAU);
+    ctx.fill();
+    // Near wing.
+    ctx.fillStyle = '#7ab6ff';
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 0.1);
+    ctx.lineTo(-s * 0.9, flapY);
+    ctx.lineTo(s * 0.5, 0);
+    ctx.closePath();
+    ctx.fill();
+    // Beak, eye, belly.
+    ctx.fillStyle = '#ff9f43';
+    ctx.beginPath();
+    ctx.moveTo(s * 1.4, -s * 0.5);
+    ctx.lineTo(s * 1.95, -s * 0.35);
+    ctx.lineTo(s * 1.4, -s * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ffe9a8';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.15, s * 0.25, s * 0.6, s * 0.35, 0, 0, TAU);
+    ctx.fill();
+    this.eye(s * 1.1, -s * 0.55, s * 0.12);
+  }
+
+  /** Colourful wings that flap while it flutters around the flowers. */
+  private drawButterfly(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const flap = 0.35 + Math.abs(Math.sin(v.age * (v.state === 'react' ? 22 : 11))) * 0.65;
+    ctx.translate(v.x, v.y);
+    ctx.rotate(Math.sin(v.age * 2) * 0.15);
+    for (const side of [-1, 1]) {
+      ctx.save();
+      ctx.scale(side * flap, 1);
+      ctx.fillStyle = `hsl(${v.hue}, 85%, 62%)`;
+      ctx.beginPath();
+      ctx.ellipse(s * 0.95, -s * 0.35, s * 0.95, s * 0.72, -0.35, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = `hsl(${(v.hue + 45) % 360}, 85%, 60%)`;
+      ctx.beginPath();
+      ctx.ellipse(s * 0.75, s * 0.55, s * 0.65, s * 0.5, 0.35, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      ctx.arc(s * 1.1, -s * 0.4, s * 0.22, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.28;
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 0.8);
+    ctx.lineTo(0, s * 0.9);
+    ctx.stroke();
+    ctx.lineWidth = s * 0.08;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 0.8);
+      ctx.quadraticCurveTo(side * s * 0.3, -s * 1.3, side * s * 0.55, -s * 1.45);
+      ctx.stroke();
+    }
+  }
+
+  /** Slow and easy to catch; pulls into its shell when touched. */
+  private drawSnail(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const hiding = v.state === 'react';
+    const out = hiding ? (v.stateAge < 0.3 ? 1 - v.stateAge / 0.3 : v.stateAge < 1.2 ? 0 : Math.min(1, (v.stateAge - 1.2) / 0.4)) : 1;
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    // Body (retracts into the shell).
+    if (out > 0.02) {
+      ctx.save();
+      ctx.translate(-s * 0.2, 0);
+      ctx.scale(out, 0.6 + 0.4 * out);
+      ctx.fillStyle = '#b5e48c';
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.9, 0);
+      ctx.quadraticCurveTo(-s * 0.9, -s * 0.5, -s * 0.2, -s * 0.5);
+      ctx.lineTo(s * 1.0, -s * 0.5);
+      ctx.quadraticCurveTo(s * 1.5, -s * 0.5, s * 1.5, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(s * 1.15, -s * 0.5, s * 0.34, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = '#b5e48c';
+      ctx.lineWidth = s * 0.1;
+      ctx.lineCap = 'round';
+      for (const [dx, dy] of [
+        [s * 0.25, -s * 0.55],
+        [s * 0.05, -s * 0.6],
+      ]) {
+        ctx.beginPath();
+        ctx.moveTo(s * 1.15, -s * 0.7);
+        ctx.lineTo(s * 1.15 + dx, -s * 0.7 + dy);
+        ctx.stroke();
+        this.eye(s * 1.15 + dx, -s * 0.7 + dy, s * 0.09);
+      }
+      ctx.restore();
+    }
+    // Shell with a spiral.
+    ctx.fillStyle = '#ff9f43';
+    ctx.beginPath();
+    ctx.arc(-s * 0.2, -s * 0.72, s * 0.72, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#d1600f';
+    ctx.lineWidth = s * 0.12;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let a = 0; a < TAU * 2.2; a += 0.15) {
+      const r = s * 0.08 + (a / (TAU * 2.2)) * s * 0.58;
+      const px = -s * 0.2 + Math.cos(a) * r;
+      const py = -s * 0.72 + Math.sin(a) * r;
+      if (a === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  private drawShootingStar(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y);
+    ctx.rotate(Math.atan2(v.vy, v.vx));
+    const glow = ctx.createLinearGradient(-s * 9, 0, 0, 0);
+    glow.addColorStop(0, 'rgba(255, 246, 168, 0)');
+    glow.addColorStop(1, 'rgba(255, 246, 168, 0.8)');
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = s * 0.9;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-s * 9, 0);
+    ctx.lineTo(0, 0);
+    ctx.stroke();
+    ctx.rotate(v.age * 6);
+    ctx.fillStyle = '#fff6a8';
+    this.starPath(0, 0, s * 1.4, 5);
+    ctx.fill();
   }
 
   // ---- Finger ribbons ------------------------------------------------------

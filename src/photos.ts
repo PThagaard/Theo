@@ -11,6 +11,8 @@ export interface StoredPhoto {
   /** Small square JPEG as a data URL. */
   dataUrl: string;
   created: number;
+  /** True for pictures that ship inside the app (src/familie/); they can't be removed from the menu. */
+  builtin?: boolean;
 }
 
 export const MAX_PHOTOS = 8;
@@ -152,7 +154,7 @@ export async function loadImage(file: Blob): Promise<LoadedImage> {
 }
 
 /** Centre-crops the picture to a square, shrinks it and returns a JPEG data URL. */
-async function shrinkToSquare(file: Blob): Promise<string> {
+export async function shrinkToSquare(file: Blob): Promise<string> {
   const image = await loadImage(file);
   const { width, height } = imageSize(image);
   const side = Math.min(width, height);

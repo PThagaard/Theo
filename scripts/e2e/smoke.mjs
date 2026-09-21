@@ -125,6 +125,33 @@ const shook = await page.evaluate(() => {
 console.log('shake via DeviceMotion:', JSON.stringify(shook));
 if (!shook.reacted) throw new Error('shake was not detected');
 
+// Visitors: bring every creature in at once, photograph them, and poke the dog and the elephant.
+const visitors = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.visitors = [];
+  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  const made = {};
+  for (const kind of ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star']) made[kind] = g.spawnVisitor(kind).id;
+  const dog = g.visitors.find((v) => v.kind === 'dog'); dog.x = g.width * 0.22; dog.dir = 1; dog.vx = Math.abs(dog.vx);
+  const elephant = g.visitors.find((v) => v.kind === 'elephant'); elephant.x = g.width * 0.62; elephant.y = g.ground(elephant.x);
+  const snail = g.visitors.find((v) => v.kind === 'snail'); snail.x = g.width * 0.75;
+  const bird = g.visitors.find((v) => v.kind === 'bird'); bird.x = g.width * 0.5; bird.y = g.height * 0.3;
+  const star = g.visitors.find((v) => v.kind === 'star'); star.x = g.width * 0.55; star.y = g.height * 0.12;
+  return made;
+});
+await page.waitForTimeout(1600);
+await page.screenshot({ path: `${OUT}/${tag}-11-visitors.png` });
+const poked = await page.evaluate(() => new Promise((resolve) => {
+  const g = window.__theo.game; const events = []; g.onEvent((e) => { if (e.type === 'visitor' && e.what === 'poke') events.push(e.kind); });
+  for (const kind of ['dog', 'elephant']) { const v = g.visitors.find((v) => v.kind === kind); const hit = g.visitorHit(v); g.press(90, hit.x, hit.y); g.release(90); }
+  resolve(events);
+}));
+console.log('visitors poked:', poked.join(', '));
+check(poked.includes('dog') && poked.includes('elephant'), 'dog or elephant did not react to a touch');
+await page.waitForTimeout(250);
+await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
+await page.evaluate(() => { window.__theo.game.visitors = []; });
+
 // Pop until a celebration happens.
 let guard = 0;
 while (s.pops < 10 && guard++ < 200) {
@@ -256,7 +283,10 @@ const audio = await page.evaluate(async () => {
     ['rain', 6.6, () => engine.rain(6.6)],
     ['rattle', 7.2, () => engine.rattle(7.2)],
     ['tada', 7.7, () => engine.tada(7.7)],
-    ['music', 8.6, () => engine.renderMusic(8.6, 3.4)],
+    ['bark', 8.6, () => engine.bark(8.6)],
+    ['trumpet', 9.2, () => engine.trumpet(9.2)],
+    ['chirp', 10.1, () => { engine.chirp(10.1); engine.flutter(10.4); engine.blub(10.6); engine.rumble(10.7); }],
+    ['music', 11.4, () => engine.renderMusic(11.4, 0.6)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -298,8 +328,12 @@ for (const [name, v] of Object.entries(audio)) {
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/${tag}-07-later.png` });
 
-console.log('console problems:', problems.length ? problems : 'none');
 await browser.close();
 server.close();
-if (problems.length) process.exitCode = 1;
+if (problems.length) {
+  console.log('console problems:', problems);
+  console.log('SMOKE FAILED: the page logged errors or warnings');
+  process.exit(1);
+}
+console.log('console problems: none');
 console.log('SMOKE OK');

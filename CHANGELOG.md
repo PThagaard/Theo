@@ -3,6 +3,24 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – besøg af dyr og indbyggede familiebilleder
+
+- **Besøg:** hvert 15.–30. sekund kommer der nogen forbi (højst to ad gangen): en hund, der går over græsset og
+  hopper med tungen ude og gør "vov vov", når den røres; en elefant, der kigger op bag bakken med en dyb brummen og
+  trumpeterer med snablen i vejret; en fugl, der flyver forbi og slår en kolbøtte med "pip pip"; en sommerfugl, der
+  flagrer mellem blomsterne; en snegl, der langsomt kravler forbi og gemmer sig i sit hus med et "blub"; og af og
+  til et stjerneskud, der eksploderer i stjerner. Alle reagerer også på et ryst. Bygget som ét besøgssystem, så nye
+  dyr er nemme at tilføje.
+- **Indbyggede familiebilleder:** billeder i mappen `src/familie/` bliver automatisk til familie-balloner i alle
+  udgaver (se `src/familie/README.md` for format). De vises med blå kant i forældremenuen og kan ikke fjernes der.
+- Røgtesten fejler nu, hvis siden logger fejl (og fotograferer de besøgende).
+
+**Test på telefonen:** (1) Vent op til et halvt minut: der kommer et dyr. Rør det: hunden hopper og gør, elefanten
+trumpeterer, fuglen slår en kolbøtte, sneglen gemmer sig, sommerfuglen flagrer væk, stjerneskuddet springer. (2) Ryst
+telefonen mens der er besøg: de reagerer. (3) Dyrene går/svæver væk igen af sig selv, og der kommer nye. (4) Er der
+lagt billeder i `src/familie/`: de dukker op på balloner uden at gøre noget på telefonen, og vises med blå kant i
+menuen.
+
 ## 2026-09-21 – opdatering inde fra appen og tempo
 
 - **Søg efter ny version** i forældremenuen: appen spørger GitHub Releases, viser hvad der er nyt, og *Hent og

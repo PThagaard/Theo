@@ -492,6 +492,74 @@ export class AudioEngine {
     [96, 100, 103].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.05 + i * 0.09, 0.5, 0.25));
   }
 
+  // ---- Visitors ------------------------------------------------------------
+
+  /** Two friendly "vov vov" barks. */
+  bark(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    for (const offset of [0, 0.22]) {
+      const t = when + offset;
+      this.synth.tone(this.sfxBus, 'sawtooth', 190, t, 0.22, 0.01, 0.16, { to: 120, glide: 0.12, filter: 900 });
+      this.synth.noiseBurst(this.sfxBus, t, 0.25, 0.08, 'bandpass', 700, 0.8);
+    }
+  }
+
+  /** An elephant trumpet: a rising, wobbling blast. */
+  trumpet(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const ctx = this.ctx;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, when);
+    osc.frequency.exponentialRampToValueAtTime(440, when + 0.25);
+    osc.frequency.exponentialRampToValueAtTime(330, when + 0.7);
+    const vibrato = ctx.createOscillator();
+    vibrato.type = 'sine';
+    vibrato.frequency.value = 11;
+    const depth = ctx.createGain();
+    depth.gain.value = 18;
+    vibrato.connect(depth).connect(osc.frequency);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 900;
+    filter.Q.value = 1.2;
+    const gain = ctx.createGain();
+    envelope(gain.gain, when, 0.28, 0.05, 0.7);
+    osc.connect(filter).connect(gain).connect(this.sfxBus);
+    osc.start(when);
+    vibrato.start(when);
+    osc.stop(when + 0.8);
+    vibrato.stop(when + 0.8);
+  }
+
+  /** A low, friendly rumble when the elephant peeks up. */
+  rumble(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'triangle', 70, when, 0.25, 0.1, 0.6, { to: 55, glide: 0.5, filter: 300 });
+  }
+
+  /** "Tweet tweet" for the bird. */
+  chirp(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    for (const offset of [0, 0.13, 0.3]) {
+      this.synth.tone(this.sfxBus, 'sine', 2100, when + offset, 0.14, 0.005, 0.1, { to: 3000, glide: 0.07 });
+    }
+  }
+
+  /** Tiny twinkle for the butterfly. */
+  flutter(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    [91, 95, 98, 103].forEach((midi, i) => {
+      this.synth.tone(this.sfxBus, 'sine', midiToFreq(midi), when + i * 0.05, 0.1, 0.003, 0.25);
+    });
+  }
+
+  /** Soft "blub" when the snail hides in its shell. */
+  blub(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 320, when, 0.25, 0.01, 0.25, { to: 140, glide: 0.2 });
+  }
+
   /** Soft raindrops ("plip plip") when a cloud is touched. */
   rain(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;

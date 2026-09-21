@@ -2,12 +2,14 @@ import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { AudioEngine } from './audio';
+import { loadBuiltinPhotos } from './builtinPhotos';
 import { Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
 import { MAX_PHOTOS, addCroppedPhoto, listPhotos, removePhoto } from './photos';
 import { Renderer } from './render';
+import type { VisitorKind } from './types';
 import { appUpdate } from './update';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -81,6 +83,10 @@ game.onEvent((event) => {
       audio?.rattle();
       haptic(ImpactStyle.Heavy);
       break;
+    case 'visitor':
+      visitorSound(event.kind, event.what);
+      if (event.what === 'poke') haptic(ImpactStyle.Light);
+      break;
     case 'celebrate':
       audio?.fanfare();
       haptic(ImpactStyle.Heavy);
@@ -88,7 +94,37 @@ game.onEvent((event) => {
   }
 });
 
+/** Each visitor has a sound when it appears and another when it is touched. */
+function visitorSound(kind: VisitorKind, what: 'appear' | 'poke'): void {
+  if (!audio) return;
+  switch (kind) {
+    case 'dog':
+      audio.bark();
+      break;
+    case 'elephant':
+      if (what === 'appear') audio.rumble();
+      else audio.trumpet();
+      break;
+    case 'bird':
+      audio.chirp();
+      break;
+    case 'butterfly':
+      audio.flutter();
+      break;
+    case 'snail':
+      if (what === 'poke') audio.blub();
+      break;
+    case 'star':
+      if (what === 'appear') audio.sparkle();
+      else audio.chime();
+      break;
+  }
+}
+
 // ---- Parent menu and kid lock ----------------------------------------------
+
+/** Pictures bundled in src/familie/ are always part of the family, next to the ones picked on the phone. */
+const builtinPhotos = loadBuiltinPhotos();
 
 game.setTempo(settings.tempo);
 const panel = new ParentPanel(settings, {
@@ -102,7 +138,7 @@ const panel = new ParentPanel(settings, {
   update: appUpdate,
   photos: {
     max: MAX_PHOTOS,
-    list: listPhotos,
+    list: async () => [...(await builtinPhotos), ...(await listPhotos())],
     add: addCroppedPhoto,
     remove: removePhoto,
     onChange: (photos) => {

@@ -1,6 +1,7 @@
 import { BALLOON_COLORS, GOLD, RAINBOW, RAINBOW_COLOR, SPARKLE_COLORS } from './palette';
 import { Rng, TAU, clamp, easeOutBack } from './rng';
-import type { Balloon, BalloonKind, Cloud, Face, GameEvent, Particle, ParticleShape, Trail } from './types';
+import { hillY } from './terrain';
+import type { Balloon, BalloonKind, Cloud, Face, GameEvent, Particle, ParticleShape, Trail, Visitor, VisitorKind } from './types';
 
 /**
  * Pure game logic: balloons, clouds, the sun, touches, swipes, pops and particles.
@@ -49,6 +50,18 @@ const CLOUD_SHAPES = 3;
 const WIND_REACH = 2.6;
 const SUN_HIT_FACTOR = 1.3;
 const SUN_POKE_INTERVAL = 0.6;
+/** Visitors: creatures that drop by now and then, so there is always something new to discover. */
+const VISITOR_WEIGHTS: Array<{ kind: VisitorKind; weight: number }> = [
+  { kind: 'dog', weight: 24 },
+  { kind: 'elephant', weight: 20 },
+  { kind: 'bird', weight: 20 },
+  { kind: 'butterfly', weight: 18 },
+  { kind: 'snail', weight: 12 },
+  { kind: 'star', weight: 6 },
+];
+const MAX_VISITORS = 2;
+const FIRST_VISIT_DELAY = 8;
+const VISIT_INTERVAL: [number, number] = [14, 32];
 /** Share of new balloons that carry a family photo, when photos exist. */
 const PHOTO_CHANCE = 0.3;
 /** How long the photo stays up after its balloon pops (seconds). */
@@ -97,6 +110,7 @@ export class Game {
   height = 0;
   balloons: Balloon[] = [];
   clouds: Cloud[] = [];
+  visitors: Visitor[] = [];
   particles: Particle[] = [];
   trails: Trail[] = [];
   /** Seconds since the game started. */
@@ -113,6 +127,8 @@ export class Game {
   private photoIds: string[] = [];
   private nextPhoto = 0;
   private tempo: Tempo = 'normal';
+  private visitorTimer = FIRST_VISIT_DELAY;
+  private nextVisitorId = 1;
   private listeners: Array<(event: GameEvent) => void> = [];
   private pointers = new Map<number, PointerState>();
   private rng: Rng;
@@ -126,6 +142,11 @@ export class Game {
   /** Size factor: about 1 on a phone, about 2 on a tablet. */
   get unit(): number {
     return Math.max(0.5, Math.min(this.width, this.height) / 400);
+  }
+
+  /** Ground level (top of the front hill) at horizontal position x. */
+  ground(x: number): number {
+    return hillY(x, this.width, this.height, this.unit, 1);
   }
 
   /** Where the sun is drawn (top right corner). */
@@ -204,10 +225,15 @@ export class Game {
     this.trails.push(trail);
     this.pointers.set(id, { x, y, travelled: 0, glideTravelled: 0, lastGlide: -1, trail });
 
-    // Same order as the drawing: balloons are in front of clouds, clouds in front of the sun.
+    // Same order as the drawing: balloons in front of visitors, visitors in front of clouds, clouds in front of the sun.
     const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
     if (balloon) {
       this.pop(balloon);
+      return;
+    }
+    const visitor = this.findVisitorAt(x, y);
+    if (visitor) {
+      this.pokeVisitor(visitor, x, y);
       return;
     }
     const cloud = this.findCloudAt(x, y);
@@ -270,7 +296,283 @@ export class Game {
       this.pop(balloon);
       return;
     }
+    const visitor = this.findVisitorAt(x, y);
+    if (visitor && visitor.stateAge > 0.5) {
+      this.pokeVisitor(visitor, x, y);
+      return;
+    }
     if (this.isOnSun(x, y) && this.sunHit > SUN_POKE_INTERVAL) this.pokeSun(x, y);
+  }
+
+  // ---- Visitors --------------------------------------------------------------
+
+  /** Where a visitor can be touched: a generous circle around its body. */
+  visitorHit(v: Visitor): { x: number; y: number; r: number } {
+    const s = v.size;
+    switch (v.kind) {
+      case 'dog':
+        return { x: v.x, y: v.y - s * 0.8 - v.lift, r: s * 1.5 };
+      case 'elephant':
+        return { x: v.x, y: v.y + s * 0.1 - v.lift, r: s * 1.1 };
+      case 'bird':
+        return { x: v.x, y: v.y, r: s * 2.4 };
+      case 'butterfly':
+        return { x: v.x, y: v.y, r: s * 2.6 };
+      case 'snail':
+        return { x: v.x, y: v.y - s * 0.5, r: s * 1.8 };
+      case 'star':
+        return { x: v.x, y: v.y, r: s * 3.5 };
+    }
+  }
+
+  findVisitorAt(x: number, y: number): Visitor | null {
+    let best: Visitor | null = null;
+    let bestDistance = Infinity;
+    for (const v of this.visitors) {
+      if (v.state === 'gone') continue;
+      const hit = this.visitorHit(v);
+      const distance = Math.hypot(x - hit.x, y - hit.y) / hit.r;
+      if (distance <= 1 && distance < bestDistance) {
+        bestDistance = distance;
+        best = v;
+      }
+    }
+    return best;
+  }
+
+  private pickVisitorKind(): VisitorKind {
+    const total = VISITOR_WEIGHTS.reduce((sum, k) => sum + k.weight, 0);
+    let roll = this.rng.range(0, total);
+    for (const k of VISITOR_WEIGHTS) {
+      roll -= k.weight;
+      if (roll <= 0) return k.kind;
+    }
+    return 'dog';
+  }
+
+  /** A creature drops by. Each kind enters in its own way and leaves again by itself. */
+  spawnVisitor(kind: VisitorKind = this.pickVisitorKind()): Visitor {
+    const u = this.unit;
+    const W = this.width;
+    const H = this.height;
+    const dir: 1 | -1 = this.rng.chance(0.5) ? 1 : -1;
+    const v: Visitor = {
+      id: this.nextVisitorId++,
+      kind,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      dir,
+      age: 0,
+      state: 'enter',
+      stateAge: 0,
+      size: u,
+      pokes: 0,
+      hue: this.rng.range(0, 360),
+      targetX: 0,
+      targetY: 0,
+      lift: 0,
+    };
+    switch (kind) {
+      case 'dog':
+        v.size = 34 * u;
+        v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
+        v.vx = dir * 42 * u;
+        v.y = this.ground(v.x);
+        v.state = 'idle';
+        break;
+      case 'elephant':
+        v.size = 60 * u;
+        v.x = this.rng.range(W * 0.25, W * 0.75);
+        v.y = this.ground(v.x);
+        break;
+      case 'bird':
+        v.size = 16 * u;
+        v.x = dir === 1 ? -v.size * 3 : W + v.size * 3;
+        v.y = this.rng.range(H * 0.12, H * 0.45);
+        v.vx = dir * 70 * u;
+        v.state = 'idle';
+        break;
+      case 'butterfly':
+        v.size = 14 * u;
+        v.x = this.rng.range(W * 0.15, W * 0.85);
+        v.y = this.ground(v.x) - 40 * u;
+        v.state = 'idle';
+        this.newButterflyTarget(v);
+        break;
+      case 'snail':
+        v.size = 18 * u;
+        v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
+        v.vx = dir * 9 * u;
+        v.y = this.ground(v.x);
+        v.state = 'idle';
+        break;
+      case 'star':
+        v.size = 12 * u;
+        v.dir = 1;
+        v.x = -v.size * 3;
+        v.y = this.rng.range(H * 0.08, H * 0.3);
+        v.vx = W / 1.6;
+        v.vy = 70 * u;
+        v.state = 'idle';
+        break;
+    }
+    this.visitors.push(v);
+    this.emit({ type: 'visitor', kind, x: v.x, y: v.y, what: 'appear' });
+    return v;
+  }
+
+  private newButterflyTarget(v: Visitor): void {
+    const u = this.unit;
+    v.targetX = this.rng.range(this.width * 0.1, this.width * 0.9);
+    v.targetY = this.ground(v.targetX) - this.rng.range(20, 150) * u;
+  }
+
+  private pokeVisitor(v: Visitor, x: number, y: number): void {
+    const u = this.unit;
+    v.pokes++;
+    switch (v.kind) {
+      case 'dog':
+        // Jump for joy (only from the ground, so quick taps don't stack).
+        if (v.lift <= 0.01 && v.vy === 0) v.vy = -300 * u;
+        break;
+      case 'elephant':
+        if (v.state === 'idle' || v.state === 'react') {
+          v.state = 'react';
+          v.stateAge = 0;
+        }
+        break;
+      case 'bird':
+      case 'snail':
+        v.state = 'react';
+        v.stateAge = 0;
+        break;
+      case 'butterfly':
+        v.state = 'react';
+        v.stateAge = 0;
+        this.newButterflyTarget(v);
+        break;
+      case 'star':
+        this.sparkleBurst(v.x, v.y, 18, SUN_COLORS, v.size);
+        v.state = 'gone';
+        break;
+    }
+    this.sparkleBurst(x, y, 5);
+    this.emit({ type: 'visitor', kind: v.kind, x, y, what: 'poke' });
+  }
+
+  private updateVisitors(dt: number): void {
+    this.visitorTimer -= dt;
+    if (this.visitorTimer <= 0) {
+      this.visitorTimer = this.rng.range(VISIT_INTERVAL[0], VISIT_INTERVAL[1]);
+      if (this.visitors.length < MAX_VISITORS) this.spawnVisitor();
+    }
+    const u = this.unit;
+    const W = this.width;
+    for (let i = this.visitors.length - 1; i >= 0; i--) {
+      const v = this.visitors[i];
+      v.age += dt;
+      v.stateAge += dt;
+      const margin = v.size * 3;
+      const offScreen = (v.dir === 1 && v.x > W + margin) || (v.dir === -1 && v.x < -margin);
+      switch (v.kind) {
+        case 'dog': {
+          v.x += v.vx * dt;
+          v.y = this.ground(v.x);
+          if (v.vy !== 0 || v.lift > 0) {
+            v.vy += 900 * u * dt;
+            v.lift = Math.max(0, v.lift - v.vy * dt);
+            if (v.lift === 0) v.vy = 0;
+          }
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'elephant': {
+          const up = v.size * 1.15;
+          if (v.state === 'enter') {
+            v.lift = Math.min(up, v.lift + (dt * up) / 1.4);
+            if (v.lift >= up) {
+              v.state = 'idle';
+              v.stateAge = 0;
+            }
+          } else if (v.state === 'react' && v.stateAge > 1.3) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          } else if (v.state === 'idle' && (v.stateAge > 10 || (v.pokes >= 4 && v.stateAge > 2))) {
+            v.state = 'leave';
+            v.stateAge = 0;
+          } else if (v.state === 'leave') {
+            v.lift -= (dt * up) / 1.2;
+            if (v.lift <= 0) v.state = 'gone';
+          }
+          break;
+        }
+        case 'bird': {
+          v.x += v.vx * dt;
+          v.y += Math.sin(v.age * 2.2) * 30 * u * dt;
+          if (v.state === 'react' && v.stateAge > 0.9) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          }
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'butterfly': {
+          const dx = v.targetX - v.x;
+          const dy = v.targetY - v.y;
+          const distance = Math.hypot(dx, dy);
+          const speed = (v.state === 'react' ? 170 : v.state === 'leave' ? 90 : 55) * u;
+          if (v.state !== 'leave' && (distance < 6 * u || (v.state === 'idle' && this.rng.chance(dt * 0.35)))) {
+            this.newButterflyTarget(v);
+          } else if (distance > 0.5) {
+            v.x += (dx / distance) * speed * dt + Math.sin(v.age * 7) * 30 * u * dt;
+            v.y += (dy / distance) * speed * dt + Math.cos(v.age * 5) * 20 * u * dt;
+          }
+          if (v.state === 'react' && v.stateAge > 1.2) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          }
+          if (v.state !== 'leave' && v.age > 28) {
+            v.state = 'leave';
+            v.stateAge = 0;
+            v.targetX = clamp(v.x + this.rng.range(-80, 80) * u, 0, W);
+            v.targetY = -80 * u;
+          }
+          if (v.state === 'leave' && v.y < -40 * u) v.state = 'gone';
+          break;
+        }
+        case 'snail': {
+          if (v.state === 'react') {
+            if (v.stateAge > 1.6) {
+              v.state = 'idle';
+              v.stateAge = 0;
+            }
+          } else if (v.state === 'leave') {
+            // Sinks into the grass and is gone.
+            v.lift -= dt * v.size;
+            if (v.lift < -v.size * 1.6) v.state = 'gone';
+          } else {
+            v.x += v.vx * dt;
+            v.y = this.ground(v.x);
+            if (v.age > 36) {
+              v.state = 'leave';
+              v.stateAge = 0;
+            }
+          }
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'star': {
+          v.x += v.vx * dt;
+          v.y += v.vy * dt;
+          this.sparkleBurst(v.x - v.size, v.y, 1, SUN_COLORS);
+          if (v.x > W + margin) v.state = 'gone';
+          break;
+        }
+      }
+      if (v.state === 'gone') this.visitors.splice(i, 1);
+    }
   }
 
   /** The phone was shaken: everything jumps, the sun gets dizzy and confetti flies. */
@@ -285,6 +587,13 @@ export class Game {
       c.vx = clamp(c.vx + u * this.rng.range(-160, 160), -220 * u, 220 * u);
     }
     this.sunHit = 0;
+    for (const v of this.visitors) {
+      if (v.kind === 'dog' && v.lift <= 0.01) v.vy = -260 * u;
+      if ((v.kind === 'elephant' && v.state === 'idle') || v.kind === 'snail' || v.kind === 'bird') {
+        v.state = 'react';
+        v.stateAge = 0;
+      }
+    }
     for (let i = 0; i < 24; i++) {
       const life = this.rng.range(0.9, 1.6);
       this.addParticle({
@@ -450,6 +759,8 @@ export class Game {
         c.x = this.width + w;
       }
     }
+
+    this.updateVisitors(dt);
 
     for (let i = this.trails.length - 1; i >= 0; i--) {
       const trail = this.trails[i];
