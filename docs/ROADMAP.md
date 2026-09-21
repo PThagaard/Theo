@@ -77,18 +77,25 @@ efter lyde.
   imitation (Theo siger lyden efter).
 - ✅ **Badekar** (Bobler) – badet: sæbebobler stiger fra vandet; tryk popper, tryk på vandet plasker og sender nye bobler op,
   tryk på væggen giver sæbebobler, swipe popper alt på vejen og laver bølger, hold stille puster en boble op, ryst
-  giver en byge, og gummiænderne rapper. Gæster som i Balloner: hvalen (står og ryster, sprøjter ved tryk), koen i
-  speedbåden, pingvinen på vandscooteren, fisken, der springer, og bruseren fra oven; ryst kalder en gæst, når badet
-  er tomt. Aldrig tomt: en ny boble stiger straks, når den sidste poppes. Vandet hælder, når telefonen drejes.
+  giver en byge, og gummiænderne rapper. Gæster som i Balloner: hvalen (gemmer sig med kun ryggen og hullet over
+  vandet; tryk lader vandet ud, og den kommer glad op), koen i speedbåden, pingvinen på vandscooteren, guldfisken
+  (springer; hvert tredje spring ender i en boble, der bærer den væk, medmindre den poppes), bruseren (drypper, til
+  den røres; så sprøjter den, laver bobler og kan trækkes rundt; bliver længe) og isbjørnen på isflagen (vinker hej
+  hej med overdrevet arm og pote, fordi Theo lærer at vinke); ryst kalder en gæst, når badet er tomt. Aldrig tomt:
+  en ny boble stiger straks, når den sidste poppes. Vandet hælder, når telefonen drejes.
   Ænderne skifter farve ved tryk og suser i regnbuefarver ved hold. Familien i boblerne, stjernebobler som godbid.
   Samme kontingens som Balloner i en ny verden ("mere af det, der virker", `docs/FORSKNING.md`). Træner: hånd-øje,
   tryk og slip, at følge noget med øjnene, årsag-virkning, forventning (hvem kommer nu?).
-  **Næste (forældrenes ønsker 21.9.2026):** hajfamilien (Theo-haj, Ma-Ma-haj, Da-Da-haj) til Baby Shark-melodien;
-  rigtige optagelser af hval og pingvin (Pixabay, forældrene lægger dem i `src/lyde/`).
-- 💡 **Musik-fane i forældremenuen** – hver sang til/fra, afspilningshastighed, Baby Shark som første sang
-  (traditionel melodi som notation i `music.ts`, appens egen synth). Forældrenes ønske 21.9.2026.
-- 💡 **To hænder på skærmen** – håndfladen må ikke åbne forældremenuen (store kontaktflader ignoreres af porten), og
-  mange samtidige tryk må ikke blive en lydmur (de ekstra tryk svarer med bevægelse, men dæmpet lyd).
+  **Næste (forældrenes ønsker 21.9.2026):** hajfamilien (Theo-haj, Ma-Ma-haj, Da-Da-haj), når Baby Shark-løsningen
+  er aftalt (spilledåse-notationen var for dårlig); rigtige optagelser af hval, pingvin og isbjørn (forældrene
+  lægger dem i `src/lyde/`).
+- ✅ **Musik-fane i forældremenuen** – hver sang til/fra, afspilningshastighed, næste sang. Baby Shark som
+  spilledåse-notation blev prøvet og taget ud igen (forældrene: "virkelig dårlig").
+- 💡 **Jeres musik** – forældrene vælger egne lydfiler på telefonen (bliver på telefonen som familiebillederne, så
+  repoet forbliver rent, og princip 8 holder), som spiller i baggrunden, gerne som første sang; det er vejen til
+  Baby Shark. Aftales med forældrene.
+- 💡 **To hænder på skærmen** – ✅ håndfladen åbner ikke forældremenuen (store kontaktflader ignoreres af porten);
+  💡 mange samtidige tryk må ikke blive en lydmur (de ekstra tryk svarer med bevægelse, men dæmpet lyd).
 - 💡 **Trommer** – hele skærmen er tre-fire store farveflader; hvert slag giver en tone og en bølge i fladen, og alle
   toner passer sammen (pentatonisk), så det aldrig lyder forkert; swipe giver et glissando; ryst en trommehvirvel.
   Træner: at slå og banke (det store ved 8–12 mdr), rytme, hånd-øje.

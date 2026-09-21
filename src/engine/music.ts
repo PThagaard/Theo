@@ -120,32 +120,11 @@ export function compileSong(song: Song): CompiledSong {
 }
 
 /**
- * All songs are traditional public-domain children's tunes, plus one original waltz. Baby Shark's melody is a
- * traditional campfire song (the words and tune predate every recording of it); this is our own notation of it,
- * played by the app's music box, no recording and no lyrics. It comes first because it is Theo's favourite.
+ * All songs are traditional public-domain children's tunes, plus one original waltz. (A music-box notation of
+ * Baby Shark was tried and taken out again: the parents found it really bad. Theo's favourite needs another way
+ * in, to be decided with the parents.)
  */
 export const SONGS: Song[] = [
-  {
-    id: 'baby-shark',
-    name: 'Baby Shark',
-    bpm: 116,
-    beatsPerBar: 4,
-    subdivision: 2,
-    melody:
-      // A one-beat pickup ("ba-by"), then "SHARK, doo doo doo doo doo doo" three times with the next pickup
-      // tucked into the end of each bar, then "Ba-by SHARK!"; then once more a step up.
-      'G4/1/2 A4/1/2 ' +
-      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
-      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
-      'C5 C5/1/2 C5/1/2 C5/1/2 C5/1/2 C5/1/2 G4/1/4 A4/1/4 ' +
-      'C5/2 R/1 ' +
-      'A4/1/2 B4/1/2 ' +
-      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
-      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
-      'D5 D5/1/2 D5/1/2 D5/1/2 D5/1/2 D5/1/2 A4/1/4 B4/1/4 ' +
-      'D5/2 R/1',
-    chords: 'C/1 C F G C/3 D/1 D G A D/3',
-  },
   {
     id: 'lille-stjerne',
     name: 'Lille stjerne (Twinkle Twinkle)',

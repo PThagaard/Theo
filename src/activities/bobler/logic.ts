@@ -8,9 +8,11 @@ import { Rng, TAU, clamp } from '../../engine/rng';
  * ever wrong. Tap a bubble and it pops with a wet plop; tap the water and it splashes and sends up new bubbles;
  * a swipe pops what it crosses, leaves a trail of tiny bubbles and makes waves; hold still and a bubble grows
  * under the finger; shake the phone and everything jiggles while a shower of bubbles rises; the rubber ducks
- * quack and spin when touched. Now and then a guest comes by, in the water or in the air (a whale that surfaces
- * and spouts when touched, a cow in a speedboat, a penguin on a jet ski, a fish that jumps, a shower head that
- * sprays): few and slow for the youngest, and every one answers a touch. Pure logic: no DOM, no canvas, no audio.
+ * quack and spin when touched. Now and then a guest comes by, in the water or in the air (a whale hiding with
+ * only its back showing until a touch lets the water out of it, a cow in a speedboat, a penguin on a jet ski, a
+ * fish that jumps and can end up in a bubble, a shower head that sprays when touched, a polar bear waving from
+ * an ice floe): few and slow for the youngest, and every one answers a touch. Pure logic: no DOM, no canvas,
+ * no audio.
  */
 
 export type BubbleKind = 'plain' | 'photo' | 'star';
@@ -75,10 +77,11 @@ export interface Ripple {
   power: number;
 }
 
-export type GuestKind = 'whale' | 'boat' | 'jetski' | 'fish' | 'shower';
-export type GuestState = 'enter' | 'stay' | 'act' | 'leave';
+export type GuestKind = 'whale' | 'boat' | 'jetski' | 'fish' | 'shower' | 'bear';
+/** `ride` and `fall` belong to the fish: carried up inside a bubble, and dropping back when it pops. */
+export type GuestState = 'enter' | 'stay' | 'act' | 'ride' | 'fall' | 'leave';
 
-/** A visitor to the bath: in the water (whale, fish, boat, jet ski) or in the air (the shower head). */
+/** A visitor to the bath: in the water (whale, fish, boat, jet ski, bear on a floe) or in the air (the shower head). */
 export interface Guest {
   id: number;
   kind: GuestKind;
@@ -97,8 +100,12 @@ export interface Guest {
   lastPoke: number;
   /** Swimming or quivering phase. */
   phase: number;
-  /** A little hop after a touch (boats), fading. */
+  /** A little hop after a touch (boats, the bear's floe), fading. */
   hop: number;
+  /** How many times it has done its own thing (the fish: jumps, the bear: waves), so every third jump can end in a bubble. */
+  acts: number;
+  /** The bubble the fish is riding in, or null. */
+  ride: number | null;
   /** Seconds until the next thing it does by itself (a fish jump, a spray ripple). */
   nextAct: number;
   /** Where the entering guest is heading. */
@@ -106,6 +113,12 @@ export interface Guest {
   /** The y it left from (to animate the leave). */
   fromY: number;
 }
+
+/**
+ * What a guest did: came, was touched (`pokes` counts the touches, so the first one can sound special), did its
+ * own thing, stopped it (the shower's spray ending), dripped, rode off in a bubble or fell out of one, left.
+ */
+export type GuestEventWhat = 'appear' | 'poke' | 'act' | 'stop' | 'drip' | 'ride' | 'fall' | 'leave';
 
 export type BoblerEvent =
   | { type: 'pop'; x: number; y: number; size: number; kind: BubbleKind; photoId?: string }
@@ -119,7 +132,7 @@ export type BoblerEvent =
   | { type: 'shake' }
   | { type: 'celebration' }
   | { type: 'swipe' }
-  | { type: 'guest'; kind: GuestKind; what: 'appear' | 'poke' | 'act' | 'leave'; x: number; y: number }
+  | { type: 'guest'; kind: GuestKind; what: GuestEventWhat; x: number; y: number; pokes?: number }
   | { type: 'sparkle'; x: number; y: number };
 
 export interface BoblerConfig {
@@ -168,19 +181,51 @@ const MAX_TILT = 0.45;
 /** Seconds between guests (times the age profile's visit interval), and how long the first one waits. */
 const GUEST_INTERVAL = 32;
 const FIRST_GUEST = 18;
-const GUEST_KINDS: ReadonlyArray<GuestKind> = ['whale', 'boat', 'fish', 'jetski', 'shower'];
-/** How long a guest stays by itself (boats and jet skis leave when they have crossed the bath). */
-const GUEST_STAY: Record<GuestKind, number> = { whale: 14, boat: Infinity, jetski: Infinity, fish: 16, shower: 9 };
+const GUEST_KINDS: ReadonlyArray<GuestKind> = ['whale', 'boat', 'fish', 'jetski', 'shower', 'bear'];
+/** How long a guest stays by itself (crossing guests leave when they have crossed; the whale and the shower have their own rules). */
+const GUEST_STAY: Record<GuestKind, number> = { whale: 16, boat: Infinity, jetski: Infinity, fish: 16, shower: 60, bear: Infinity };
 /** Crossing speed (times unit and the age profile's speed). */
-const GUEST_SPEED: Record<GuestKind, number> = { whale: 0, boat: 85, jetski: 135, fish: 22, shower: 0 };
-const GUEST_ENTER_TIME: Record<GuestKind, number> = { whale: 1.2, boat: 0, jetski: 0, fish: 1.0, shower: 0.9 };
+const GUEST_SPEED: Record<GuestKind, number> = { whale: 0, boat: 85, jetski: 135, fish: 22, shower: 0, bear: 20 };
+const GUEST_ENTER_TIME: Record<GuestKind, number> = { whale: 1.2, boat: 0, jetski: 0, fish: 1.0, shower: 0.9, bear: 0 };
 const GUEST_LEAVE_TIME = 1.1;
+/** Crossing guests that have to leave (the bath falls asleep) hurry off at this speed. */
+const HURRY_OFF_SPEED = 130;
+/**
+ * The whale hides: only its back and blowhole show above the water, a secret to find. Untouched, it sinks away
+ * after a while (the youngest get longest to find it). The first touch lets the water out and brings it up, glad
+ * to be helped; it then stays a while, and every touch keeps it a little longer, up to a cap.
+ */
+const WHALE_HIDDEN_STAY: Record<Age, number> = { '8-12': 40, '1-2': 30, '2+': 25 };
+const WHALE_TOUCH_EXTRA = 6;
+const WHALE_MAX_STAY = 50;
+const WHALE_RISE_TIME = 1.0;
+const WHALE_HINT_EVERY = 3.5;
 const SPOUT_TIME = 0.9;
-const FISH_JUMP_TIME = 1.1;
+const FIRST_SPOUT_TIME = 1.6;
+export const FISH_JUMP_TIME = 1.1;
 /** The fish jumps by itself every so often from 1 year; the youngest make it jump by touching it. */
 const FISH_JUMP_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': 7, '2+': 5 };
-/** Drops per second from the shower head (fewer for the youngest). */
-const SHOWER_RATE: Record<Age, number> = { '8-12': 9, '1-2': 16, '2+': 20 };
+/** The second jump, and every third after it, ends inside a bubble that carries the fish away unless it is popped. */
+const FISH_BUBBLE_EVERY = 3;
+const FISH_BUBBLE_FIRST = 2;
+/**
+ * The shower drips gently until it is touched; then it sprays hard for a while (drops per second), and foam
+ * bubbles rise where the spray hits the water. From 1 year it also bursts by itself now and then. It stays long,
+ * and every touch keeps it longer, up to a cap: the more it is played with, the longer it stays.
+ */
+const SHOWER_DRIP: Record<Age, number> = { '8-12': 2.5, '1-2': 4, '2+': 5 };
+const SHOWER_SPRAY: Record<Age, number> = { '8-12': 28, '1-2': 40, '2+': 48 };
+export const SPRAY_TIME = 5;
+const SPRAY_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': 14, '2+': 10 };
+const SPRAY_BUBBLE_EVERY = 0.6;
+const SHOWER_STAY: Record<Age, number> = { '8-12': 45, '1-2': 60, '2+': 60 };
+const SHOWER_TOUCH_EXTRA = 12;
+const SHOWER_MAX_STAY = 150;
+const DRIP_EVERY = 2.2;
+/** The bear waves hello when it comes on screen, when touched, and now and then by itself (seldom for the youngest). */
+export const WAVE_TIME = 1.8;
+const WAVE_EVERY: Record<Age, number> = { '8-12': 12, '1-2': 9, '2+': 7 };
+const FIRST_WAVE = 1.5;
 /** How often a new bubble carries a family photo (one photo bubble at a time): they are the best part. */
 const PHOTO_CHANCE = 0.4;
 const STAR_CHANCE = 0.08;
@@ -199,6 +244,8 @@ interface PointerState {
   bubble: Bubble | null;
   /** A duck under a still finger: a long press sends it dashing in rainbow colours. */
   duck: Duck | null;
+  /** The shower head under the finger: dragging carries it around the bath, spraying as it goes. */
+  guest: Guest | null;
   swiped: boolean;
   travelled: number;
   lastRipple: number;
@@ -459,9 +506,13 @@ export class BoblerGame {
 
   findGuestAt(x: number, y: number): Guest | null {
     for (const g of this.guests) {
-      if (g.state === 'leave') continue;
-      const wide = g.kind === 'boat' || g.kind === 'jetski' ? 2.2 : 1.8;
-      if (Math.abs(x - g.x) <= g.size * wide && Math.abs(y - (g.y - g.size * 0.3)) <= g.size * 1.7) return g;
+      // A fish inside a bubble is reached through the bubble (popping it lets the fish out).
+      if (g.state === 'leave' || g.state === 'ride' || g.state === 'fall') continue;
+      const wide = g.kind === 'boat' || g.kind === 'jetski' || g.kind === 'bear' ? 2.2 : 1.8;
+      // The bear sits up tall on its floe; the others are centred a little above their water line.
+      const centerY = g.kind === 'bear' ? g.y - g.size * 1.0 : g.y - g.size * 0.3;
+      const tall = g.kind === 'bear' ? 2.2 : 1.7;
+      if (Math.abs(x - g.x) <= g.size * wide && Math.abs(y - centerY) <= g.size * tall) return g;
     }
     return null;
   }
@@ -480,58 +531,80 @@ export class BoblerGame {
     return this.guestDeck.shift() as GuestKind;
   }
 
+  /** Where the whale sits: hidden (only its back and blowhole above the water) or up, helped out of hiding. */
+  private whaleY(x: number, size: number, up: boolean): number {
+    return this.surfaceY(x) + (up ? -size * 0.35 : size * 0.5);
+  }
+
   /** A guest arrives (also used by the smoke test with a chosen kind). */
   spawnGuest(kind = this.nextGuestKind()): Guest {
     const u = this.unit;
-    const size = this.guestSize * (kind === 'boat' ? 1.15 : kind === 'jetski' ? 1.0 : kind === 'shower' ? 0.9 : 1);
+    const size = this.guestSize * (kind === 'boat' ? 1.15 : kind === 'whale' ? 1.25 : kind === 'bear' ? 1.05 : kind === 'shower' ? 0.9 : 1);
     const dir: 1 | -1 = this.rng.chance(0.5) ? 1 : -1;
     const speed = GUEST_SPEED[kind] * u * this.profile.speed;
+    const crossing = kind === 'boat' || kind === 'jetski' || kind === 'bear';
     let x = this.rng.range(0.3, 0.7) * this.width;
     let y = this.surfaceY(x) + size * 2.2;
-    // The whale stands up out of the water (that is the joke), the fish stays mostly under it.
     let targetY = this.surfaceY(x) - size * 0.6;
     let state: GuestState = 'enter';
-    if (kind === 'boat' || kind === 'jetski') {
+    let stay = GUEST_STAY[kind];
+    let nextAct = 0;
+    if (kind === 'whale') {
+      // The whale comes up only far enough for its back and blowhole to show: the secret to find.
+      targetY = this.whaleY(x, size, false);
+      stay = WHALE_HIDDEN_STAY[this.age];
+      nextAct = WHALE_HINT_EVERY;
+    } else if (crossing) {
       // Crossing guests come in from one side, already on the water.
       x = dir > 0 ? -size * 2.5 : this.width + size * 2.5;
       y = this.waterY;
       targetY = y;
       state = 'stay';
+      if (kind === 'bear') nextAct = FIRST_WAVE;
     } else if (kind === 'shower') {
       y = -size * 2;
       targetY = this.height * 0.14;
+      stay = SHOWER_STAY[this.age];
+      nextAct = SPRAY_EVERY[this.age];
     } else if (kind === 'fish') {
       x = this.rng.range(0.25, 0.75) * this.width;
       targetY = this.surfaceY(x) + size * 0.35;
+      nextAct = FISH_JUMP_EVERY[this.age];
     }
     const guest: Guest = {
       id: this.nextId++,
       kind,
       x,
       y,
-      vx: kind === 'boat' || kind === 'jetski' ? dir * speed : kind === 'fish' ? dir * speed : 0,
+      vx: crossing || kind === 'fish' ? dir * speed : 0,
       dir,
       state,
       age: 0,
       stateAge: 0,
       size,
-      stay: GUEST_STAY[kind],
+      stay,
       pokes: 0,
       lastPoke: -Infinity,
       phase: this.rng.range(0, TAU),
       hop: 0,
-      nextAct: kind === 'fish' ? FISH_JUMP_EVERY[this.age] : 0,
+      acts: 0,
+      ride: null,
+      nextAct,
       targetY,
       fromY: y,
     };
     this.guests.push(guest);
-    if (kind === 'whale' || kind === 'fish') this.waterSplash(x, kind === 'whale');
+    // The fish arrives with a splash; the whale's arrival is only a small stir, so the secret stays a secret.
+    if (kind === 'whale' || kind === 'fish') this.waterSplash(x, false);
     this.guestsSeen++;
     this.emit({ type: 'guest', kind, what: 'appear', x, y: targetY });
     return guest;
   }
 
-  /** Touching a guest: the whale spouts, the boat hops and the cow moos, the fish jumps, the shower bursts. */
+  /**
+   * Touching a guest: the whale lets its water out (and rises out of hiding, the first time), the fish jumps,
+   * the boat hops and the cow moos, the shower sprays (and follows the finger), the bear waves hello.
+   */
   pokeGuest(g: Guest, x: number, y: number): void {
     if (this.time - g.lastPoke < 0.25) return;
     g.lastPoke = this.time;
@@ -540,11 +613,19 @@ export class BoblerGame {
     const u = this.unit;
     switch (g.kind) {
       case 'whale':
+        if (g.pokes === 1) {
+          // Helped: up it comes, glad, with a splash, and it stays a while.
+          g.fromY = g.y;
+          g.stay = g.age + GUEST_STAY.whale;
+          this.waterSplash(g.x, true);
+        } else {
+          g.stay = Math.min(g.stay + WHALE_TOUCH_EXTRA, WHALE_HIDDEN_STAY[this.age] + WHALE_MAX_STAY);
+        }
         g.state = 'act';
         g.stateAge = 0;
         break;
       case 'fish':
-        if (g.state !== 'act') this.fishJump(g);
+        if (g.state === 'stay') this.fishJump(g);
         break;
       case 'boat':
       case 'jetski':
@@ -553,28 +634,82 @@ export class BoblerGame {
         this.addRipple(g.x, 0.8);
         break;
       case 'shower':
-        for (let i = 0; i < 24; i++) this.showerDrop(g);
+        this.spray(g);
+        g.stay = Math.min(g.stay + SHOWER_TOUCH_EXTRA, SHOWER_MAX_STAY);
+        break;
+      case 'bear':
+        this.wave(g);
+        g.hop = 1;
+        this.addRipple(g.x, 0.6);
         break;
     }
-    this.emit({ type: 'guest', kind: g.kind, what: 'poke', x, y });
+    this.emit({ type: 'guest', kind: g.kind, what: 'poke', x, y, pokes: g.pokes });
   }
 
   private fishJump(g: Guest): void {
     g.state = 'act';
     g.stateAge = 0;
     g.fromY = g.y;
+    g.acts++;
     this.waterSplash(g.x, false);
     this.emit({ type: 'guest', kind: 'fish', what: 'act', x: g.x, y: g.y });
   }
 
-  private showerDrop(g: Guest): void {
+  /** Whether this jump is one that ends inside a bubble (the second, then every third). */
+  private jumpEndsInBubble(g: Guest): boolean {
+    return g.acts >= FISH_BUBBLE_FIRST && (g.acts - FISH_BUBBLE_FIRST) % FISH_BUBBLE_EVERY === 0;
+  }
+
+  /**
+   * At the top of a jump the fish lands inside a new bubble, which carries it slowly up and away, unless the
+   * bubble is popped first: then the fish drops back into the water. A reason to pop, and a small surprise.
+   */
+  private fishRide(g: Guest): void {
+    const b = this.spawnBubble({ x: g.x, y: g.y, r: Math.max(this.baseR * 1.25, g.size * 1.35), kind: 'plain', hurry: 0.7 });
+    if (!b) return;
+    b.wobbleAmp = 0.8;
+    b.vx = g.vx * 0.3;
+    g.ride = b.id;
+    g.state = 'ride';
+    g.stateAge = 0;
+    this.emit({ type: 'guest', kind: 'fish', what: 'ride', x: g.x, y: g.y });
+  }
+
+  /** The bubble the fish rode in popped: it drops back towards the water. */
+  private fishFall(g: Guest): void {
+    g.ride = null;
+    g.state = 'fall';
+    g.stateAge = 0;
+    g.fromY = g.y;
+  }
+
+  /** The shower's spray turns on, or keeps going. Returns true when it was off. */
+  private spray(g: Guest): boolean {
+    if (g.state === 'leave' || g.state === 'ride' || g.state === 'fall') return false;
+    const started = g.state !== 'act';
+    g.state = 'act';
+    g.stateAge = 0;
+    if (started) for (let i = 0; i < 10; i++) this.showerDrop(g, true);
+    return started;
+  }
+
+  /** The bear waves hello: a big, slow wave with the whole arm, the kind Theo is learning himself. */
+  private wave(g: Guest): void {
+    if (g.state === 'leave') return;
+    g.state = 'act';
+    g.stateAge = 0;
+    g.acts++;
+  }
+
+  /** A drop from the shower head: a gentle drip, or part of the hard spray. */
+  private showerDrop(g: Guest, hard: boolean): void {
     const u = this.unit;
     if (this.droplets.length >= MAX_DROPLETS) this.droplets.shift();
     this.droplets.push({
       x: g.x + this.rng.range(-0.8, 0.8) * g.size,
       y: g.y + g.size * 0.3,
-      vx: this.rng.range(-25, 25) * u,
-      vy: this.rng.range(60, 140) * u,
+      vx: (hard ? this.rng.range(-45, 45) : this.rng.range(-10, 10)) * u,
+      vy: (hard ? this.rng.range(120, 230) : this.rng.range(40, 90)) * u,
       life: 3,
       maxLife: 3,
       r: this.rng.range(2, 3.5) * u,
@@ -590,11 +725,19 @@ export class BoblerGame {
 
   private guestLeave(g: Guest): void {
     if (g.state === 'leave') return;
+    if (g.ride !== null) {
+      // Leaving from inside a bubble (the bath fell asleep): the bubble quietly goes, the fish dives from the water.
+      const index = this.bubbles.findIndex((b) => b.id === g.ride);
+      if (index >= 0) this.bubbles.splice(index, 1);
+      g.ride = null;
+    }
+    if (g.kind === 'fish') g.y = Math.max(g.y, this.surfaceY(g.x) + g.size * 0.35);
     g.state = 'leave';
     g.stateAge = 0;
     g.fromY = g.y;
-    if (g.kind === 'whale' || g.kind === 'fish') this.waterSplash(g.x, g.kind === 'whale');
-    this.emit({ type: 'guest', kind: g.kind, what: 'leave', x: g.x, y: g.y });
+    // A hidden whale slips away quietly; one that was helped up dives with a splash.
+    if (g.kind === 'whale' || g.kind === 'fish') this.waterSplash(g.x, g.kind === 'whale' && g.pokes > 0);
+    this.emit({ type: 'guest', kind: g.kind, what: 'leave', x: g.x, y: g.y, pokes: g.pokes });
   }
 
   private updateGuests(dt: number): void {
@@ -605,10 +748,13 @@ export class BoblerGame {
       g.stateAge += dt;
       g.hop = Math.max(0, g.hop - dt * 1.6);
       g.phase += dt * (g.kind === 'fish' ? 6 : 3);
-      // Asleep, or stayed long enough: off it goes.
-      if ((this.asleep || g.age > g.stay) && g.state !== 'leave') this.guestLeave(g);
+      // Asleep, or stayed long enough: off it goes (not in the middle of a jump, a ride or a spout).
+      const busy = g.state === 'act' || g.state === 'ride' || g.state === 'fall';
+      if ((this.asleep || (g.age > g.stay && !busy)) && g.state !== 'leave') this.guestLeave(g);
       switch (g.kind) {
         case 'whale': {
+          const down = this.whaleY(g.x, g.size, false);
+          const up = this.whaleY(g.x, g.size, true);
           if (g.state === 'enter') {
             const t = Math.min(1, g.stateAge / GUEST_ENTER_TIME.whale);
             g.y = g.fromY + (g.targetY - g.fromY) * (1 - (1 - t) * (1 - t));
@@ -617,12 +763,15 @@ export class BoblerGame {
               g.stateAge = 0;
             }
           } else if (g.state === 'act') {
-            // The spout: a fountain from the blowhole for a moment.
+            // Letting the water out: a fountain from the blowhole; the first time it also rises out of hiding.
+            const first = g.pokes === 1;
+            const rise = first ? Math.min(1, g.stateAge / WHALE_RISE_TIME) : 1;
+            g.y = down + (up - down) * (1 - (1 - rise) * (1 - rise));
             for (let k = 0; k < 3; k++) {
               if (this.droplets.length >= MAX_DROPLETS) this.droplets.shift();
               this.droplets.push({
-                x: g.x + g.dir * g.size * 0.3 + this.rng.range(-4, 4) * u,
-                y: g.y - g.size * 0.85,
+                x: g.x + g.dir * g.size * 0.35 + this.rng.range(-4, 4) * u,
+                y: g.y - g.size * 1.0,
                 vx: this.rng.range(-70, 70) * u,
                 vy: -this.rng.range(280, 430) * u,
                 life: 1.6,
@@ -631,20 +780,30 @@ export class BoblerGame {
                 kind: 'drop',
               });
             }
-            if (g.stateAge >= SPOUT_TIME) {
+            if (g.stateAge >= (first ? FIRST_SPOUT_TIME : SPOUT_TIME)) {
               g.state = 'stay';
               g.stateAge = 0;
+            }
+          } else if (g.state === 'stay') {
+            g.y = g.pokes > 0 ? up : down;
+            if (g.pokes === 0) {
+              // Hidden, it gives a tiny hint now and then: a few bubbles from the blowhole.
+              g.nextAct -= dt;
+              if (g.nextAct <= 0) {
+                g.nextAct = WHALE_HINT_EVERY;
+                this.addDroplets(g.x + g.dir * g.size * 0.35, g.y - g.size * 1.0, 3, 'soap', 30, 60);
+                this.emit({ type: 'guest', kind: 'whale', what: 'drip', x: g.x, y: g.y });
+              }
             }
           } else if (g.state === 'leave') {
             const t = Math.min(1, g.stateAge / GUEST_LEAVE_TIME);
             g.y = g.fromY + g.size * 2.6 * t * t;
             if (t >= 1) this.guests.splice(i, 1);
           }
-          // Standing at the surface, it quivers (the bobbing is drawn from the phase).
-          if (g.state === 'stay' || g.state === 'act') g.y = this.surfaceY(g.x) - g.size * 0.6;
           break;
         }
         case 'fish': {
+          const swim = this.surfaceY(g.x) + g.size * 0.35;
           if (g.state === 'enter') {
             const t = Math.min(1, g.stateAge / GUEST_ENTER_TIME.fish);
             g.y = g.fromY + (g.targetY - g.fromY) * (1 - (1 - t) * (1 - t));
@@ -661,21 +820,42 @@ export class BoblerGame {
               g.vx = -g.vx;
               g.dir = g.vx >= 0 ? 1 : -1;
             }
-            g.y = this.surfaceY(g.x) + g.size * 0.35;
+            g.y = swim;
             g.nextAct -= dt;
             if (g.nextAct <= 0) {
               g.nextAct = FISH_JUMP_EVERY[this.age];
               this.fishJump(g);
             }
           } else if (g.state === 'act') {
-            // The jump: an arc out of the water and back in with a splash.
+            // The jump: an arc out of the water and back in with a splash, or, at the top, into a bubble.
             const t = Math.min(1, g.stateAge / FISH_JUMP_TIME);
+            const before = (g.stateAge - dt) / FISH_JUMP_TIME;
             g.x += g.vx * 1.6 * dt;
-            g.y = this.surfaceY(g.x) + g.size * 0.35 - Math.sin(t * Math.PI) * g.size * 3.2;
-            if (t >= 1) {
+            g.y = swim - Math.sin(t * Math.PI) * g.size * 3.2;
+            if (before < 0.5 && t >= 0.5 && this.jumpEndsInBubble(g)) this.fishRide(g);
+            else if (t >= 1) {
               g.state = 'stay';
               g.stateAge = 0;
               this.waterSplash(g.x, true);
+            }
+          } else if (g.state === 'ride') {
+            const b = this.bubbles.find((bubble) => bubble.id === g.ride);
+            if (!b) {
+              // The bubble floated off the top: the fish is gone with it.
+              this.guests.splice(i, 1);
+              this.emit({ type: 'guest', kind: 'fish', what: 'leave', x: g.x, y: g.y });
+              break;
+            }
+            g.x = b.x;
+            g.y = b.y;
+          } else if (g.state === 'fall') {
+            g.y = g.fromY + 450 * u * g.stateAge * g.stateAge;
+            if (g.y >= swim) {
+              g.y = swim;
+              g.state = 'stay';
+              g.stateAge = 0;
+              this.waterSplash(g.x, true);
+              this.emit({ type: 'guest', kind: 'fish', what: 'fall', x: g.x, y: g.y });
             }
           } else if (g.state === 'leave') {
             const t = Math.min(1, g.stateAge / GUEST_LEAVE_TIME);
@@ -685,39 +865,63 @@ export class BoblerGame {
           break;
         }
         case 'boat':
-        case 'jetski': {
-          // Speeds back down after a push, bounces over the waves, leaves a wake and rocks the ducks.
-          const cruise = GUEST_SPEED[g.kind] * u * this.profile.speed;
+        case 'jetski':
+        case 'bear': {
+          // Crosses the bath: speeds back down after a push (and hurries off when it has to leave), leaves a
+          // wake and rocks the ducks. The boats bounce over the waves; the bear's floe just bobs along.
+          const cruise = (g.state === 'leave' ? HURRY_OFF_SPEED : GUEST_SPEED[g.kind]) * u * this.profile.speed;
           if (Math.abs(g.vx) > cruise) g.vx -= Math.sign(g.vx) * cruise * 0.8 * dt;
+          else if (g.state === 'leave') g.vx = g.dir * cruise;
           g.x += g.vx * dt;
-          const bounce = g.kind === 'jetski' ? Math.abs(Math.sin(g.phase * 1.3)) * g.size * 0.12 : Math.sin(g.phase) * g.size * 0.05;
-          g.y = this.surfaceY(g.x) - g.size * 0.1 - bounce - Math.sin(Math.min(1, 1 - g.hop) * Math.PI) * g.size * 0.6 * (g.hop > 0 ? 1 : 0);
-          g.nextAct -= dt;
-          if (g.nextAct <= 0) {
-            g.nextAct = g.kind === 'jetski' ? 0.05 : 0.08;
-            if (this.droplets.length < MAX_DROPLETS) {
-              this.droplets.push({
-                x: g.x - g.dir * g.size * this.rng.range(1.2, 1.8),
-                y: this.surfaceY(g.x) + this.rng.range(-2, 4) * u,
-                vx: -g.dir * this.rng.range(10, 40) * u,
-                vy: g.kind === 'jetski' ? -this.rng.range(60, 160) * u : 0,
-                life: g.kind === 'jetski' ? 0.8 : 1.6,
-                maxLife: g.kind === 'jetski' ? 0.8 : 1.6,
-                r: this.rng.range(3, 6) * u,
-                kind: g.kind === 'jetski' ? 'drop' : 'foam',
-              });
+          const bounce =
+            g.kind === 'jetski' ? Math.abs(Math.sin(g.phase * 1.3)) * g.size * 0.12 : g.kind === 'boat' ? Math.sin(g.phase) * g.size * 0.05 : Math.sin(g.phase * 0.7) * g.size * 0.03;
+          const hopUp = g.kind === 'bear' ? 0.25 : 0.6;
+          g.y = this.surfaceY(g.x) - g.size * 0.1 - bounce - Math.sin(Math.min(1, 1 - g.hop) * Math.PI) * g.size * hopUp * (g.hop > 0 ? 1 : 0);
+          if (g.kind === 'bear') {
+            // Waves hello once it is on screen, and now and then after that (few and calm for the youngest).
+            if (g.state === 'act' && g.stateAge >= WAVE_TIME) {
+              g.state = 'stay';
+              g.stateAge = 0;
             }
+            g.nextAct -= dt;
+            if (g.nextAct <= 0) {
+              const onScreen = g.x > g.size && g.x < this.width - g.size;
+              g.nextAct = onScreen ? WAVE_EVERY[this.age] : 1;
+              if (onScreen && g.state === 'stay') {
+                this.wave(g);
+                this.emit({ type: 'guest', kind: 'bear', what: 'act', x: g.x, y: g.y });
+              }
+            }
+            if (Math.floor(g.age * 1.2) !== Math.floor((g.age - dt) * 1.2)) this.addRipple(g.x, 0.25);
+          } else {
+            g.nextAct -= dt;
+            if (g.nextAct <= 0) {
+              g.nextAct = g.kind === 'jetski' ? 0.05 : 0.08;
+              if (this.droplets.length < MAX_DROPLETS) {
+                this.droplets.push({
+                  x: g.x - g.dir * g.size * this.rng.range(1.2, 1.8),
+                  y: this.surfaceY(g.x) + this.rng.range(-2, 4) * u,
+                  vx: -g.dir * this.rng.range(10, 40) * u,
+                  vy: g.kind === 'jetski' ? -this.rng.range(60, 160) * u : 0,
+                  life: g.kind === 'jetski' ? 0.8 : 1.6,
+                  maxLife: g.kind === 'jetski' ? 0.8 : 1.6,
+                  r: this.rng.range(3, 6) * u,
+                  kind: g.kind === 'jetski' ? 'drop' : 'foam',
+                });
+              }
+            }
+            if (Math.floor(g.age * 2.5) !== Math.floor((g.age - dt) * 2.5)) this.addRipple(g.x, 0.5);
           }
-          if (Math.floor(g.age * 2.5) !== Math.floor((g.age - dt) * 2.5)) this.addRipple(g.x, 0.5);
+          const gentle = g.kind === 'bear';
           for (const duck of this.ducks) {
-            if (Math.abs(duck.x - g.x) < 140 * u) {
-              duck.vx += g.dir * 25 * u * dt * 10;
-              duck.bobV -= 40 * u * dt * 10;
+            if (Math.abs(duck.x - g.x) < (gentle ? 100 : 140) * u) {
+              duck.vx += g.dir * (gentle ? 10 : 25) * u * dt * 10;
+              duck.bobV -= (gentle ? 15 : 40) * u * dt * 10;
             }
           }
           if ((g.dir > 0 && g.x > this.width + g.size * 2.5) || (g.dir < 0 && g.x < -g.size * 2.5)) {
             this.guests.splice(i, 1);
-            this.emit({ type: 'guest', kind: g.kind, what: 'leave', x: g.x, y: g.y });
+            if (g.state !== 'leave') this.emit({ type: 'guest', kind: g.kind, what: 'leave', x: g.x, y: g.y });
           }
           break;
         }
@@ -729,22 +933,43 @@ export class BoblerGame {
               g.state = 'stay';
               g.stateAge = 0;
             }
-          } else if (g.state === 'stay') {
-            // Spraying: drops fall into the water and make it ripple; bubbles under it get pushed about.
-            this.showerSpray += SHOWER_RATE[this.age] * dt;
+          } else if (g.state === 'stay' || g.state === 'act') {
+            const spraying = g.state === 'act';
+            g.y += (g.targetY - g.y) * Math.min(1, 6 * dt);
+            // Drips gently by itself; sprays hard after a touch (and now and then by itself from 1 year).
+            this.showerSpray += (spraying ? SHOWER_SPRAY[this.age] : SHOWER_DRIP[this.age]) * dt;
             while (this.showerSpray >= 1) {
               this.showerSpray -= 1;
-              this.showerDrop(g);
+              this.showerDrop(g, spraying);
             }
-            g.nextAct -= dt;
-            if (g.nextAct <= 0) {
-              g.nextAct = 0.45;
-              this.addRipple(g.x + this.rng.range(-0.6, 0.6) * g.size, 0.35);
+            if (spraying) {
+              if (Math.floor(g.stateAge / SPRAY_BUBBLE_EVERY) !== Math.floor((g.stateAge - dt) / SPRAY_BUBBLE_EVERY)) {
+                // Foam bubbles rise where the spray hits the water, and the water ripples there.
+                const x = clamp(g.x + this.rng.range(-0.9, 0.9) * g.size, 20 * u, this.width - 20 * u);
+                this.spawnBubble({ x, r: this.baseR * this.rng.range(0.35, 0.55), kind: 'plain', hurry: 1.3 });
+                this.addRipple(x, 0.5);
+              }
+              // The ducks under the spray quack and bob.
+              for (const duck of this.ducks) {
+                if (Math.abs(duck.x - g.x) < g.size * 1.3 && duck.quackAge > 1.6) this.quack(duck, false);
+              }
+              if (g.stateAge >= SPRAY_TIME) {
+                g.state = 'stay';
+                g.stateAge = 0;
+                g.nextAct = SPRAY_EVERY[this.age];
+                this.emit({ type: 'guest', kind: 'shower', what: 'stop', x: g.x, y: g.y });
+              }
+            } else {
+              // A drip now and then (a small sound, so it is not forgotten), and from 1 year a burst by itself.
+              if (Math.floor(g.age / DRIP_EVERY) !== Math.floor((g.age - dt) / DRIP_EVERY)) this.emit({ type: 'guest', kind: 'shower', what: 'drip', x: g.x, y: g.y });
+              g.nextAct -= dt;
+              if (g.nextAct <= 0 && this.spray(g)) this.emit({ type: 'guest', kind: 'shower', what: 'act', x: g.x, y: g.y });
             }
+            // Bubbles under the shower get pushed about.
             for (const b of this.bubbles) {
               if (b.heldBy === null && Math.abs(b.x - g.x) < g.size * 1.2 && b.y > g.y) {
-                b.vy += 40 * u * dt;
-                b.wobbleAmp = Math.max(b.wobbleAmp, 0.5);
+                b.vy += (spraying ? 60 : 15) * u * dt;
+                b.wobbleAmp = Math.max(b.wobbleAmp, spraying ? 0.6 : 0.3);
               }
             }
           } else if (g.state === 'leave') {
@@ -777,6 +1002,8 @@ export class BoblerGame {
     const index = this.bubbles.indexOf(b);
     if (index < 0) return;
     this.bubbles.splice(index, 1);
+    // A fish riding in this bubble drops back towards the water.
+    for (const g of this.guests) if (g.ride === b.id) this.fishFall(g);
     const size = this.sizeOf(b);
     this.addDroplets(b.x, b.y, 7 + Math.round(size * 10), 'drop', 90 + size * 80, 20);
     if (b.kind === 'star') {
@@ -831,12 +1058,12 @@ export class BoblerGame {
     this.emit({ type: 'soap', x, y });
   }
 
-  quack(duck: Duck): void {
+  quack(duck: Duck, touched = true): void {
     duck.spinAge = 0;
     duck.quackAge = 0;
     duck.bobV = -60 * this.unit;
-    // Every touch gives the duck its next colour.
-    duck.color = (duck.color + 1) % DUCK_COLORS;
+    // Every touch gives the duck its next colour (a shower does not).
+    if (touched) duck.color = (duck.color + 1) % DUCK_COLORS;
     this.addRipple(duck.x, 0.6);
     this.quacks++;
     this.emit({ type: 'quack', x: duck.x, y: this.duckY(duck) });
@@ -866,7 +1093,7 @@ export class BoblerGame {
       this.emit({ type: 'sparkle', x, y });
       return;
     }
-    const pointer: PointerState = { id, x, y, downX: x, downY: y, held: 0, holding: false, bubble: null, duck: null, swiped: false, travelled: 0, lastRipple: -1 };
+    const pointer: PointerState = { id, x, y, downX: x, downY: y, held: 0, holding: false, bubble: null, duck: null, guest: null, swiped: false, travelled: 0, lastRipple: -1 };
     this.pointers.set(id, pointer);
     const bubble = this.findBubbleAt(x, y, TAP_HIT_FACTOR);
     if (bubble) {
@@ -876,6 +1103,8 @@ export class BoblerGame {
     const guest = this.findGuestAt(x, y);
     if (guest) {
       this.pokeGuest(guest, x, y);
+      // The shower head can be carried around by the finger.
+      if (guest.kind === 'shower') pointer.guest = guest;
       return;
     }
     const duck = this.findDuckAt(x, y);
@@ -899,6 +1128,17 @@ export class BoblerGame {
     const moved = Math.hypot(dx, dy);
     pointer.x = x;
     pointer.y = y;
+    if (pointer.guest) {
+      // Carrying the shower head: it follows the finger and keeps spraying; nothing else happens under this finger.
+      const g = pointer.guest;
+      if (this.guests.includes(g) && g.state !== 'leave') {
+        g.x = clamp(x, g.size * 1.2, this.width - g.size * 1.2);
+        g.y = clamp(y, this.height * 0.06, this.waterY - g.size * 1.6);
+        g.targetY = g.y;
+        if (this.spray(g)) this.emit({ type: 'guest', kind: 'shower', what: 'act', x: g.x, y: g.y });
+      }
+      return;
+    }
     if ((pointer.holding || pointer.duck) && Math.hypot(x - pointer.downX, y - pointer.downY) > HOLD_MOVE_TOLERANCE * u) {
       this.endHold(pointer);
       pointer.duck = null;
@@ -992,6 +1232,12 @@ export class BoblerGame {
       if (g.kind === 'boat' || g.kind === 'jetski') g.hop = 1;
       else if (g.kind === 'fish' && g.state === 'stay') this.fishJump(g);
       else if (g.kind === 'whale' && g.state === 'stay') g.phase += 3;
+      else if (g.kind === 'shower' && this.spray(g)) this.emit({ type: 'guest', kind: 'shower', what: 'act', x: g.x, y: g.y });
+      else if (g.kind === 'bear' && g.state === 'stay') {
+        this.wave(g);
+        g.hop = 1;
+        this.emit({ type: 'guest', kind: 'bear', what: 'act', x: g.x, y: g.y });
+      }
     }
     // A shake also calls a guest, if none is here: the child's own doing brings the whale up.
     if (this.guests.length === 0) this.guestTimer = Math.min(this.guestTimer, 1.5);

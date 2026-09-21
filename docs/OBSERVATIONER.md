@@ -118,3 +118,22 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   voldsomt synligt. Og jeg savner virkelig musik-indstillinger og Baby Shark" → nedtælling (mat, kun tal), Musik-fane
   (sange til/fra, hastighed, næste sang) og Baby Shark som første sang. Undtagelsen fra "ingen tekst til barnet" er
   skrevet ind i CLAUDE.md.
+- "Baby Shark-musikken er virkelig dårlig. Glem det med sangen; vi finder en anden løsning i morgen" → notationen
+  taget ud af spillelisten. Forslag til i morgen: *Jeres musik* (egne lydfiler valgt på telefonen, som bliver der
+  ligesom familiebillederne); det holder repoet rent og princip 8 sandt. Hajfamilien venter på det.
+- "Hvalen er ikke godkendt, den er grim. Mere tegneserie-hval med stort hoved (billeder vedhæftet). I starten kun
+  toppen og hullet synligt, en hemmelighed: tryk lader vandet ud og aktiverer hvalen, som bliver synlig og glad,
+  fordi man har hjulpet den" → behov: figurer, der ligner dem, Theo kender fra bøger, og en opdagelse med belønning
+  → hvalen tegnet om efter billederne, og den gemmer sig med kun ryggen og hullet over vandet; første tryk lader
+  vandet ud, og den kommer glad op. Ren kontingens for de mindste: intet sker, før han rører.
+- "Guldfisken er fantastisk! Den springer, når man trykker. Vandet under den vises underligt (er der behov for
+  det?)" → den tonede stribe under gæsterne fjernet for alle; delen under vandet ses svagt gennem vandet i stedet.
+  "Kan man springe den op i en boble, så den flyver væk med boblen, medmindre man popper boblen?" → gjort: andet
+  spring og hvert tredje derefter.
+- "Hvad gør bruseren? Der skete ikke nok, og den var der kun 10 sekunder; det kunne sagtens være 100, hvis det var
+  sjovt" → behov: gæster skal kunne leges med, ikke bare ses → bruseren drypper, til den røres, sprøjter så og
+  laver bobler, kan trækkes rundt, ænder under den rapper, og hvert tryk giver den mere tid (op til 2½ minut).
+- "Kan vi få en isbjørn, der driver på en isflage og vinker, med arm og hånd lidt overdrevet? Theo er begyndt at
+  lære at vinke og sige hej hej" → behov: noget at efterligne (imitation er det store lige nu, `docs/ROADMAP.md`
+  8–12 mdr) → isbjørnen vinker, når den kommer ind, når den røres og nu og da; stor pote, langsom bevægelse, så
+  Theo kan nå at vinke med. Forældrene siger "hej hej", når den vinker.

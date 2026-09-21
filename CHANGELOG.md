@@ -3,6 +3,43 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Hvalen gemmer sig, guldfisken i en boble, bruseren bliver, og isbjørnen vinker
+
+- **Hvalen er tegnet om** (forældrene: "ikke godkendt, grim"): nu en tegneserie-hval med stort rundt hoved, blå
+  ryg med pletter, lys mave, halen i vejret og et hul på toppen, som på jeres billeder. Og den **gemmer sig**: den
+  kommer op, så kun ryggen og hullet stikker op af vandet, og venter der (med små bobler fra hullet nu og da som
+  en lille hjælp). Rører man den, lader den vandet ud i en fontæne, rejser sig op af vandet med et plask og sit
+  kald, glad for hjælpen, og bliver så en stund og sprøjter igen ved hvert tryk. Rører ingen den, synker den stille
+  væk igen; de mindste får længst tid til at finde den (40 sekunder), og for dem sker der intet, før de rører.
+- **Guldfisken** (forældrene: "fantastisk"): det underlige vand under den er væk. Ingen gæst har længere en tonet
+  stribe ned gennem vandet; den del af en gæst, der er under vandet, ses i stedet svagt gennem vandet. Og nu kan
+  den **springe op i en boble**: andet spring, og derefter hvert tredje, ender i toppen af buen inde i en boble, som
+  langsomt bærer fisken opad. Popper I boblen, falder fisken tilbage i vandet med et plask; ellers svæver den ud
+  af skærmen med boblen, og fisken er væk til næste besøg.
+- **Bruseren gør mere og bliver meget længere** (forældrene: "der skete ikke nok; 10 sekunder kunne sagtens være
+  100"): den hænger nu og drypper stille (et lille plip nu og da), til man rører den; så sprøjter den kraftigt i fem
+  sekunder, skumbobler stiger op, hvor strålen rammer vandet, og ænder under strålen rapper og hopper. **Træk i
+  den**, og brusehovedet følger fingeren rundt i badet, mens det sprøjter. Den bliver 60 sekunder (45 for de
+  mindste), og hvert tryk giver den 12 sekunder mere, op til 2½ minut: jo mere der leges med den, jo længere bliver
+  den. Fra 1 år sprøjter den også af sig selv nu og da; for de mindste kun ved tryk.
+- **Isbjørnen på isflagen** (forældrene: Theo lærer at vinke og sige "hej hej"): en ny gæst. En isflage driver
+  langsomt hen over vandet med en hvid bjørn, der sidder og kigger på jer. Når den kommer ind på skærmen, vinker den
+  hej: hele armen op og en stor, overdrevet pote, der vifter frem og tilbage. Den vinker igen, når man rører den
+  (med et venligt "brum-brum" og et lille hop på flagen), og nu og da af sig selv (for de mindste kun sjældent).
+  Læg `isbjoern.mp3` i `src/lyde/`, hvis I finder en venlig bjørnelyd; ellers bruges synthen.
+- **Baby Shark er taget ud af spillelisten** (forældrene: "virkelig dårlig"). En anden løsning aftales i morgen
+  (forslag: jeres egen musik fra telefonen, som bliver på telefonen ligesom familiebillederne). Hajfamilien i
+  badekarret venter på det.
+- Nye tællere under *Theos leg*: isbjørnen rørt, fisken fløjet væk i en boble, og poppet fri igen.
+
+**Test på telefonen:** (1) Badekar: vent på hvalen (eller ryst telefonen, når der ingen gæst er): kun en blå ryg
+med et hul stikker op af vandet. Rør den: fontæne, plask, kald, og den rejser sig glad op. Rør den igen: sprøjt.
+Sig, om den nye hval er godkendt. (2) Rør guldfisken to gange: andet spring ender i en boble. Pop boblen: fisken
+falder ned i vandet. Prøv også at lade boblen svæve væk. (3) Bruseren: den drypper, til I rører den; så sprøjter
+den, og der kommer bobler. Træk den rundt med fingeren og hen over en and. Hold øje med, hvor længe den bliver.
+(4) Isbjørnen: vent, til den vinker, og vink tilbage sammen med Theo; rør den, og den vinker igen med brum-brum.
+(5) Alder *8–12 mdr*: hvalen venter længe, bruseren sprøjter kun ved tryk, bjørnen vinker sjældent af sig selv.
+
 ## 2026-09-21 – Musik-fanen, Baby Shark, nedtælling til pausen og håndflade-værn
 
 - **Ny fane i forældremenuen: Musik.** Hver sang har sin egen kontakt (slå fra dem, I er trætte af), *Hastighed*

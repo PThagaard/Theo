@@ -25,6 +25,7 @@ Ingen kode skal ændres: næste build samler filen op. Mangler filen, eller kan 
 | `and.mp3`             | gummianden rapper, når man rører den (Badekarret)                          |
 | `hval.mp3`            | hvalen kalder, når den dukker op (Badekarret)                              |
 | `pingvin.mp3`         | pingvinen skræpper, når man rører den (Badekarret)                         |
+| `isbjoern.mp3`        | isbjørnen brummer venligt, når den vinker (Badekarret)                     |
 
 Listen vedligeholdes i `src/engine/samples.ts` (`SAMPLE_NAMES`); en fil med et andet navn får enhedstesten til at fejle.
 

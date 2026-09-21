@@ -35,6 +35,7 @@ export const SAMPLE_NAMES = {
   and: 'anden rapper (tryk på anden i Badekarret)',
   hval: 'hvalen kalder, når den dukker op (Badekarret)',
   pingvin: 'pingvinen skræpper (tryk på pingvinen på vandscooteren i Badekarret)',
+  isbjoern: 'isbjørnen brummer venligt (tryk på isbjørnen på isflagen i Badekarret)',
 } as const;
 
 export type SampleName = keyof typeof SAMPLE_NAMES;

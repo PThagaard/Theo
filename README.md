@@ -114,10 +114,13 @@ titte-bøh, jeres ansigter og jeres ord.
   vandet: plask, bølger og nye bobler. Swipe: popper alt på vejen og laver bølger. Hold fingeren stille: en boble
   vokser og svæver væk, når du slipper. Ryst telefonen: alt hopper, og en byge af bobler stiger op. Drej telefonen,
   og vandet hælder som rigtigt vand. Gummiænderne rapper og skifter farve ved tryk; hold fingeren på en and, og den
-  suser i regnbuefarver frem og tilbage. Der er altid mindst én boble. Nu og da kommer en gæst: hvalen, der står og ryster og sprøjter ved tryk, koen i speedbåden (muh og dyt),
-  pingvinen på vandscooteren, fisken, der springer, og bruseren, der sprøjter fra oven. Ryst telefonen, når badet er
-  tomt, og en gæst kommer. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og *Alder*
-  gælder her også (for de mindste én gæst ad gangen og sjældent).
+  suser i regnbuefarver frem og tilbage. Der er altid mindst én boble. Nu og da kommer en gæst: hvalen, der gemmer
+  sig, så kun ryggen og hullet stikker op (tryk, og den lader vandet ud og kommer glad op), koen i speedbåden (muh
+  og dyt), pingvinen på vandscooteren, guldfisken, der springer (hvert tredje spring ender i en boble, der bærer den
+  væk, medmindre I popper boblen), bruseren, der drypper, til man rører den, og så sprøjter, laver bobler og kan
+  trækkes rundt med fingeren, og isbjørnen, der driver forbi på sin isflage og vinker hej hej. Ryst telefonen, når
+  badet er tomt, og en gæst kommer. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og
+  *Alder* gælder her også (for de mindste én gæst ad gangen og sjældent).
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:
@@ -131,8 +134,8 @@ titte-bøh, jeres ansigter og jeres ord.
   stemme. Balloner og Badekarret siger ingen ord; der er kun lyde. Telefonen beder om lov til mikrofonen første
   gang; optagelserne bliver på telefonen.
 - **Musik** (forældremenuen → *Musik*): hver sang kan slås til og fra, hastigheden kan sættes (langsom, normal,
-  hurtig), og *Næste sang* springer videre. Baby Shark (den traditionelle melodi, spillet af appens egen spilledåse)
-  spiller først. Alle sange er gamle børnesange eller vores egne; ingen optagelser.
+  hurtig), og *Næste sang* springer videre. Alle sange er gamle børnesange eller vores egne, spillet af appens egen
+  spilledåse; ingen optagelser. (Baby Shark som spilledåse-melodi blev prøvet og taget ud igen.)
 - **Nedtælling til pausen**: er *Pause efter* slået til, står der en lille, mat tid nederst til højre i spillet.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
   ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.

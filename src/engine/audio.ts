@@ -250,7 +250,7 @@ class MusicPlayer {
     }
     // Don't play the same song twice in a row when the playlist wraps around.
     if (order.length > 1 && order[0] === previous) [order[0], order[1]] = [order[1], order[0]];
-    // The first song of a session is the first in the list (Baby Shark), when it is on.
+    // The first song of a session is the first in the list, when it is on.
     if (this.firstRun) {
       this.firstRun = false;
       const favourite = order.indexOf(this.enabled[0]);
@@ -1184,6 +1184,28 @@ export class AudioEngine {
     if (this.sample('traktor-motor', when, { rate: 1.7, gain: 0.7 })) return;
     for (let i = 0; i < 12; i++) {
       this.synth.tone(this.sfxBus, 'sawtooth', 220 + i * 6, when + i * 0.07, 0.12, 0.004, 0.06, { filter: 1500 });
+    }
+  }
+
+  /** A single drop from the shower head: a short, high "plip". */
+  drip(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 1900, when, 0.16, 0.002, 0.09, { to: 1100, glide: 0.07 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.06, 0.02, 'highpass', 4000);
+  }
+
+  /** The polar bear's friendly "brum-brum" hello (a recording if there is one): low, soft and round, never a growl. */
+  bearHello(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('isbjoern', when)) return;
+    for (const [offset, base] of [
+      [0, 150],
+      [0.28, 190],
+    ] as const) {
+      const t = when + offset;
+      this.synth.tone(this.sfxBus, 'triangle', base, t, 0.28, 0.03, 0.26, { to: base * 1.12, glide: 0.2, filter: 700 });
+      this.synth.tone(this.sfxBus, 'sawtooth', base * 0.5, t, 0.1, 0.03, 0.22, { filter: 500 });
+      this.synth.noiseBurst(this.sfxBus, t, 0.05, 0.2, 'lowpass', 600, 0.5);
     }
   }
 

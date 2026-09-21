@@ -190,6 +190,9 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['guest:jetski', '… pingvinen på vandscooteren'],
   ['guest:fish', '… fisken'],
   ['guest:shower', '… bruseren'],
+  ['guest:bear', '… isbjørnen'],
+  ['fishRides', 'Fisken fløj væk i en boble'],
+  ['fishFreed', '… og blev poppet fri igen'],
 ];
 
 export function formatMinutes(seconds: number): string {

@@ -1,25 +1,35 @@
 import { ImpactStyle } from '@capacitor/haptics';
 import type { ActivityContext } from '../../engine/activity';
 import type { AudioEngine } from '../../engine/audio';
-import type { GuestKind } from './logic';
+import type { GuestEventWhat, GuestKind } from './logic';
 import type { BoblerEvent } from './logic';
 
 /** What the guests sound like as they come, are touched, act and leave. */
-function guestSound(audio: AudioEngine | null, kind: GuestKind, what: 'appear' | 'poke' | 'act' | 'leave'): void {
+function guestSound(audio: AudioEngine | null, kind: GuestKind, what: GuestEventWhat, pokes: number): void {
   if (!audio) return;
   const now = audio.ctx.currentTime;
   switch (kind) {
     case 'whale':
-      if (what === 'appear') {
-        audio.splash(true);
-        audio.whaleCall(now + 0.4);
-      } else if (what === 'poke') audio.spout();
-      else if (what === 'leave') audio.splash(true);
+      // Hidden, it only stirs the water and blows a few quiet bubbles; the first touch lets the water out with a
+      // splash and its glad call; later touches just spout.
+      if (what === 'appear') audio.plop(0.7);
+      else if (what === 'drip') audio.plop(0.25);
+      else if (what === 'poke') {
+        audio.spout();
+        if (pokes === 1) {
+          audio.splash(true, now + 0.15);
+          audio.whaleCall(now + 0.6);
+        }
+      } else if (what === 'leave' && pokes > 0) audio.splash(true);
       break;
     case 'fish':
       if (what === 'appear' || what === 'leave') audio.splash(false);
-      else if (what === 'act') audio.splash(true);
-      else audio.blub();
+      else if (what === 'act' || what === 'fall') audio.splash(true);
+      else if (what === 'ride') {
+        // Caught in a bubble: a little whoop up, and a sparkle.
+        audio.inflate();
+        audio.sparkle(now + 0.3);
+      } else if (what === 'poke') audio.blub();
       break;
     case 'boat':
       // The cow moos, then the boat toots its old horn.
@@ -37,9 +47,21 @@ function guestSound(audio: AudioEngine | null, kind: GuestKind, what: 'appear' |
       }
       break;
     case 'shower':
-      if (what === 'appear') audio.startRain();
-      else if (what === 'leave') audio.stopRain();
-      else if (what === 'poke') audio.splash(false);
+      // Drips quietly until touched; the spray is the rain loop, which stops when the spray does.
+      if (what === 'appear' || what === 'drip') audio.drip();
+      else if (what === 'poke') {
+        audio.splash(false);
+        audio.startRain();
+      } else if (what === 'act') audio.startRain();
+      else if (what === 'stop' || what === 'leave') audio.stopRain();
+      break;
+    case 'bear':
+      // A friendly "brum-brum" hello with every wave; a touch also bounces the floe.
+      if (what === 'act') audio.bearHello();
+      else if (what === 'poke') {
+        audio.bearHello();
+        audio.splash(false, now + 0.1);
+      }
       break;
   }
 }
@@ -107,13 +129,17 @@ export function handleBoblerEvent(event: BoblerEvent, ctx: ActivityContext): voi
       ctx.stats.bump('bubbleSwipes');
       break;
     case 'guest':
-      guestSound(audio, event.kind, event.what);
+      guestSound(audio, event.kind, event.what, event.pokes ?? 0);
       if (event.what === 'poke') {
         ctx.haptic(ImpactStyle.Light);
         ctx.stats.bump('bathGuestsPoked');
         ctx.stats.bump(`guest:${event.kind}`);
       } else if (event.what === 'appear') {
         ctx.stats.bump('bathGuests');
+      } else if (event.what === 'ride') {
+        ctx.stats.bump('fishRides');
+      } else if (event.what === 'fall') {
+        ctx.stats.bump('fishFreed');
       }
       break;
     case 'sparkle':
