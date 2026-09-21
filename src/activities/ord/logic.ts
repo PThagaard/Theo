@@ -12,7 +12,7 @@ import type { VisitorKind } from '../balloner/types';
 export interface Thing {
   /** The word key (engine/voices.ts VOICE_WORDS), or `photo:<id>` for a family photo. */
   key: string;
-  kind: 'creature' | 'balloon' | 'photo';
+  kind: 'creature' | 'balloon' | 'sun' | 'cloud' | 'flower' | 'photo';
   creature?: VisitorKind;
   photoId?: string;
 }
@@ -25,6 +25,9 @@ export const BASE_THINGS: ReadonlyArray<Thing> = [
   { key: 'snegl', kind: 'creature', creature: 'snail' },
   { key: 'traktor', kind: 'creature', creature: 'tractor' },
   { key: 'ballon', kind: 'balloon' },
+  { key: 'sol', kind: 'sun' },
+  { key: 'sky', kind: 'cloud' },
+  { key: 'blomst', kind: 'flower' },
 ];
 
 export type ThingState = 'enter' | 'idle' | 'react' | 'leave';

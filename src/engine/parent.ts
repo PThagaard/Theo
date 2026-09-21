@@ -65,8 +65,10 @@ export interface ParentPanelHooks {
   onChange(settings: Settings): void;
   /** The menu opened (a parent held the corner button). */
   onOpen?(): void;
-  /** The activities the shell can run; the menu shows a choice when there is more than one. */
-  activities?: ReadonlyArray<{ id: string; label: string }>;
+  /** The game running now (null on the start page), so the menu can show its name and its own settings. */
+  currentGame?(): { id: string; title: string; hasTempo: boolean } | null;
+  /** "Skift spil": back to the start page. */
+  onSwitchGame?(): void;
   /** One line about the pause ("falder i søvn om 7 min"), shown while the menu is open. */
   pauseStatus?(): string;
   lock?: KidLock;
@@ -198,9 +200,10 @@ export class ParentPanel {
   private readonly tempoButtons = Array.from(element<HTMLElement>('tempo-options').querySelectorAll<HTMLButtonElement>('button[data-tempo]'));
   private readonly ageButtons = Array.from(element<HTMLElement>('age-options').querySelectorAll<HTMLButtonElement>('button[data-age]'));
   private readonly pauseButtons = Array.from(element<HTMLElement>('pause-options').querySelectorAll<HTMLButtonElement>('button[data-pause]'));
-  private readonly activityRow = element<HTMLElement>('activity-row');
+  private readonly activityName = element<HTMLElement>('activity-name');
+  private readonly switchGame = element<HTMLButtonElement>('switch-game');
+  private readonly tempoRow = element<HTMLElement>('tempo-row');
   private readonly pauseStatus = element<HTMLElement>('pause-status');
-  private readonly activityOptions = element<HTMLElement>('activity-options');
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
   private readonly lockStatus = element<HTMLElement>('lock-status');
@@ -290,22 +293,10 @@ export class ParentPanel {
         this.renderPauseStatus();
       });
     }
-    const activities = hooks.activities ?? [];
-    this.activityRow.hidden = activities.length < 2;
-    this.activityOptions.replaceChildren(
-      ...activities.map((entry) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.dataset.activity = entry.id;
-        button.textContent = entry.label;
-        button.addEventListener('click', () => {
-          this.settings.activity = entry.id;
-          this.renderChoices();
-          this.changed();
-        });
-        return button;
-      }),
-    );
+    this.switchGame.addEventListener('click', () => {
+      this.close();
+      hooks.onSwitchGame?.();
+    });
     this.renderChoices();
 
     this.photoSection.hidden = !hooks.photos;
@@ -415,6 +406,7 @@ export class ParentPanel {
   open(): void {
     this.panel.hidden = false;
     this.hooks.onOpen?.();
+    this.renderGame();
     this.renderPauseStatus();
     this.armAutoClose();
     this.renderStats();
@@ -466,11 +458,14 @@ export class ParentPanel {
       button.classList.toggle('is-selected', selected);
       button.setAttribute('aria-pressed', String(selected));
     }
-    for (const button of this.activityOptions.querySelectorAll<HTMLButtonElement>('button[data-activity]')) {
-      const selected = button.dataset.activity === this.settings.activity;
-      button.classList.toggle('is-selected', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    }
+  }
+
+  /** The game's name at the top of the Leg page; settings that belong to one game only show for it. */
+  private renderGame(): void {
+    const game = this.hooks.currentGame?.() ?? null;
+    this.activityName.textContent = game ? `🧩 ${game.title}` : '🧩 Intet spil valgt';
+    this.switchGame.hidden = !game;
+    this.tempoRow.hidden = !(game?.hasTempo ?? false);
   }
 
   private changed(): void {

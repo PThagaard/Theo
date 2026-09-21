@@ -28,6 +28,9 @@ function thingSound(audio: AudioEngine, thing: Thing): void {
       break;
   }
   if (thing.kind === 'balloon') audio.boing();
+  else if (thing.kind === 'sun') audio.wee();
+  else if (thing.kind === 'cloud') audio.rain();
+  else if (thing.kind === 'flower') audio.twirl();
   else if (thing.kind === 'photo') audio.tada();
 }
 

@@ -341,6 +341,80 @@ body {
   font-size: 17px;
 }
 
+/* The start page: big tiles for the parents to pick a game. Opaque, so nothing shows through until a game runs. */
+#start-page {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(180deg, #4fb3ff 0%, #a8e1ff 55%, #fff4d6 100%);
+}
+
+#start-page[hidden] {
+  display: none;
+}
+
+.start-card {
+  width: min(100%, 380px);
+  padding: 28px 22px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.start-card h1 {
+  margin: 8px 0 2px;
+  font-size: 30px;
+}
+
+.start-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.start-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 0;
+  border-radius: 20px;
+  background: #eef2ff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-tile:active {
+  background: #dfe7ff;
+}
+
+.start-tile-emoji {
+  font-size: 40px;
+  line-height: 1;
+  flex: none;
+}
+
+.start-tile-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.start-tile-blurb {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
 /* The menu is split into pages, so settings, photos, counters and phone things never become one long list. */
 .tabs {
   display: flex;

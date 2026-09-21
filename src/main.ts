@@ -1,7 +1,7 @@
 import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { ACTIVITIES, findActivity } from './activities/registry';
+import { ACTIVITIES, findActivity, type ActivityEntry } from './activities/registry';
 import type { Activity, ActivityContext } from './engine/activity';
 import { AGE_PROFILES } from './engine/age';
 import { AudioEngine } from './engine/audio';
@@ -84,14 +84,57 @@ const context: ActivityContext = {
 };
 
 let familyPhotos: StoredPhoto[] = [];
-let activity: Activity = findActivity(settings.activity).create(canvas, context);
+/** The running game, or null while the start page is up. */
+let activity: Activity | null = null;
 
+// ---- The start page: the parents pick a game ----------------------------------
+
+const startPage = document.getElementById('start-page') as HTMLElement;
+const startTiles = document.getElementById('start-tiles') as HTMLElement;
+startTiles.replaceChildren(
+  ...ACTIVITIES.map((entry) => {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'start-tile';
+    tile.dataset.activity = entry.id;
+    const emoji = document.createElement('span');
+    emoji.className = 'start-tile-emoji';
+    emoji.textContent = entry.emoji;
+    const text = document.createElement('span');
+    const title = document.createElement('span');
+    title.className = 'start-tile-title';
+    title.textContent = entry.title;
+    const blurb = document.createElement('span');
+    blurb.className = 'start-tile-blurb';
+    blurb.textContent = entry.blurb;
+    text.append(title, blurb);
+    tile.append(emoji, text);
+    tile.addEventListener('click', () => startActivity(entry.id));
+    return tile;
+  }),
+);
+
+function showStartPage(): void {
+  activity?.dispose();
+  activity = null;
+  startPage.hidden = false;
+}
+
+/** Starts a game (from the start page or the parent menu) and remembers it as the last one played. */
 function startActivity(id: string): void {
-  const entry = findActivity(id);
-  if (entry.id === activity.id) return;
-  activity.dispose();
+  const entry: ActivityEntry = findActivity(id);
+  if (activity?.id === entry.id) {
+    startPage.hidden = true;
+    return;
+  }
+  activity?.dispose();
   activity = entry.create(canvas, context);
   settings.activity = entry.id;
+  saveSettings(settings);
+  startPage.hidden = true;
+  // Picking a game is a touch, so sound may start right away.
+  ensureAudio();
+  session.reset();
   resize();
   activity.applySettings(settings);
   activity.setPhotos(familyPhotos);
@@ -105,8 +148,7 @@ const panel = new ParentPanel(settings, {
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
     audio?.setMusicLevel(AGE_PROFILES[updated.age].music);
-    if (updated.activity !== activity.id) startActivity(updated.activity);
-    activity.applySettings(updated);
+    activity?.applySettings(updated);
   },
   // Opening the menu (a two second hold by a parent) wakes the world after a pause.
   onOpen: () => wakeUp(),
@@ -116,7 +158,11 @@ const panel = new ParentPanel(settings, {
     const minutes = Math.ceil(left / 60);
     return minutes <= 1 ? 'Verdenen falder i søvn om under et minut.' : `Verdenen falder i søvn om ca. ${minutes} min.`;
   },
-  activities: ACTIVITIES.map((entry) => ({ id: entry.id, label: entry.label })),
+  currentGame: () => {
+    const entry = activity ? findActivity(activity.id) : null;
+    return entry ? { id: entry.id, title: entry.title, hasTempo: entry.hasTempo } : null;
+  },
+  onSwitchGame: () => showStartPage(),
   lock: kidLock,
   update: appUpdate,
   stats: {
@@ -139,11 +185,10 @@ const panel = new ParentPanel(settings, {
     remove: removePhoto,
     onChange: (photos) => {
       familyPhotos = photos;
-      activity.setPhotos(familyPhotos);
+      activity?.setPhotos(familyPhotos);
     },
   },
 });
-activity.applySettings(settings);
 
 // On the phone, a little after start, the app looks for a new version by itself (at most twice a day) and
 // fetches it in the background; a dot on the corner button then tells the parents it is ready to install.
@@ -158,19 +203,19 @@ if (kidLock.available && settings.autoLock) {
 
 attachInput(canvas, {
   down: (id, x, y) => {
-    if (panel.isOpen) return;
+    if (panel.isOpen || !activity) return;
     // Create/unlock audio before the first pop so even the very first touch makes a sound.
     ensureAudio();
     void requestWakeLock();
     lastTouch = performance.now();
     activity.press(id, x, y);
   },
-  move: (id, x, y) => activity.drag(id, x, y),
-  up: (id) => activity.release(id),
+  move: (id, x, y) => activity?.drag(id, x, y),
+  up: (id) => activity?.release(id),
 });
 
 attachShake(() => {
-  if (panel.isOpen) return;
+  if (panel.isOpen || !activity) return;
   lastTouch = performance.now();
   activity.shake();
 });
@@ -183,7 +228,7 @@ function resize(): void {
   const height = Math.max(1, Math.round(rect.height || window.innerHeight));
   // Two device pixels per CSS pixel is plenty for this art style and keeps old phones smooth.
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  activity.resize(width, height, dpr);
+  activity?.resize(width, height, dpr);
 }
 resize();
 window.addEventListener('resize', resize);
@@ -196,14 +241,14 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 // opening the menu. Time in the menu does not count; a quiet stretch does (the screen is still on).
 const session = new SessionClock();
 function wakeUp(): void {
-  if (!activity.asleep) return;
+  if (!activity?.asleep) return;
   activity.wake();
   audio?.wake();
   session.reset();
   stats.bump('pauses');
 }
 function fallAsleep(): void {
-  if (activity.asleep) return;
+  if (!activity || activity.asleep) return;
   activity.sleep();
   audio?.sleep();
 }
@@ -214,6 +259,10 @@ function frame(now: number): void {
   const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
   lastFrame = now;
   try {
+    if (!activity) {
+      requestAnimationFrame(frame);
+      return;
+    }
     activity.update(dt);
     activity.render(dt);
     // Play time: the half minute after every touch counts, so pauses don't inflate the numbers.
@@ -269,7 +318,7 @@ if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in 
 declare global {
   interface Window {
     __theo?: {
-      readonly activity: Activity;
+      readonly activity: Activity | null;
       readonly game: unknown;
       audio: () => AudioEngine | null;
       AudioEngine: typeof AudioEngine;
@@ -283,7 +332,7 @@ window.__theo = {
     return activity;
   },
   get game() {
-    return activity.debug.game;
+    return activity?.debug.game ?? null;
   },
   audio: () => audio,
   AudioEngine,

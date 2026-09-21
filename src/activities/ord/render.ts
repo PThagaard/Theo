@@ -2,7 +2,7 @@ import { TAU } from '../../engine/rng';
 import { BALLOON_COLORS, HILLS } from '../balloner/palette';
 import { Renderer } from '../balloner/render';
 import { hillY } from '../balloner/terrain';
-import type { Balloon, Visitor } from '../balloner/types';
+import type { Balloon, Cloud, Flower, Visitor } from '../balloner/types';
 import type { OrdGame, Thing } from './logic';
 
 /**
@@ -44,7 +44,7 @@ export class OrdRenderer {
     const bounce = game.state === 'react' ? Math.sin(Math.min(1, game.stateAge / 0.9) * Math.PI) : 0;
     const lift = bounce * size * 0.5;
 
-    this.drawThing(game.current, game, game.x, y, size, lift, bounce);
+    this.drawThing(game.current, game, game.x, y, size, lift, bounce, dt);
 
     // The bush: in front of the thing while it hides (rustling a little), jumped aside once it has been found.
     if (game.hidden || game.bushOpen < 1) {
@@ -57,9 +57,47 @@ export class OrdRenderer {
     if (game.dusk > 0) base.drawNight(game.dusk);
   }
 
-  private drawThing(thing: Thing, game: OrdGame, x: number, y: number, size: number, lift: number, bounce: number): void {
+  private drawThing(thing: Thing, game: OrdGame, x: number, y: number, size: number, lift: number, bounce: number, dt: number): void {
     const base = this.base;
     const ctx = base.ctx;
+    if (thing.kind === 'sun') {
+      // Hangs in the sky above the stage; spins and squints when touched, like in the balloon world.
+      base.drawSun(
+        {
+          sun: { x, y: y - size * 2.4 - lift, r: size * 1.1 },
+          sinceCelebration: 1e9,
+          sunHit: game.state === 'react' ? game.stateAge : 1e9,
+          sunCharge: 0,
+        },
+        dt,
+      );
+      return;
+    }
+    if (thing.kind === 'cloud') {
+      const cloud: Cloud = { x, y: y - size * 2.2 - lift, scale: size / 40, speed: 0, shape: 1, vx: 0, wobble: bounce, dark: 0, holding: false };
+      base.drawCloud(cloud);
+      return;
+    }
+    if (thing.kind === 'flower') {
+      // One big flower growing from the stage; it spins in rainbow colours when touched.
+      const flower: Flower = {
+        id: 1,
+        fx: x / base.W,
+        color: '#ff6b8a',
+        size: size * 0.55,
+        petals: 6,
+        phase: 0,
+        angle: bounce * TAU,
+        spin: 0,
+        rainbow: game.state === 'react' ? 1 : 0,
+        growth: 1,
+        regrow: 0,
+        flying: null,
+        boost: 0,
+      };
+      base.drawFlower(flower, base.time);
+      return;
+    }
     if (thing.kind === 'creature' && thing.creature) {
       const flying = thing.creature === 'bird' || thing.creature === 'butterfly';
       const visitor: Visitor = {

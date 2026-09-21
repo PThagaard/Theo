@@ -3,6 +3,22 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – Theos spil: en forside, og flere ting i Ord
+
+- **Forsiden "Theos spil"**: når appen åbner, vælger man spillet på store felter: *Theos Balloner* eller *Theos Ord
+  og Billeder*. Spillene har ingen vej tilbage til forsiden (Theo kan ikke forlade dem); forældremenuen → *Leg* →
+  *Skift spil* fører tilbage. Menuen viser, hvilket spil der kører, og *Tempo* vises kun i Balloner, hvor den
+  hører hjemme. Alder, pause, musik og lyde gælder begge spil.
+- **Appen hedder nu "Theos spil"** (ikonet på telefonen, webappen og overskriften i forældremenuen); *Theos
+  Balloner* er navnet på det første spil. Indstillinger, tællere, billeder og stemmer bevares ved opdateringen.
+- **Flere ting i Ord**: solen (snurrer og kniber øjnene sammen ved tryk), en sky (regner ved tryk) og en stor
+  blomst (snurrer i regnbuefarver). Ordene *sol*, *sky* og *blomst* kan indtales under *Jeres stemmer*.
+
+**Test på telefonen:** (1) Ikonet hedder *Theos spil*. Åbn appen: forsiden med to felter. Tryk *Theos Ord og Billeder*: spillet starter med
+lyd fra første tryk. (2) Hold hjørneknappen → *Leg*: øverst står spillets navn og *Skift spil*; *Tempo* er væk.
+Tryk *Skift spil*: forsiden igen; vælg *Theos Balloner*: *Tempo* er tilbage. (3) I Ord: swipe, til solen, skyen og
+blomsten kommer; rør dem.
+
 ## 2026-09-21 – spil nr. 2: Ord, og pausen tæller rigtigt
 
 - **Ord** (forældremenu → *Leg* → *Aktivitet* → *Ord*): én ting ad gangen, stor og rolig midt på skærmen: hunden,

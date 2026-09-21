@@ -62,8 +62,14 @@ export async function openPhone(viewport = VIEWPORTS.phone) {
   return { browser, context, page, problems };
 }
 
-export const waitForGame = (page) =>
-  page.waitForFunction(() => window.__theo && window.__theo.game.balloons.length > 0, null, { timeout: 30000 });
+/** The app opens on the start page "Theos spil"; pick the balloons, then wait until they are in the air. */
+export async function waitForGame(page) {
+  await page.waitForFunction(() => window.__theo && document.querySelector('#start-page button[data-activity="balloner"]'), null, { timeout: 30000 });
+  if (await page.evaluate(() => !document.getElementById('start-page').hidden)) {
+    await page.click('#start-page button[data-activity="balloner"]');
+  }
+  await page.waitForFunction(() => window.__theo && window.__theo.game && window.__theo.game.balloons.length > 0, null, { timeout: 30000 });
+}
 
 export function check(condition, message) {
   if (!condition) throw new Error(message);

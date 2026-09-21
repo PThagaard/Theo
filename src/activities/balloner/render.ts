@@ -5,6 +5,14 @@ import { TAU, clamp, easeOutBack } from '../../engine/rng';
 import { hillY } from './terrain';
 import type { Balloon, Cloud, Flower, Particle, Trail, Visitor } from './types';
 
+/** What the sun needs to know to spin, squint and glow (the balloon game, or a stand-in). */
+export interface SunView {
+  sun: { x: number; y: number; r: number };
+  sinceCelebration: number;
+  sunHit: number;
+  sunCharge: number;
+}
+
 /**
  * Draws the world on a 2D canvas: sky, smiling sun, rainbow, clouds, flowery
  * hills, the balloons with their faces, the finger ribbons and all the confetti.
@@ -122,7 +130,7 @@ export class Renderer {
     const airborne = (v: Visitor) => v.state === 'carried' || v.state === 'falling';
     for (const v of game.visitors) if (v.kind === 'elephant' && !airborne(v)) this.drawVisitor(v);
     this.drawHill(1);
-    for (const f of game.flowers) this.drawFlower(f, game);
+    for (const f of game.flowers) this.drawFlower(f, game.time);
     for (const v of game.visitors) if ((v.kind !== 'elephant' || airborne(v)) && v.kind !== 'storm') this.drawVisitor(v);
     for (const v of game.visitors) if (v.kind === 'storm' && v.lightning > 0) this.drawLightning(v, game);
     for (const b of game.balloons) this.drawString(b, game);
@@ -140,7 +148,7 @@ export class Renderer {
 
   // ---- Scenery -------------------------------------------------------------
 
-  private drawSun(game: Game, dt: number): void {
+  drawSun(game: SunView, dt: number): void {
     const ctx = this.ctx;
     const sun = game.sun;
     // The sun spins and bounces for a moment after every celebration and whenever it is touched.
@@ -235,7 +243,7 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawCloud(cloud: Cloud): void {
+  drawCloud(cloud: Cloud): void {
     const ctx = this.ctx;
     const wobble = cloud.wobble > 0 ? 1 + 0.1 * cloud.wobble * Math.sin(cloud.wobble * 22) : 1;
     ctx.save();
@@ -317,7 +325,7 @@ export class Renderer {
   }
 
   /** A flower on the hill (or its head flying through the air after being plucked). */
-  private drawFlower(f: Flower, game: Game): void {
+  drawFlower(f: Flower, now: number): void {
     const ctx = this.ctx;
     const u = this.u;
     const x = f.fx * this.W;
@@ -337,7 +345,7 @@ export class Renderer {
       ctx.moveTo(0, 0);
       ctx.lineTo(0, f.size * 1.4);
       ctx.stroke();
-      this.drawFlowerHead(f, 1, game.time);
+      this.drawFlowerHead(f, 1, now);
       ctx.restore();
     }
 
@@ -362,7 +370,7 @@ export class Renderer {
     ctx.stroke();
     ctx.translate(0, -f.size * (1 + f.boost) * 2.4 * growth);
     ctx.rotate(f.angle);
-    this.drawFlowerHead(f, growth, game.time);
+    this.drawFlowerHead(f, growth, now);
     ctx.restore();
   }
 

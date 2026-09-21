@@ -31,7 +31,7 @@ console.log('manifest:', manifest.name, manifest.display, manifest.icons.length,
 await context.setOffline(true);
 const before = requests();
 await page.reload();
-await page.waitForFunction(() => window.__theo && window.__theo.game.balloons.length > 0, null, { timeout: 15000 });
+await waitForGame(page);
 await page.waitForTimeout(800);
 const balloons = await page.evaluate(() => window.__theo.game.balloons.length);
 console.log('offline reload OK, balloons on screen:', balloons, '| server requests during offline reload:', requests() - before);

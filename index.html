@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Theos Balloner" />
+    <meta name="apple-mobile-web-app-title" content="Theos spil" />
     <meta name="theme-color" content="#4fb3ff" />
     <meta name="format-detection" content="telephone=no" />
-    <title>Theos Balloner</title>
+    <title>Theos spil</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   </head>
   <body>
-    <canvas id="game" aria-label="Pop ballonerne"></canvas>
+    <canvas id="game" aria-label="Theos spil"></canvas>
 
     <button id="parent-button" type="button" aria-label="Forældremenu (hold knappen nede)">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -29,10 +29,21 @@
       </svg>
     </button>
 
+    <!-- The start page: the parents pick a game when the app opens. The games have no way back here;
+         only the parent menu (hold the corner button) leads back. -->
+    <div id="start-page">
+      <div class="start-card">
+        <div class="card-balloon" aria-hidden="true">🎈</div>
+        <h1>Theos spil</h1>
+        <p class="subtitle">Vælg et spil</p>
+        <div id="start-tiles" class="start-tiles"></div>
+      </div>
+    </div>
+
     <div id="parent-panel" hidden>
       <div class="card" role="dialog" aria-labelledby="parent-title">
         <div class="card-balloon" aria-hidden="true">🎈</div>
-        <h1 id="parent-title">Theos Balloner</h1>
+        <h1 id="parent-title">Theos spil</h1>
         <p class="subtitle">Forældremenu</p>
         <div id="parent-tabs" class="tabs" role="tablist" aria-label="Forældremenu">
           <button id="tab-leg" type="button" role="tab" data-tab="leg">🎈 Leg</button>
@@ -41,9 +52,9 @@
           <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
         </div>
         <section class="tab-page" data-tab="leg">
-        <div class="row row-stacked" id="activity-row" hidden>
-          <span class="row-label">🧩 Aktivitet</span>
-          <div id="activity-options" class="segmented" role="group" aria-label="Aktivitet"></div>
+        <div class="row row-stacked" id="activity-row">
+          <span class="row-label" id="activity-name">🧩 Spil</span>
+          <button id="switch-game" type="button" class="photo-button">🧩 Skift spil</button>
         </div>
         <div class="row row-stacked">
           <span class="row-label">👶 Alder</span>
@@ -64,7 +75,7 @@
           <input type="checkbox" id="opt-sfx" />
           <span class="switch" aria-hidden="true"></span>
         </label>
-        <div class="row row-stacked">
+        <div class="row row-stacked" id="tempo-row">
           <span class="row-label">🎈 Tempo</span>
           <div id="tempo-options" class="segmented" role="group" aria-label="Tempo">
             <button type="button" data-tempo="rolig">🐢 Rolig</button>
@@ -167,7 +178,7 @@
           <b>Guidet adgang</b> i stedet.
         </p>
         </section>
-        <button id="parent-close" type="button">Tilbage til ballonerne</button>
+        <button id="parent-close" type="button">Tilbage til spillet</button>
       </div>
     </div>
 

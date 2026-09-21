@@ -73,3 +73,6 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - Far: "rens billederne ud af historikken" → git-historikken er omskrevet med `git filter-repo` (de tre jpg'er er
   væk fra alle commits), branchen er force-pushet, og `latest`-tagget er lavet om. GitHub kan stadig have kopier i
   gamle CI-artefakter (kørsel 9–12) og i sin cache; det er noteret i chatten.
+- "Kan vi ikke lave en 'vælg spil'-forside? Settings er jo kun til Balloner" → behov: appen er nu flere spil, og
+  forældrene skal kunne vælge, når de giver Theo telefonen; indstillinger skal høre til det spil, de gælder →
+  forsiden "Theos spil", *Skift spil* i menuen, Tempo kun i Balloner.

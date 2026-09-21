@@ -302,6 +302,23 @@ check(ordStats.touched >= 1 && ordStats.next >= 1 && ordStats.peeks >= 1, 'Ord d
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
+// The start page is reachable again through the menu, and a tile starts a game.
+await page.evaluate(() => window.__theo.startActivity('ord'));
+await page.waitForTimeout(300);
+const startBtn = await page.locator('#parent-button').boundingBox();
+await page.mouse.move(startBtn.x + startBtn.width / 2, startBtn.y + startBtn.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(2300);
+await page.mouse.up();
+await page.waitForFunction(() => !document.getElementById('parent-panel').hidden, null, { timeout: 5000 });
+check(await page.evaluate(() => document.getElementById('activity-name').textContent.includes('Ord') && document.getElementById('tempo-row').hidden), 'the menu should name Ord without Tempo');
+await page.click('#tab-leg');
+await page.click('#switch-game');
+await page.waitForFunction(() => !document.getElementById('start-page').hidden && document.getElementById('parent-panel').hidden, null, { timeout: 5000 });
+await page.screenshot({ path: `${OUT}/${tag}-24-start.png` });
+check((await page.evaluate(() => window.__theo.activity)) === null, 'the start page should have no running game');
+await page.click('#start-page button[data-activity="balloner"]');
+await page.waitForFunction(() => document.getElementById('start-page').hidden && window.__theo.activity && window.__theo.activity.id === 'balloner', null, { timeout: 5000 });
 
 // The pause: the world falls asleep (sun sets, night veil, moon), touches only twinkle, and a parent wakes it.
 await page.evaluate(() => window.__theo.game.sleep());
@@ -398,8 +415,10 @@ const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.se
 console.log('stored settings:', stored);
 check(JSON.parse(stored).tempo === 'vild', 'tempo was not stored');
 check(JSON.parse(stored).age === '2+' && JSON.parse(stored).pauseAfter === 5, 'age or pause was not stored');
-// Two activities: the menu offers the choice, and the pause line tells when the world will sleep.
-check((await page.evaluate(() => !document.getElementById('activity-row').hidden && document.querySelectorAll('#activity-options button').length)) === 2, 'the activity chooser should list two activities');
+// The menu names the running game, offers "Skift spil", shows Tempo only for the balloons, and tells when the
+// world will sleep.
+console.log('menu game line:', await page.evaluate(() => document.getElementById('activity-name').textContent));
+check(await page.evaluate(() => document.getElementById('activity-name').textContent.includes('Theos Balloner') && !document.getElementById('switch-game').hidden && !document.getElementById('tempo-row').hidden), 'the menu should name Theos Balloner with Skift spil and Tempo');
 console.log('pause line:', await page.evaluate(() => document.getElementById('pause-status').textContent));
 check((await page.evaluate(() => document.getElementById('pause-status').textContent)).includes('søvn'), 'the pause line is missing');
 check(await page.evaluate(() => window.__theo.game.currentTempo) === 'vild', 'tempo did not reach the game');

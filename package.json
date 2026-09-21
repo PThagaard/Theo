@@ -2,7 +2,7 @@
   "name": "theos-balloner",
   "private": true,
   "version": "1.0.0",
-  "description": "Ballon-pop app til babyer – tryk på skærmen og pop balloner med sjove lyde og musik",
+  "description": "Theos spil: reklamefrit lege- og læringsunivers til de mindste (balloner, ord og billeder)",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

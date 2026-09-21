@@ -1,8 +1,9 @@
-# 🎈 Theos Balloner
+# 🎈 Theos spil
 
-En lille app til iPhone og Android, hvor en baby kan trykke, klappe og swipe på skærmen for at poppe balloner.
-Lavet til små fingre: alt på skærmen giver en reaktion, der er ingen menuer at fare vild i, og alle lyde og al
-musik laves af appen selv (ingen reklamer, intet internet).
+En lille app til iPhone og Android med små spil til Theo: *Theos Balloner* (tryk, klap og swipe for at poppe
+balloner) og *Theos Ord og Billeder* (én ting ad gangen, ordet i jeres egne stemmer). Lavet til små fingre: alt på
+skærmen giver en reaktion, der er ingen menuer at fare vild i, og alle lyde og al musik laves af appen selv (ingen
+reklamer, intet internet).
 
 ## 🌐 Anbefalet: én webapp på dit eget domæne
 
@@ -49,7 +50,7 @@ Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og 
 henter dem i baggrunden. En lille rød prik på låseknappen i hjørnet betyder, at en ny version er klar. Åbn
 forældremenuen → *Telefon*: der står, hvad der er nyt, og **Installér nu** åbner Androids installationsvindue med
 det samme. Menuen kigger også selv, når den åbnes, og *Søg efter ny version* gør det på et tryk. Første gang spørger
-telefonen, om Theos Balloner må installere apps; sig ja (det gælder kun denne app). Webappen opdaterer sig selv.
+telefonen, om Theos spil må installere apps; sig ja (det gælder kun denne app). Webappen opdaterer sig selv.
 
 Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **Actions** på GitHub
 (knappen *Run workflow*).
@@ -103,7 +104,9 @@ der deltager aktivt, og det er sådan, appen er tænkt: som et legetøj, I bruge
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Gården** til højre: en rød lade med rygende skorsten, og en gammel traktor, der af og til kører ud, holder
   lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
-- **Ord** (forældremenuen → *Leg* → *Aktivitet*): spil nr. 2. Én ting ad gangen midt på græsset (dyrene,
+- **Forsiden "Theos spil"**: når appen åbner, vælger I spillet på store felter. Spillene har ingen vej tilbage
+  til forsiden; forældremenuen → *Leg* → *Skift spil* fører tilbage.
+- **Theos Ord og Billeder** (spil nr. 2): Én ting ad gangen midt på græsset (dyrene,
   traktoren, en ballon, jeres familiebilleder). Rør den: hop, lyd og jeres ord. Swipe: den næste. Hver tredje gemmer
   sig bag en busk: titte-bøh. Roligt og uden noget, der sker af sig selv, for de mindste.
 - **Jeres stemmer** (forældremenuen → *Familie*): indtal ordene (hund, ballon, traktor …) og navnene på
@@ -231,6 +234,6 @@ Google Play, så lav en ny privat nøgle og hold den uden for git.
 
 ### Navn og app-id
 
-Appen hedder *Theos Balloner* og har id'et `com.pthagaard.theoballoner`. Begge dele står i `capacitor.config.json`
+Appen hedder *Theos spil* og har id'et `com.pthagaard.theoballoner`. Begge dele står i `capacitor.config.json`
 (og navnet også i `index.html`, `android/app/src/main/res/values/strings.xml` og `ios/App/App/Info.plist`).
 Skift dem gerne før den første rigtige build.

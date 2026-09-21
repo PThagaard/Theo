@@ -2,14 +2,26 @@ import type { Activity, ActivityContext } from '../engine/activity';
 import { createBalloner } from './balloner';
 import { createOrd } from './ord';
 
-/** Every activity the shell can run, in the order the parent menu lists them. */
-export const ACTIVITIES: ReadonlyArray<{ id: string; label: string; create(canvas: HTMLCanvasElement, ctx: ActivityContext): Activity }> = [
-  { id: 'balloner', label: '🎈 Balloner', create: createBalloner },
-  { id: 'ord', label: '🗣️ Ord', create: createOrd },
+export interface ActivityEntry {
+  id: string;
+  /** The name on the start page and in the parent menu. */
+  title: string;
+  emoji: string;
+  /** One line for the parents about what the game is. */
+  blurb: string;
+  /** Whether the balloon tempo setting applies. */
+  hasTempo: boolean;
+  create(canvas: HTMLCanvasElement, ctx: ActivityContext): Activity;
+}
+
+/** Every game the shell can run, in the order the start page shows them. */
+export const ACTIVITIES: ReadonlyArray<ActivityEntry> = [
+  { id: 'balloner', title: 'Theos Balloner', emoji: '🎈', blurb: 'Pop og swipe, dyr, uvejr og gården', hasTempo: true, create: createBalloner },
+  { id: 'ord', title: 'Theos Ord og Billeder', emoji: '🗣️', blurb: 'Én ting ad gangen, jeres stemmer og titte-bøh', hasTempo: false, create: createOrd },
 ];
 
 export const DEFAULT_ACTIVITY = ACTIVITIES[0].id;
 
-export function findActivity(id: string): (typeof ACTIVITIES)[number] {
+export function findActivity(id: string): ActivityEntry {
   return ACTIVITIES.find((activity) => activity.id === id) ?? ACTIVITIES[0];
 }

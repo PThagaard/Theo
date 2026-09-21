@@ -188,5 +188,5 @@ jobs:
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest TheosBalloner.apk version.json \
             --target "$GITHUB_SHA" \
-            --title "Theos Balloner $VERSION" \
+            --title "Theos spil $VERSION" \
             --notes-file release-notes.md

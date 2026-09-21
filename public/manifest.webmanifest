@@ -1,7 +1,7 @@
 {
-  "name": "Theos Balloner",
-  "short_name": "Balloner",
-  "description": "Pop balloner med sjove lyde og musik – til de mindste.",
+  "name": "Theos spil",
+  "short_name": "Theos spil",
+  "description": "Theos spil: balloner, ord og billeder. Reklamefrit og til de mindste.",
   "lang": "da",
   "start_url": "./",
   "scope": "./",

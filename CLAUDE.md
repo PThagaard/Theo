@@ -25,7 +25,9 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
 2. **Alt, barnet rører ved, reagerer** – med bevægelse *og* lyd, inden for 100 ms. Ingen døde områder, ingen "forkert",
    ingen straf, ingen tidspres, ingen "game over". Alt kan gøres med én hel hånd, ikke kun en præcis finger.
 3. **Ingen tekst, knapper eller menuer til barnet.** Alt voksen-UI ligger bag "hold nede i 2 sekunder"-porten
-   (forældremenuen), som også afbrydes, hvis flere fingre rører skærmen.
+   (forældremenuen), som også afbrydes, hvis flere fingre rører skærmen. Undtagelsen er forsiden "Theos spil", som
+   kun vises, når appen åbnes eller forældrene vælger *Skift spil*; inde i et spil findes der ingen vej tilbage til
+   den.
 4. **Barnet kan ikke forlade eller ødelægge noget.** Tilbage ignoreres, zoom/scroll/langt-tryk er blokeret, skærmen
    slukker ikke, og appen kan låses fast på skærmen (KidLock). Indstillinger kan kun ændres fra forældremenuen.
 5. **Roligt og trygt.** Moderat lydstyrke og et kompressor-sikret miks; ingen pludselige høje eller skræmmende lyde;
@@ -92,8 +94,8 @@ behov**, ikke en kravspecifikation. Arbejdsgangen er altid:
 
 ```
 src/
-  main.ts                 skallen: canvas, spil-loop (try/catch), lyd, forældremenu, lås, tællere, pause, billeder
-                          og stemmer; starter og skifter aktivitet (settings.activity)
+  main.ts                 skallen: forsiden "Theos spil", canvas, spil-loop (try/catch), lyd, forældremenu, lås,
+                          tællere, pause, billeder og stemmer; starter og skifter spil
   engine/                 alt, aktiviteterne deler
     activity.ts           Activity-interfacet (resize/update/render/press/drag/release/shake/sleep/wake) og
                           ActivityContext (audio, stats, haptic, say, settings)
@@ -109,7 +111,7 @@ src/
     stats.ts              tællere for alt (i dag / i alt / legetid), gemt i localStorage
     rng.ts                seedbar tilfældighed og små matematikhjælpere
   activities/
-    registry.ts           listen over aktiviteter (id, navn, create) – forældremenuen viser den, når der er flere
+    registry.ts           listen over spil (id, titel, emoji, blurb, hasTempo, create) – forsiden og menuen bruger den
     ord/                  Ord: én ting ad gangen, ordet i forældrenes stemme, swipe, titte-bøh (logic.ts, render.ts
                           låner balloner/render.ts' dyr og bakker, sounds.ts, index.ts)
     balloner/             Theos Balloner

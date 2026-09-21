@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Theos Balloner</string>
-    <string name="title_activity_main">Theos Balloner</string>
+    <string name="app_name">Theos spil</string>
+    <string name="title_activity_main">Theos spil</string>
     <string name="package_name">com.pthagaard.theoballoner</string>
     <string name="custom_url_scheme">com.pthagaard.theoballoner</string>
 </resources>

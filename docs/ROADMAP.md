@@ -68,7 +68,8 @@ efter lyde.
 
 - ✅ **Ord (spil nr. 2)** – én ting ad gangen (dyr, traktor, ballon, familiebilleder), tryk giver lyd og jeres ord,
   swipe giver den næste, hver tredje gemmer sig bag en busk (titte-bøh). Træner: objektpermanens, ordforråd,
-  forventning, at én ting kan have ét navn. Næste: flere ting (sol, blomst, sky, ko, kat), tryk på busken flere gange.
+  forventning, at én ting kan have ét navn. Har også sol, sky og blomst. Næste: ko, kat, bil (nye tegninger), tryk
+  på busken flere gange, før den åbner.
 - 💡 **Hvor er lyden?** – en lyd kommer fra en side af skærmen, og et dyr dukker op der, når man trykker. Træner:
   lyd-lokalisering, opmærksomhed.
 - 💡 **Dyr og lyde** – store dyr, der siger deres lyd og navn, når de røres, og laver en lille dans. Træner: ordforråd,
