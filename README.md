@@ -18,7 +18,10 @@ APK er, at nye spil og rettelser er live med det samme, og at den også virker p
 - *Automatisk ved hvert push:* forbind repoet til [Cloudflare Pages](https://pages.cloudflare.com) eller
   [Netlify](https://www.netlify.com) (build-kommando `npm run build`, output-mappe `dist`) og peg domænet derhen.
   Begge er gratis og virker med private repos.
-- *GitHub Pages:* virker også med eget domæne, men kræver at repoet er offentligt (eller GitHub Pro).
+- *GitHub Pages (nemmest):* gør repoet offentligt (Settings → General → Danger Zone → *Change visibility*), så lægger
+  workflowet automatisk webappen på <https://pthagaard.github.io/Theo/> ved næste push. Skulle jobbet klage over, at
+  Pages ikke er slået til, så vælg *Settings → Pages → Source: GitHub Actions* én gang. Eget domæne sættes samme sted
+  (*Custom domain*) plus en CNAME-post hos din DNS-udbyder, der peger på `pthagaard.github.io`.
 
 **Installér den på telefonen:**
 
@@ -31,8 +34,8 @@ APK er, at nye spil og rettelser er live med det samme, og at den også virker p
 
 Hver gang der pushes til GitHub, bygger GitHub selv en færdig app-fil (APK) og lægger den under **Releases**.
 
-1. Åbn <https://github.com/PThagaard/Theo/releases/latest> i browseren **på telefonen** (log ind på GitHub, repoet er
-   privat) og tryk på **TheosBalloner.apk**.
+1. Åbn <https://github.com/PThagaard/Theo/releases/latest> i browseren **på telefonen** (er repoet privat, skal du
+   være logget ind på GitHub) og tryk på **TheosBalloner.apk**.
 2. Åbn den hentede fil (fra notifikationen eller mappen *Downloads*). Siger telefonen, at browseren ikke må installere
    ukendte apps, så tryk **Indstillinger** og slå **Tillad fra denne kilde** til. Tryk derefter **Installér**.
 3. Spørger Google Play Protect, om appen skal scannes, så vælg blot *Installér alligevel* / *Scan*. Appen bruger
