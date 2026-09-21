@@ -18,9 +18,10 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
 ## Ufravigelige principper
 
 1. **Ingen reklamer, køb, konti, tracking eller analytics.** Ingen netværkskald i selve spillet. Den eneste
-   netværksadgang er forældremenuens *Søg efter ny version*, som kun sker på et tryk og kun taler med projektets egne
-   GitHub Releases (sender intet andet end en almindelig HTTP-forespørgsel). Ingen tredjeparts-SDK'er ud over
-   Capacitor og dets officielle plugins. Det gælder også, når appen bliver offentlig.
+   netværksadgang er forældremenuens opdateringstjek (når menuen åbnes, og på *Søg efter ny version*), som kun
+   forældrene kan udløse og som kun taler med projektets egne GitHub Releases (sender intet andet end en almindelig
+   HTTP-forespørgsel). Ingen tredjeparts-SDK'er ud over Capacitor og dets officielle plugins. Det gælder også, når
+   appen bliver offentlig.
 2. **Alt, barnet rører ved, reagerer** – med bevægelse *og* lyd, inden for 100 ms. Ingen døde områder, ingen "forkert",
    ingen straf, ingen tidspres, ingen "game over". Alt kan gøres med én hel hånd, ikke kun en præcis finger.
 3. **Ingen tekst, knapper eller menuer til barnet.** Alt voksen-UI ligger bag "hold nede i 2 sekunder"-porten

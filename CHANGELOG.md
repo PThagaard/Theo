@@ -3,6 +3,35 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – hold fingeren nede: uvejr, kæmpeballon og solskinsbrag
+
+- **Hold på en sky**, så bliver den mørkere og mørkere, og efter godt et sekund bliver den til uvejrsskyen lige
+  der, med regn, lyn og alle forvandlingerne. Slip eller flyt fingeren, og skyen bliver hvid igen. (Fars idé.)
+- **Hold på himlen**: ballonen, der pustes op under fingeren, bliver ved med at vokse, så længe fingeren holder,
+  til den sprænger med et brag og konfetti. Slip før, og kæmpeballonen flyver op.
+- **Hold på solen**: den lader op, lyser stærkere og snurrer, og efter godt et sekund kommer et solskinsbrag:
+  gnister, blomsterne skyder i vejret, og alle balloner får et varmt løft.
+- **Uvejrsskyen er blevet sjov i stedet for sur** (fars ønske: lyn er ikke farligt for en baby, bare høje sjove
+  lyde og lysglimt). Den har nu et glad, frækt ansigt, der spærrer øjnene op, når den lyner. Lynet popper ikke
+  længere balloner, det skubber dem ud til siderne med et lille hop. Regnen skubber ballonerne ned og ud fra
+  skyen af sig selv. Tordenen er et "zap", et knald og et kort, venligt drøn med en lille klokke bagefter.
+- **Tag fat i uvejrsskyen og swipe den rundt** på himlen; slip den, og den fortsætter med svinget. Den bliver på
+  skærmen i omkring 2½ minut (før ca. 40 sekunder), driver langsomt og vender ved kanterne, før den flyver videre.
+  Mens man trækker i den, lyner den ikke for hvert lille ryk, kun når man trykker på den.
+- Forældremenuen **søger selv efter ny version**, når den åbnes (højst hvert 10. minut), så "Ny version … er klar"
+  og *Hent og installér* står der med det samme. Ingen tur forbi GitHub.
+- Uvejrsskyen kommer lidt oftere af sig selv (typisk 3–5 minutter efter start, mindst 4 minutter mellem to).
+- Tælles i Theos leg (uvejr fremkaldt, balloner sprængt, solskinsbrag).
+
+**Test på telefonen:** (1) Åbn forældremenuen: efter et øjeblik står der "Du har den nyeste version" eller "Ny
+version … er klar" med *Hent og installér*, uden at trykke *Søg*. (2) Hold en finger stille på en hvid sky: den
+bliver mørk og skælver, og så er den uvejrsskyen med torden; slip tidligt, og den bliver hvid igen. (3) Hold
+fingeren stille på tom himmel: ballonen vokser og vokser og sprænger med et brag; slip før, og den store ballon
+flyver op. (4) Hold på solen: den lyser op og snurrer, og så skyder blomsterne i vejret til et klokkespil. (5) Med
+uvejrsskyen på skærmen: tryk på den (glad ansigt, lyn, sjovt zap-brag); balloner under lynet skubbes til siden, ikke
+poppet; balloner under regnen glider ned og ud. Tag fat i skyen og swipe den rundt; slip, og den glider videre. Den
+bliver i flere minutter. (6) Theos leg viser de tre nye tællere.
+
 ## 2026-09-21 – rigtige dyrelyde, ballonen samler dyr op, ingen billeder i repoet
 
 - **Rigtige dyrelyde.** Hunden gør og elefanten trutter med rigtige optagelser (frie lyde fra Pixabay), lidt

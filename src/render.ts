@@ -133,17 +133,28 @@ export class Renderer {
       game.sinceCelebration < 1.6 ? 1 - game.sinceCelebration / 1.6 : 0,
       game.sunHit < 1.2 ? 1 - game.sunHit / 1.2 : 0,
     );
-    this.sunAngle += dt * (0.12 + party * 5);
+    const charge = game.sunCharge;
+    this.sunAngle += dt * (0.12 + party * 5 + charge * 4);
     const wobbleClock = Math.min(game.sinceCelebration, game.sunHit);
     const pulse = party > 0 ? 1 + party * 0.12 * Math.sin(wobbleClock * 14) : 1;
     const r = sun.r * pulse;
 
     ctx.save();
     ctx.translate(sun.x, sun.y);
+    if (charge > 0) {
+      // Charging up under a held finger: a growing warm halo.
+      const halo = ctx.createRadialGradient(0, 0, r, 0, 0, r * (1.8 + charge * 1.6));
+      halo.addColorStop(0, `rgba(255, 230, 120, ${0.55 * charge})`);
+      halo.addColorStop(1, 'rgba(255, 230, 120, 0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * (1.8 + charge * 1.6), 0, TAU);
+      ctx.fill();
+    }
     ctx.fillStyle = 'rgba(255, 196, 40, 0.85)';
     for (let i = 0; i < 12; i++) {
       const a = this.sunAngle + (i * TAU) / 12;
-      const length = r * (i % 2 ? 1.55 : 1.85);
+      const length = r * (i % 2 ? 1.55 : 1.85) * (1 + charge * 0.35);
       ctx.beginPath();
       ctx.moveTo(Math.cos(a - 0.17) * r * 1.1, Math.sin(a - 0.17) * r * 1.1);
       ctx.lineTo(Math.cos(a) * length, Math.sin(a) * length);
@@ -213,9 +224,13 @@ export class Renderer {
     const ctx = this.ctx;
     const wobble = cloud.wobble > 0 ? 1 + 0.1 * cloud.wobble * Math.sin(cloud.wobble * 22) : 1;
     ctx.save();
-    ctx.translate(cloud.x, cloud.y);
+    // A held cloud turns grey and trembles a little before it becomes the storm cloud.
+    const dark = cloud.dark;
+    const tremble = dark > 0.6 ? Math.sin(this.time * 40) * (dark - 0.6) * 5 * this.u : 0;
+    ctx.translate(cloud.x + tremble, cloud.y + dark * 6 * this.u);
     ctx.scale(cloud.scale * wobble, cloud.scale / wobble);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.93)';
+    const mix = (from: number, to: number) => Math.round(from + (to - from) * dark);
+    ctx.fillStyle = `rgba(${mix(255, 96)}, ${mix(255, 92)}, ${mix(255, 122)}, 0.93)`;
     ctx.beginPath();
     for (const [dx, dy, r] of CLOUD_SHAPES[cloud.shape % CLOUD_SHAPES.length]) {
       ctx.moveTo(dx + r, dy);
@@ -567,18 +582,34 @@ export class Renderer {
       ctx.arc(dx, dy, r, 0, TAU);
     }
     ctx.fill();
-    // Grumpy little face so the child knows this cloud is different.
+    // A cheeky, happy face: this cloud is fun, not scary. Eyes go wide and the grin opens when it flashes.
+    const wide = lit ? 1.3 : 1;
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(side * 15, -4, 7 * wide, 8.5 * wide, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#2f3641';
+      ctx.beginPath();
+      ctx.arc(side * 15 + (lit ? 0 : side * 1.5), -3, 3.6, 0, TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(255, 140, 160, 0.5)';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(side * 27, 9, 5, 0, TAU);
+      ctx.fill();
+    }
     ctx.strokeStyle = '#2f3641';
     ctx.lineCap = 'round';
     ctx.lineWidth = 3;
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(side * 16 - side * 6, -4);
-      ctx.lineTo(side * 16 + side * 6, 0);
-      ctx.stroke();
-    }
     ctx.beginPath();
-    ctx.arc(0, 18, 8, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.arc(0, 7, lit ? 12 : 9, 0.15 * Math.PI, 0.85 * Math.PI);
+    if (lit) {
+      ctx.closePath();
+      ctx.fillStyle = '#2f3641';
+      ctx.fill();
+    }
     ctx.stroke();
     ctx.restore();
   }
@@ -1011,10 +1042,13 @@ export class Renderer {
     const s = b.scale;
     if (s <= 0.02) return;
     const breathe = Math.sin(this.time * 3 + b.swayPhase) * 0.025;
+    // A balloon being held past full size strains and quivers before it bursts.
+    const strain = b.overinflate > 0.5 ? (b.overinflate - 0.5) * 2 : 0;
+    const quiver = Math.sin(this.time * 45) * 0.035 * strain;
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.rotate(this.tilt(b));
-    ctx.scale(s * (1 + breathe), s * (1 - breathe));
+    ctx.scale(s * (1 + breathe + quiver), s * (1 - breathe - quiver));
     const rx = b.r;
     const ry = b.r * 1.15;
 

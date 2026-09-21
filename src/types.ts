@@ -49,6 +49,10 @@ export interface Balloon {
   blownBy?: number;
   /** Id of the creature hanging from this balloon's string, if any. */
   carrying?: number;
+  /** The finger that made this balloon and is still holding it: the balloon keeps growing. */
+  heldBy?: number;
+  /** 0–1: how far past full size a held balloon has grown; at 1 it bursts. */
+  overinflate: number;
 }
 
 export interface Cloud {
@@ -63,6 +67,10 @@ export interface Cloud {
   vx: number;
   /** 1 right after being touched, fades to 0. */
   wobble: number;
+  /** 0 = white, 1 = dark grey: grows while a finger holds the cloud, then it becomes the storm cloud. */
+  dark: number;
+  /** True while a finger is holding the cloud (the darkness fades again when it lets go). */
+  holding: boolean;
 }
 
 export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm';
@@ -117,6 +125,8 @@ export interface Visitor {
   helpTimer: number;
   /** What the creature was doing before it was picked up, to carry on with afterwards. */
   resumeState: VisitorState;
+  /** The finger currently dragging it around (storm cloud), or null. */
+  grabbedBy: number | null;
 }
 
 /** A flower on the hills: spins and cycles colours when tapped, flies off when swiped, grows back. */
@@ -199,6 +209,8 @@ export type GameEvent =
   | { type: 'transform'; kind: VisitorKind; form: VisitorForm | null; x: number; y: number }
   /** A balloon picked a creature up, the creature called for help, was let go, or landed again. */
   | { type: 'carry'; kind: VisitorKind; x: number; y: number; what: 'hooked' | 'help' | 'released' | 'landed' }
+  /** A finger held still: a cloud became the storm, a held balloon burst, or the sun let off a sunburst. */
+  | { type: 'hold'; what: 'storm' | 'burst' | 'sunburst'; x: number; y: number }
   /** A balloon was blown away by a swipe (once per balloon per swipe). */
   | { type: 'blow' }
   /** A finger lifted after a real swipe of at least `length` px. */

@@ -41,3 +41,15 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   et langt tryk som tredje bevægelse → på roadmap med egne idéer (hold på himlen: ballon vokser til den sprænger).
 - "Lav dag/nat-cyklus, så kan vi lave et helt nyt setup til nat" (til senere) → behov: variation i en kendt verden og
   ro før sengetid → på roadmap.
+
+## 2026-09-21 – uvejrsskyen set på telefonen (far)
+
+- "Den skal ikke være sur. Lyn kan godt være sjovt … det er til baby, så lyn behøver ikke være farligt" → behov:
+  alt i verdenen skal være trygt og sjovt, også det vilde; høje sjove lyde og lysglimt er fint, uhygge er ikke →
+  glad ansigt, lyn skubber i stedet for at poppe, venligere torden. Regel: "vildt" må aldrig blive "farligt".
+- "Regnen skal også skubbe ballonerne automatisk" → behov: elementerne skal påvirke hinanden synligt uden at man
+  gør noget → regn skubber balloner ned og ud.
+- "Jeg vil kunne tage fat i lynskyen og swipe den rundt (den skal være på siden meget længere)" → behov: det
+  sjældne skal kunne nydes og styres, ikke bare kigges på → skyen kan trækkes og flænges rundt og bliver 2½ minut.
+- Uvejrsskyen kom første gang efter ret lang tid → tallene forklaret (tidligst 1 minut, ~9 % pr. besøg); vægten
+  hævet, og skyen kan nu fremkaldes ved at holde på en hvid sky.

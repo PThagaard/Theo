@@ -143,6 +143,19 @@ game.onEvent((event) => {
       haptic(ImpactStyle.Heavy);
       stats.bump('lightning');
       break;
+    case 'hold':
+      if (event.what === 'storm') {
+        audio?.thunder();
+        stats.bump('stormsSummoned');
+      } else if (event.what === 'burst') {
+        audio?.burst();
+        stats.bump('bursts');
+      } else {
+        audio?.sunburst();
+        stats.bump('sunbursts');
+      }
+      haptic(ImpactStyle.Heavy);
+      break;
     case 'transform':
       if (event.form === 'hotdog') audio?.sizzle();
       else if (event.form === 'mouse') audio?.squeak();

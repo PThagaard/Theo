@@ -159,7 +159,10 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['visitor:star', '… stjerneskud'],
   ['creaturesLifted', 'Dyr løftet af en ballon'],
   ['storms', 'Uvejr'],
+  ['stormsSummoned', '… heraf fremkaldt ved at holde på en sky'],
   ['lightning', 'Lyn'],
+  ['bursts', 'Balloner sprængt (holdt til de revnede)'],
+  ['sunbursts', 'Solskinsbrag'],
   ['transformations', 'Dyr forvandlet'],
 ];
 

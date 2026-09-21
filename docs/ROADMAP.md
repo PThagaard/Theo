@@ -29,9 +29,10 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   Næste: flere dyr (kat, kanin, frø, bi), en stemme der siger dyrets navn.
 - ✅ **Levende blomster** – tryk snurrer og farveskifter, swipe plukker (flyver, snurrer, vokser igen). Træner:
   årsag-virkning med to forskellige svar på to forskellige bevægelser (tryk vs. swipe).
-- ✅ **Uvejrssky** – sjældent besøg med regn, lyn og torden, hvor alle elementer reagerer (hund → hotdog,
-  elefant → mus, fugl strutter, balloner presses ned, blomster vokser, regnbuen lyser op bagefter). Træner:
-  forventning, overraskelse, "hvad sker der nu?", at ting hænger sammen.
+- ✅ **Uvejrssky** – sjældent besøg (eller fremkaldt ved at holde på en sky) med regn, lyn og torden, hvor alle
+  elementer reagerer (hund → hotdog, elefant → mus, fugl strutter, balloner skubbes ned og til siden, blomster
+  vokser, regnbuen lyser op bagefter). Glad ansigt og sjove, ikke uhyggelige, lyde; kan trækkes rundt på himlen og
+  bliver et par minutter. Træner: forventning, overraskelse, "hvad sker der nu?", at ting hænger sammen.
 - ✅ **Ballonen samler dyr op** – en ballon pustet op over et dyr løfter det i snoren; det råber om hjælp, og et pop
   lader det dale roligt ned i faldskærm. Træner: kæder af årsag og virkning (min ballon → dyret hænger → mit tryk →
   det lander), omsorg ("hjælp den!").
@@ -39,9 +40,10 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   dyrelyde til ordforråd (rigtige lyde genkendes fra bøger og virkeligheden).
 - 💡 **Gården** – et lille landbrug til højre med skorstensrøg og en gammel traktor, der kører ud og hjem, dytter ved
   tryk og kan samles op af en ballon.
-- 💡 **Hold fingeren nede** – langt tryk på en sky gør den mørk og forvandler den til uvejrsskyen (far's idé);
+- ✅ **Hold fingeren nede** – langt tryk på en sky gør den mørk og forvandler den til uvejrsskyen (far's idé);
   samme behov (Theo bestemmer selv, hvad der sker, ved at holde): hold på himlen, og ballonen vokser, til den
-  sprænger; hold på solen, og den blusser op. Træner: en tredje bevægelse ud over tryk og swipe, tålmodighed.
+  sprænger; hold på solen, og den lader op til et solskinsbrag. Træner: en tredje bevægelse ud over tryk og swipe,
+  tålmodighed og forventning ("nu sker det snart").
 - 💡 **Dag og nat** – himlen skifter langsomt over dagen (eller efter klokken), og natten får sit eget indhold: måne,
   stjerner der tændes ved tryk, ildfluer, ugle, stille vuggeviser og roligere tempo før sengetid (far's idé, til
   senere). Træner: ro før søvn, kontrast-syn, nye ting at opdage i en kendt verden.

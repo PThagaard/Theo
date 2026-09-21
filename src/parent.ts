@@ -412,11 +412,22 @@ export class ParentPanel {
 
   // ---- Updates ---------------------------------------------------------------
 
+  /** The menu looks for a new version by itself when it opens, at most this often. */
+  private static readonly AUTO_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+  private lastAutoCheck = -Infinity;
+
   private async showVersion(): Promise<void> {
     const update = this.hooks.update;
     if (!update?.available || this.busy) return;
     const version = await update.version();
     if (!this.updateUrl) this.updateStatus.textContent = version ? `Du har version ${version}.` : '';
+    // Check by itself when the menu opens, so "Ny version … er klar" and the install button are
+    // there straight away without a tap on "Søg" (only on the phone; the web version updates itself).
+    const online = typeof navigator === 'undefined' || navigator.onLine !== false;
+    if (online && Date.now() - this.lastAutoCheck > ParentPanel.AUTO_CHECK_INTERVAL_MS) {
+      this.lastAutoCheck = Date.now();
+      await this.checkForUpdate();
+    }
   }
 
   private async checkForUpdate(): Promise<void> {

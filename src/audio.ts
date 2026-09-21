@@ -615,14 +615,17 @@ export class AudioEngine {
     loop.source.stop(now + 2.1);
   }
 
-  /** Crack of lightning, then rolling thunder (kept where a phone speaker can reproduce it). */
+  /**
+   * Lightning for a baby: a bright "zap", a crack and a short, friendly boom, then a little sparkle.
+   * Loud-ish and exciting, never harsh or long enough to frighten.
+   */
   thunder(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;
     if (this.sample('torden', when, { vary: false })) return;
-    this.synth.noiseBurst(this.sfxBus, when, 0.5, 0.09, 'highpass', 2500, 0.7);
-    this.synth.noiseBurst(this.sfxBus, when + 0.25, 0.4, 1.4, 'lowpass', 500, 0.6);
-    this.synth.noiseBurst(this.sfxBus, when + 0.6, 0.25, 1.2, 'bandpass', 250, 0.8);
-    this.synth.tone(this.sfxBus, 'sawtooth', 140, when + 0.25, 0.18, 0.05, 1.3, { to: 70, glide: 1.2, filter: 400 });
+    this.synth.tone(this.sfxBus, 'sawtooth', 1500, when, 0.26, 0.004, 0.2, { to: 220, glide: 0.18, filter: 3200 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.4, 0.06, 'highpass', 2500, 0.7);
+    this.synth.noiseBurst(this.sfxBus, when + 0.12, 0.3, 0.7, 'lowpass', 450, 0.6);
+    [91, 96].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.3 + i * 0.1, 0.5, 0.25));
   }
 
   /** Sizzle and boing: the dog just became a hotdog. */
@@ -661,6 +664,21 @@ export class AudioEngine {
     if (!this.sfxOn) return;
     this.synth.tone(this.sfxBus, 'sine', 320, when, 0.28, 0.005, 0.14, { to: 760, glide: 0.09 });
     this.synth.noiseBurst(this.sfxBus, when + 0.02, 0.12, 0.28, 'lowpass', 900, 0.6);
+  }
+
+  /** A balloon that grew until it burst: a deeper bang than a pop, with a puff of air. */
+  burst(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 180, when, 0.5, 0.004, 0.35, { to: 60, glide: 0.3 });
+    this.synth.noiseBurst(this.sfxBus, when, 0.45, 0.16, 'lowpass', 1400, 0.7);
+    this.synth.noiseBurst(this.sfxBus, when + 0.02, 0.25, 0.5, 'bandpass', 700, 0.5);
+  }
+
+  /** A sunburst: a bright rising shimmer of music-box notes. */
+  sunburst(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    [72, 76, 79, 84, 88, 91, 96].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + i * 0.07, 0.6, 0.3));
+    this.synth.noiseBurst(this.sfxBus, when, 0.12, 0.6, 'highpass', 5000);
   }
 
   // ---- Visitors ------------------------------------------------------------

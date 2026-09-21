@@ -76,7 +76,14 @@ const MAX_VISITORS = 2;
 /** The storm cloud is a rare treat: never in the first minute, and at least this long between storms. */
 const STORM_MIN_INTERVAL = 240;
 const STORM_FIRST_DELAY = 60;
-const STORM_WEIGHT = 10;
+const STORM_WEIGHT = 15;
+/** How long the storm cloud lingers (cruising slowly, bouncing off the edges) before it moves on. */
+export const STORM_STAY = 150;
+const STORM_CRUISE = 6;
+const STORM_ENTER_SPEED = 14;
+const STORM_LEAVE_SPEED = 16;
+/** Fastest a flung storm cloud travels (px/s times unit). */
+const STORM_FLING_MAX = 260;
 /** Seconds a lightning-struck visitor stays in its new shape. */
 const FORM_TIME = 7;
 const LIGHTNING_INTERVAL: [number, number] = [6, 12];
@@ -119,10 +126,26 @@ const FACES: Face[] = ['happy', 'happy', 'happy', 'surprised', 'sleepy', 'wink']
 const RAIN_COLORS = ['#6fc3ff', '#a6d8ff', '#4d96ff'];
 const SUN_COLORS = ['#fff3a6', '#ffd93d', '#ffffff', '#ffb703'];
 
+/** What a finger held still is doing: darkening a cloud, growing a balloon or charging the sun. */
+type Hold = { kind: 'cloud'; cloud: Cloud } | { kind: 'balloon'; id: number } | { kind: 'sun' };
+
 interface PointerState {
   id: number;
   x: number;
   y: number;
+  /** Where the finger touched down. */
+  downX: number;
+  downY: number;
+  /** Seconds the finger has stayed put. */
+  held: number;
+  hold: Hold | null;
+  /** The storm cloud this finger is dragging around, if any. */
+  grab: Visitor | null;
+  /** Movement since the last frame, and the smoothed speed it gives (px/s), for flinging. */
+  moveDx: number;
+  moveDy: number;
+  vx: number;
+  vy: number;
   travelled: number;
   /** Whole distance the finger has moved since it touched down. */
   totalTravelled: number;
@@ -133,6 +156,17 @@ interface PointerState {
 
 /** A finger must travel at least this far (times unit) to count as a swipe. */
 const SWIPE_MIN_TRAVEL = 60;
+/** A finger that stays within this distance (times unit) of where it touched down is "holding". */
+const HOLD_MOVE_TOLERANCE = 14;
+/** Holding starts to do something after this long. */
+const HOLD_START = 0.35;
+/** A held cloud takes this long to turn dark and become the storm cloud. */
+const CLOUD_DARKEN_TIME = 1.1;
+/** A held balloon keeps growing this long past full size, then bursts. */
+const OVERINFLATE_TIME = 2.0;
+const OVERINFLATE_SCALE = 1.55;
+/** Holding the sun this long lets off a sunburst. */
+const SUN_CHARGE_TIME = 1.2;
 
 export type Tempo = 'rolig' | 'normal' | 'vild';
 
@@ -168,6 +202,9 @@ export class Game {
   sinceCelebration = 1e9;
   /** Seconds since the sun was last touched (the renderer spins it for a moment). */
   sunHit = 1e9;
+  /** 0–1 while a finger holds the sun; at 1 the sun lets off a sunburst. */
+  sunCharge = 0;
+  private sunCharging = false;
   /** Seconds left of the rainbow glowing after a storm has passed. */
   rainbowGlow = 0;
   private lastStorm = -Infinity;
@@ -280,6 +317,8 @@ export class Game {
           shape: this.rng.int(0, CLOUD_SHAPES - 1),
           vx: 0,
           wobble: 0,
+          dark: 0,
+          holding: false,
         });
       }
       return;
@@ -292,7 +331,8 @@ export class Game {
   press(id: number, x: number, y: number): void {
     const trail: Trail = { id, hue: this.rng.range(0, 360), points: [{ x, y, t: this.time }], active: true };
     this.trails.push(trail);
-    this.pointers.set(id, { id, x, y, travelled: 0, totalTravelled: 0, glideTravelled: 0, lastGlide: -1, trail });
+    const pointer: PointerState = { id, x, y, downX: x, downY: y, held: 0, hold: null, grab: null, moveDx: 0, moveDy: 0, vx: 0, vy: 0, travelled: 0, totalTravelled: 0, glideTravelled: 0, lastGlide: -1, trail };
+    this.pointers.set(id, pointer);
 
     // Same order as the drawing: balloons in front of visitors, visitors in front of clouds, clouds in front of the sun.
     const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
@@ -303,6 +343,11 @@ export class Game {
     const visitor = this.findVisitorAt(x, y);
     if (visitor) {
       this.pokeVisitor(visitor, x, y);
+      if (visitor.kind === 'storm') {
+        // The storm cloud can be grabbed and swiped around the sky.
+        visitor.grabbedBy = id;
+        pointer.grab = visitor;
+      }
       return;
     }
     const flower = this.findFlowerAt(x, y);
@@ -313,10 +358,12 @@ export class Game {
     const cloud = this.findCloudAt(x, y);
     if (cloud) {
       this.pokeCloud(cloud, x, y);
+      pointer.hold = { kind: 'cloud', cloud }; // keep holding and it turns into the storm cloud
       return;
     }
     if (this.isOnSun(x, y)) {
       this.pokeSun(x, y);
+      pointer.hold = { kind: 'sun' }; // keep holding and the sun lets off a sunburst
       return;
     }
     // Touching empty sky is rewarded too: sparkles, and a brand new balloon inflates under the finger.
@@ -327,8 +374,133 @@ export class Game {
       if (created) {
         this.emit({ type: 'spawn', x, y });
         this.hookCreature(created);
+        created.heldBy = id; // keep holding and it grows until it bursts
+        pointer.hold = { kind: 'balloon', id: created.id };
       }
     }
+  }
+
+  // ---- Steering the storm cloud ------------------------------------------------
+
+  /** The finger drags the storm cloud around the sky (never down into the hills). */
+  private moveStorm(storm: Visitor, dx: number, dy: number): void {
+    storm.x = clamp(storm.x + dx, storm.size * 0.6, this.width - storm.size * 0.6);
+    storm.y = clamp(storm.y + dy, this.height * 0.08, this.height * 0.55);
+    storm.vx = 0;
+  }
+
+  /** The finger lets go: the cloud keeps some of the swing and cruises on from there. */
+  private flingStorm(pointer: PointerState): void {
+    const storm = pointer.grab;
+    pointer.grab = null;
+    if (!storm || storm.grabbedBy !== pointer.id) return;
+    storm.grabbedBy = null;
+    const u = this.unit;
+    storm.vx = clamp(pointer.vx * 0.5, -STORM_FLING_MAX * u, STORM_FLING_MAX * u);
+    if (Math.abs(storm.vx) > 5 * u) storm.dir = storm.vx > 0 ? 1 : -1;
+  }
+
+  // ---- Holding a finger still --------------------------------------------------
+
+  private updateHold(pointer: PointerState, dt: number): void {
+    const hold = pointer.hold;
+    if (!hold) return;
+    pointer.held += dt;
+    if (pointer.held < HOLD_START) return;
+    const progress = pointer.held - HOLD_START;
+    switch (hold.kind) {
+      case 'cloud': {
+        const cloud = hold.cloud;
+        if (!this.clouds.includes(cloud)) {
+          pointer.hold = null;
+          return;
+        }
+        cloud.holding = true;
+        cloud.dark = Math.min(1, progress / CLOUD_DARKEN_TIME);
+        if (cloud.dark >= 1) {
+          pointer.hold = null;
+          this.summonStorm(cloud, pointer.x, pointer.y);
+        }
+        return;
+      }
+      case 'balloon': {
+        const b = this.balloons.find((balloon) => balloon.id === hold.id);
+        if (!b || b.heldBy !== pointer.id) {
+          pointer.hold = null;
+          return;
+        }
+        if (b.inflate < 1) return;
+        b.overinflate = Math.min(1, b.overinflate + dt / OVERINFLATE_TIME);
+        if (b.overinflate >= 1) {
+          pointer.hold = null;
+          this.burst(b);
+        }
+        return;
+      }
+      case 'sun': {
+        this.sunCharging = true;
+        this.sunCharge = Math.min(1, progress / SUN_CHARGE_TIME);
+        if (this.sunCharge >= 1) {
+          pointer.hold = null;
+          this.sunburst();
+        }
+        return;
+      }
+    }
+  }
+
+  /** The finger moved or let go: whatever it was holding stops (a big balloon stays big and floats off). */
+  private cancelHold(pointer: PointerState): void {
+    const hold = pointer.hold;
+    if (!hold) return;
+    pointer.hold = null;
+    if (hold.kind === 'balloon') {
+      const b = this.balloons.find((balloon) => balloon.id === hold.id);
+      if (b && b.heldBy === pointer.id) b.heldBy = undefined;
+    }
+  }
+
+  /** A cloud held until it is dark becomes the storm cloud, right where it is. */
+  private summonStorm(cloud: Cloud, x: number, y: number): void {
+    const u = this.unit;
+    if (this.storm) {
+      // One storm at a time: this cloud just showers a little and turns white again.
+      cloud.dark = 0;
+      this.pokeCloud(cloud, x, y);
+      return;
+    }
+    // The white cloud goes off to the side and drifts back in later; the storm takes its place.
+    const storm = this.spawnVisitor('storm');
+    storm.x = cloud.x;
+    storm.y = clamp(cloud.y, this.height * 0.14, this.height * 0.34);
+    storm.vx = (cloud.speed >= 0 ? 1 : -1) * STORM_CRUISE * u;
+    storm.dir = storm.vx >= 0 ? 1 : -1;
+    storm.state = 'idle'; // already on screen: linger from here
+    cloud.dark = 0;
+    cloud.x = -120 * cloud.scale;
+    this.sparkleBurst(storm.x, storm.y, 14, RAIN_COLORS, storm.size);
+    this.emit({ type: 'hold', what: 'storm', x, y });
+  }
+
+  /** A balloon grown too big bursts with a bang and a shower of confetti. */
+  private burst(b: Balloon): void {
+    b.heldBy = undefined;
+    const { x, y, r } = b;
+    this.pop(b);
+    this.sparkleBurst(x, y, 16, SPARKLE_COLORS, r * 2);
+    this.emit({ type: 'hold', what: 'burst', x, y });
+  }
+
+  /** The sun, held long enough, lets off a sunburst: sparkles, flowers shoot up, balloons get a warm lift. */
+  private sunburst(): void {
+    const sun = this.sun;
+    const u = this.unit;
+    this.sunHit = 0;
+    this.sunCharge = 0;
+    this.sparkleBurst(sun.x, sun.y, 24, SUN_COLORS, sun.r * 1.5);
+    for (const f of this.flowers) f.boost = Math.min(0.7, f.boost + 0.5);
+    for (const b of this.balloons) b.vyImpulse -= 140 * u;
+    this.emit({ type: 'hold', what: 'sunburst', x: sun.x, y: sun.y });
   }
 
   // ---- Carrying creatures ------------------------------------------------------
@@ -421,6 +593,7 @@ export class Game {
 
   /** A balloon rises at half speed once its string has lifted a creature off the ground. */
   private riseFactor(b: Balloon): number {
+    if (b.heldBy !== undefined) return 0; // pinned under the finger while it grows
     if (b.carrying === undefined) return 1;
     const v = this.visitors.find((visitor) => visitor.id === b.carrying);
     return v && this.isLifted(v) ? 0.5 : 1;
@@ -450,8 +623,15 @@ export class Game {
     const pointer = this.pointers.get(id);
     if (!pointer) return;
     const u = this.unit;
+    if (pointer.hold && Math.hypot(x - pointer.downX, y - pointer.downY) > HOLD_MOVE_TOLERANCE * u) this.cancelHold(pointer);
     const dx = x - pointer.x;
     const dy = y - pointer.y;
+    pointer.moveDx += dx;
+    pointer.moveDy += dy;
+    if (pointer.grab) {
+      if (pointer.grab.grabbedBy === pointer.id && pointer.grab.state !== 'gone') this.moveStorm(pointer.grab, dx, dy);
+      else pointer.grab = null;
+    }
     const moved = Math.hypot(dx, dy);
     pointer.travelled += moved;
     pointer.totalTravelled += moved;
@@ -481,11 +661,12 @@ export class Game {
     this.wind(x, y, dx, dy, pointer.id);
 
     const balloon = this.findBalloonAt(x, y, DRAG_HIT_FACTOR, DRAG_MIN_AGE);
-    if (balloon) {
+    if (balloon && balloon.heldBy !== id) {
       this.pop(balloon);
       return;
     }
-    const visitor = this.findVisitorAt(x, y);
+    // A finger dragging the storm cloud around is steering it, not poking it (no lightning on every move).
+    const visitor = pointer.grab ? null : this.findVisitorAt(x, y);
     if (visitor) {
       this.pokeVisitor(visitor, x, y);
       return;
@@ -671,14 +852,15 @@ export class Game {
       carriedBy: null,
       helpTimer: 0,
       resumeState: 'idle',
+      grabbedBy: null,
     };
     switch (kind) {
       case 'storm':
         v.size = 60 * u;
         v.x = dir === 1 ? -v.size * 3 : W + v.size * 3;
         v.y = this.rng.range(H * 0.16, H * 0.3);
-        v.vx = dir * 14 * u;
-        v.state = 'idle';
+        v.vx = dir * STORM_ENTER_SPEED * u;
+        v.state = 'enter';
         this.lastStorm = this.time;
         break;
       case 'dog':
@@ -799,9 +981,17 @@ export class Game {
     this.emit({ type: 'lightning', x: storm.boltX, y: groundY });
     this.sparkleBurst(storm.boltX, groundY, 12, SUN_COLORS, 20 * u);
 
-    // Balloons in the bolt's path pop with a bang.
-    for (const b of [...this.balloons]) {
-      if (Math.abs(b.x - storm.boltX) < reach + b.r && b.y > storm.y) this.pop(b);
+    // Balloons near the bolt are shoved aside with a little hop. Never popped: lightning here is a fun
+    // shove with a flash and a bang, not something to be afraid of.
+    for (const b of this.balloons) {
+      const dx = b.x - storm.boltX;
+      const span = reach * 1.5 + b.r;
+      if (Math.abs(dx) < span && b.y > storm.y) {
+        const away = dx === 0 ? (this.rng.chance(0.5) ? 1 : -1) : Math.sign(dx);
+        const strength = 1 - Math.abs(dx) / span;
+        b.vx += away * (240 + 220 * strength) * u;
+        b.vyImpulse -= 90 * u * strength;
+      }
     }
     // Flowers near the strike light up and spin.
     for (const f of this.flowers) {
@@ -851,7 +1041,39 @@ export class Game {
 
   private updateStorm(storm: Visitor, dt: number): void {
     const u = this.unit;
-    storm.x += storm.vx * dt;
+    const edge = storm.size * 0.6;
+    if (storm.grabbedBy === null) {
+      if (storm.state === 'enter') {
+        storm.vx = storm.dir * STORM_ENTER_SPEED * u;
+        storm.x += storm.vx * dt;
+        if (storm.x > edge && storm.x < this.width - edge) {
+          storm.state = 'idle';
+          storm.stateAge = 0;
+        }
+      } else if (storm.state === 'idle') {
+        // Lingering for a good while: cruises slowly, lets a fling from the finger die down, bounces off the edges.
+        const cruise = storm.dir * STORM_CRUISE * u;
+        storm.vx += (cruise - storm.vx) * Math.min(1, dt * 0.8);
+        storm.x += storm.vx * dt;
+        if (storm.x <= edge) {
+          storm.x = edge;
+          storm.dir = 1;
+          storm.vx = Math.abs(storm.vx) * 0.5;
+        } else if (storm.x >= this.width - edge) {
+          storm.x = this.width - edge;
+          storm.dir = -1;
+          storm.vx = -Math.abs(storm.vx) * 0.5;
+        }
+        if (storm.age > STORM_STAY) {
+          storm.state = 'leave';
+          storm.stateAge = 0;
+        }
+      } else {
+        // Moving on, the way it is facing.
+        storm.vx = storm.dir * STORM_LEAVE_SPEED * u;
+        storm.x += storm.vx * dt;
+      }
+    }
     storm.lightning = Math.max(0, storm.lightning - dt);
     storm.nextLightning -= dt;
     const onScreen = storm.x > storm.size && storm.x < this.width - storm.size;
@@ -878,9 +1100,12 @@ export class Game {
       });
     }
 
-    // Rain presses balloons down, makes flowers grow and gets creatures wet.
+    // Rain pushes balloons down and out from under the cloud, makes flowers grow and gets creatures wet.
     for (const b of this.balloons) {
-      if (this.underStorm(storm, b.x, b.y)) b.vyImpulse = Math.min(b.vyImpulse + 130 * u * dt, 90 * u);
+      if (this.underStorm(storm, b.x, b.y)) {
+        b.vyImpulse = Math.min(b.vyImpulse + 130 * u * dt, 90 * u);
+        b.vx += (b.x >= storm.x ? 1 : -1) * 120 * u * dt;
+      }
     }
     for (const f of this.flowers) {
       const head = this.flowerHead(f);
@@ -1088,6 +1313,8 @@ export class Game {
   release(id: number): void {
     const pointer = this.pointers.get(id);
     if (pointer) {
+      this.cancelHold(pointer);
+      this.flingStorm(pointer);
       pointer.trail.active = false;
       if (pointer.totalTravelled >= SWIPE_MIN_TRAVEL * this.unit) {
         this.emit({ type: 'swipe', length: pointer.totalTravelled });
@@ -1164,6 +1391,7 @@ export class Game {
       blinkTimer: this.rng.range(1.5, 5),
       blink: 0,
       tapped: !!options.inflate,
+      overinflate: 0,
       vx: 0,
       vyImpulse: 0,
       photoId,
@@ -1177,6 +1405,20 @@ export class Game {
     this.sinceCelebration += dt;
     this.sunHit += dt;
     this.rainbowGlow = Math.max(0, this.rainbowGlow - dt);
+
+    // How fast each finger is moving right now (smoothed), so a let-go storm cloud keeps its swing.
+    for (const pointer of this.pointers.values()) {
+      pointer.vx = pointer.vx * 0.4 + (pointer.moveDx / dt) * 0.6;
+      pointer.vy = pointer.vy * 0.4 + (pointer.moveDy / dt) * 0.6;
+      pointer.moveDx = 0;
+      pointer.moveDy = 0;
+    }
+    // Fingers held still: a cloud darkens, a new balloon keeps growing, the sun charges up.
+    this.sunCharging = false;
+    for (const c of this.clouds) c.holding = false;
+    for (const pointer of this.pointers.values()) this.updateHold(pointer, dt);
+    if (!this.sunCharging) this.sunCharge = Math.max(0, this.sunCharge - dt / 0.5);
+    for (const c of this.clouds) if (!c.holding) c.dark = Math.max(0, c.dark - dt / 0.7);
 
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
@@ -1195,7 +1437,8 @@ export class Game {
         b.inflate = Math.min(1, b.inflate + dt / INFLATE_TIME);
         b.scale = easeOutBack(b.inflate);
       } else {
-        b.scale = 1;
+        // A balloon still held by the finger that made it keeps growing (see updateHold).
+        b.scale = 1 + (OVERINFLATE_SCALE - 1) * b.overinflate;
       }
       // A balloon with a passenger is heavy and rises slowly.
       b.y -= b.vy * dt * (0.3 + 0.7 * b.inflate) * this.riseFactor(b);

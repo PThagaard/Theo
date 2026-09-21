@@ -68,9 +68,11 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Ballonen samler dyr op** – pust en ballon op lige over hunden, sneglen, elefanten, fuglen eller sommerfuglen,
   så hænger dyret i snoren og råber om hjælp, mens ballonen tungt stiger til vejrs. Pop ballonen: dyret daler roligt
   ned under en lille faldskærm og fortsætter, hvor det slap (fuglen og sommerfuglen flyver bare videre).
-- **Uvejrsskyen** – en sjælden gæst: en mørk, gnaven sky driver hen over himlen og regner. Regnen presser
-  ballonerne ned og får blomsterne til at vokse. Den lyner af sig selv af og til, og hver gang man trykker på den:
-  balloner i lynets vej popper, blomsterne snurrer, hunden bliver til en hotdog, elefanten til en mus og fuglen
+- **Uvejrsskyen** – en sjælden gæst: en stor, mørk sky med et glad, frækt ansigt, der bliver på himlen i et par
+  minutter og regner. Regnen skubber ballonerne ned og ud til siderne og får blomsterne til at vokse. Man kan tage
+  fat i skyen og swipe den rundt. Den lyner af sig selv af og til, og hver gang man trykker på den: et zap og et
+  knald, balloner i lynets vej skubbes til siden, blomsterne snurrer, hunden bliver til en hotdog, elefanten til
+  en mus og fuglen
   strutter af skræk (alt bliver normalt igen efter nogle sekunder). Når skyen er drevet over, lyser regnbuen op.
 - **Blomsterne** – tryk på en blomst: den snurrer rundt og skifter farver i nogle sekunder. Swipe hen over
   blomsterne: de plukkes, flyver op i luften, snurrer og daler ned, og vokser op igen lidt efter.
@@ -84,6 +86,10 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
   frem med hjerter og "ta-daa". Billeder valgt på telefonen bliver kun på telefonen; der ligger ingen billeder i
   appen eller i repoet.
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
+- **Hold fingeren stille** for en tredje slags leg: hold på en hvid sky, og den bliver mørk og til uvejrsskyen
+  lige der; hold på tom himmel, og ballonen under fingeren vokser, til den sprænger (slip før, og kæmpeballonen
+  flyver op); hold på solen, og den lader op til et solskinsbrag, hvor blomsterne skyder i vejret og ballonerne
+  løftes.
 - **Særlige balloner**: guld-stjerneballoner giver en klokke-klang og stjernestøv, regnbueballoner siger "boing".
 - **Hver 10. ballon** udløser en lille fest: konfettiregn, fanfare og solen snurrer rundt.
 - Ballonerne har ansigter, der blinker, og forskellige mønstre (prikker, striber, stjerner, regnbue).

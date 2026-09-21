@@ -183,6 +183,15 @@ const forms = await page.evaluate(() => window.__theo.game.visitors.map((v) => `
 console.log('after lightning:', forms);
 check(forms.includes('dog:hotdog') && forms.includes('elephant:mouse'), 'lightning did not transform the animals');
 await page.screenshot({ path: `${OUT}/${tag}-15-storm.png` });
+// The storm cloud can be grabbed and swiped around the sky.
+const stormPos = await page.evaluate(() => { const s = window.__theo.game.storm; return [s.x, s.y]; });
+await page.mouse.move(stormPos[0], stormPos[1]);
+await page.mouse.down();
+await page.mouse.move(stormPos[0] - 120, stormPos[1] + 30, { steps: 12 });
+await page.mouse.up();
+const stormMoved = await page.evaluate(() => { const s = window.__theo.game.storm; return s ? [Math.round(s.x), Math.round(s.y)] : null; });
+console.log('storm dragged from', stormPos.map(Math.round), 'to', stormMoved);
+check(stormMoved && stormPos[0] - stormMoved[0] > 80, 'the storm cloud could not be dragged');
 await page.evaluate(() => { window.__theo.game.visitors = []; });
 
 // A balloon made right above the dog lifts it; popping the balloon lets it parachute down.
@@ -190,6 +199,7 @@ const lifted = await page.evaluate(() => {
   const g = window.__theo.game;
   g.visitors = [];
   for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  for (const c of g.clouds) c.y = -500; // no cloud may sit where the finger will make the balloon
   const dog = g.spawnVisitor('dog'); dog.x = g.width * 0.5; dog.vx = 0;
   g.update(1 / 60);
   const hit = g.visitorHit(dog);
@@ -210,6 +220,58 @@ await page.screenshot({ path: `${OUT}/${tag}-17-parachute.png` });
 await page.waitForFunction(() => { const dog = window.__theo.game.visitors.find((v) => v.kind === 'dog'); return dog.state !== 'falling'; }, null, { timeout: 8000 });
 check(await page.evaluate(() => window.__theo.game.visitors.find((v) => v.kind === 'dog').state === 'idle'), 'the dog did not land and walk on');
 await page.evaluate(() => { window.__theo.game.visitors = []; });
+
+// Holding a finger still on a white cloud darkens it and turns it into the storm cloud, right there.
+const heldCloud = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.visitors = [];
+  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  const c = g.clouds[0];
+  c.x = g.width / 2; c.y = g.height * 0.3; c.vx = 0;
+  g.update(1 / 60);
+  return [c.x, c.y];
+});
+await page.mouse.move(heldCloud[0], heldCloud[1]);
+await page.mouse.down();
+await page.waitForTimeout(1000);
+await page.screenshot({ path: `${OUT}/${tag}-18-darkcloud.png` });
+const darkening = await page.evaluate(() => window.__theo.game.clouds[0].dark);
+await page.waitForFunction(() => !!window.__theo.game.storm, null, { timeout: 4000 }).catch(() => undefined);
+await page.mouse.up();
+const summoned = await page.evaluate(() => !!window.__theo.game.storm);
+console.log('held cloud: dark', darkening.toFixed(2), 'storm summoned', summoned);
+check(darkening > 0.3 && summoned, 'holding a cloud did not make the storm cloud');
+await page.evaluate(() => { window.__theo.game.visitors = []; });
+
+// Holding on empty sky keeps the new balloon growing until it bursts.
+const heldSpot = await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.balloons = [];
+  g.spawnTimer = 30;
+  for (const c of g.clouds) c.y = -500;
+  return [g.width / 2, g.height * 0.45];
+});
+await page.mouse.move(heldSpot[0], heldSpot[1]);
+await page.mouse.down();
+await page.waitForTimeout(1700);
+const big = await page.evaluate(() => Math.max(0, ...window.__theo.game.balloons.map((b) => b.scale)));
+await page.screenshot({ path: `${OUT}/${tag}-19-bigballoon.png` });
+await page.waitForFunction(() => (window.__theo.stats.snapshot.today.bursts ?? 0) > 0, null, { timeout: 4000 }).catch(() => undefined);
+await page.mouse.up();
+const bursts = await page.evaluate(() => window.__theo.stats.snapshot.today.bursts ?? 0);
+console.log('held balloon grew to', big.toFixed(2), 'bursts', bursts);
+check(big > 1.1 && bursts > 0, 'the held balloon did not grow and burst');
+
+// Holding the sun charges a sunburst.
+const sunSpot = await page.evaluate(() => { const g = window.__theo.game; for (const b of g.balloons) { b.baseX = g.width / 2; b.y = g.height * 0.6; } return [g.sun.x, g.sun.y]; });
+await page.mouse.move(sunSpot[0], sunSpot[1]);
+await page.mouse.down();
+await page.waitForFunction(() => (window.__theo.stats.snapshot.today.sunbursts ?? 0) > 0, null, { timeout: 4000 }).catch(() => undefined);
+await page.screenshot({ path: `${OUT}/${tag}-20-sunburst.png` });
+await page.mouse.up();
+const sunbursts = await page.evaluate(() => window.__theo.stats.snapshot.today.sunbursts ?? 0);
+console.log('sunbursts', sunbursts);
+check(sunbursts > 0, 'holding the sun did not make a sunburst');
 
 // Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
 const flowerTap = await page.evaluate(() => {
@@ -233,12 +295,16 @@ console.log('flowers plucked by a swipe:', plucked);
 check(plucked >= 3, 'swiping over the flowers did not pluck them');
 await page.screenshot({ path: `${OUT}/${tag}-13-flowers.png` });
 
-// Pop until a celebration happens (every tenth pop; earlier steps have already popped some).
+// Pop until a celebration happens (every tenth pop; earlier steps have already popped some, so count from
+// the live number, and make sure balloons keep coming).
+await page.evaluate(() => { window.__theo.game.spawnTimer = 0; });
+s = await state();
 let guard = 0;
 const celebrationAt = Math.ceil((s.pops + 1) / 10) * 10;
 while (s.pops < celebrationAt && guard++ < 200) {
   const b = s.balloons.find((b) => b.y > 60 && b.y < viewport.height - 60 && b.scale > 0.9);
   if (b) await page.touchscreen.tap(b.x, b.y);
+  else await page.evaluate(() => { window.__theo.game.spawnBalloon(); });
   await page.waitForTimeout(150);
   s = await state();
 }

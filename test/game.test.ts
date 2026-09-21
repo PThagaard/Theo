@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE } from '../src/game';
+import { DEFAULT_CONFIG, GLIDE_NOTES, Game, TAP_HIT_FACTOR, TRAIL_LIFE, STORM_STAY } from '../src/game';
 import type { Balloon, GameEvent, Visitor } from '../src/types';
 
 const W = 390;
@@ -86,6 +86,7 @@ describe('Game', () => {
     expect(created.y).toBeCloseTo(y, 5);
     expect(created.scale).toBe(0);
     expect(events.map((e) => e.type)).toEqual(['sparkle', 'spawn']);
+    game.release(1); // a tap lets go; a finger that stays keeps the balloon growing (see "holding")
 
     advance(game, 0.6);
     expect(created.scale).toBeCloseTo(1, 2);
@@ -421,6 +422,114 @@ describe('Game', () => {
     });
   });
 
+  describe('holding a finger still', () => {
+    /** Clears the sky so a held finger meets exactly what the test wants. */
+    function clearSky(game: Game): void {
+      game.balloons = [];
+      game.visitors = [];
+      for (const c of game.clouds) c.x = -1000;
+    }
+
+    it('turns a held cloud dark and then into the storm cloud, where it was', () => {
+      const { game, events } = makeGame();
+      clearSky(game);
+      const cloud = game.clouds[0];
+      cloud.x = W / 2;
+      cloud.y = H * 0.25;
+      game.press(1, cloud.x, cloud.y);
+      advance(game, 0.2);
+      expect(cloud.dark).toBe(0); // a plain tap is still just a tap
+      advance(game, 0.8);
+      expect(cloud.dark).toBeGreaterThan(0.2);
+      expect(cloud.dark).toBeLessThan(1);
+      expect(game.storm).toBeNull();
+      advance(game, 1);
+      const storm = game.storm;
+      expect(storm).not.toBeNull();
+      expect(Math.abs(storm!.x - W / 2)).toBeLessThan(40);
+      expect(events.some((e) => e.type === 'hold' && e.what === 'storm')).toBe(true);
+      expect(cloud.dark).toBe(0);
+      expect(cloud.x).toBeLessThan(W / 4); // the white cloud drifts back in from the side later
+      game.release(1);
+    });
+
+    it('lets a cloud turn white again when the finger moves away or lets go early', () => {
+      const { game } = makeGame();
+      clearSky(game);
+      const cloud = game.clouds[0];
+      cloud.x = W / 2;
+      cloud.y = H * 0.25;
+      game.press(1, cloud.x, cloud.y);
+      advance(game, 0.8);
+      expect(cloud.dark).toBeGreaterThan(0);
+      game.drag(1, cloud.x + 60 * game.unit, cloud.y);
+      advance(game, 2);
+      game.release(1);
+      expect(game.storm).toBeNull();
+      expect(cloud.dark).toBe(0);
+      game.press(2, cloud.x, cloud.y);
+      advance(game, 0.8);
+      game.release(2);
+      advance(game, 2);
+      expect(game.storm).toBeNull();
+      expect(cloud.dark).toBe(0);
+    });
+
+    it('keeps a new balloon growing under a held finger until it bursts', () => {
+      const { game, events } = makeGame();
+      clearSky(game);
+      game.press(1, W / 2, H * 0.45);
+      const b = game.balloons[game.balloons.length - 1];
+      expect(b.heldBy).toBe(1);
+      advance(game, 1);
+      expect(b.scale).toBeGreaterThanOrEqual(1);
+      const y = b.y;
+      advance(game, 1);
+      expect(b.y).toBe(y); // pinned under the finger
+      expect(b.scale).toBeGreaterThan(1.1);
+      expect(game.balloons).toContain(b); // its own finger does not pop it
+      advance(game, 1.5);
+      expect(game.balloons).not.toContain(b);
+      expect(events.some((e) => e.type === 'hold' && e.what === 'burst')).toBe(true);
+      game.release(1);
+    });
+
+    it('lets a big balloon float off when the finger lets go before it bursts', () => {
+      const { game } = makeGame();
+      clearSky(game);
+      game.press(1, W / 2, H * 0.45);
+      const b = game.balloons[game.balloons.length - 1];
+      advance(game, 1.5);
+      game.release(1);
+      const scale = b.scale;
+      expect(scale).toBeGreaterThan(1.05);
+      const y = b.y;
+      advance(game, 1);
+      expect(b.scale).toBe(scale);
+      expect(b.y).toBeLessThan(y);
+      expect(game.balloons).toContain(b);
+    });
+
+    it('charges the sun and lets off a sunburst that boosts the flowers and lifts the balloons', () => {
+      const { game, events } = makeGame();
+      game.visitors = [];
+      for (const c of game.clouds) c.x = -1000;
+      const sun = game.sun;
+      game.press(1, sun.x, sun.y);
+      advance(game, 1);
+      expect(game.sunCharge).toBeGreaterThan(0);
+      expect(game.sunCharge).toBeLessThan(1);
+      const before = new Map(game.balloons.map((b) => [b.id, b.vyImpulse]));
+      advance(game, 1);
+      expect(events.some((e) => e.type === 'hold' && e.what === 'sunburst')).toBe(true);
+      expect(game.flowers.every((f) => f.boost > 0)).toBe(true);
+      for (const b of game.balloons) {
+        if (before.has(b.id)) expect(b.vyImpulse).toBeLessThan(before.get(b.id)!);
+      }
+      game.release(1);
+    });
+  });
+
   describe('balloons carrying creatures', () => {
     /** Spawns a balloon by touching just above a creature, so the string reaches it. */
     function liftWithBalloon(game: Game, v: Visitor): Balloon {
@@ -561,7 +670,13 @@ describe('Game', () => {
       expect(game.particles.filter((p) => p.shape === 'drop').length).toBeGreaterThan(10);
       expect(balloon.vyImpulse).toBeGreaterThan(20);
       expect(flower.boost).toBeGreaterThan(0.2);
-      // Let it drift off the screen; the rainbow glows right after it has gone.
+      // It lingers for a good while, bouncing off the edges, before it moves on.
+      advance(game, 60, 1 / 30);
+      expect(game.visitors).toContain(storm);
+      expect(storm.x).toBeGreaterThan(0);
+      expect(storm.x).toBeLessThan(W);
+      storm.age = STORM_STAY + 1;
+      // Then it drifts off the screen; the rainbow glows right after it has gone.
       for (let t = 0; t < 120 && game.visitors.includes(storm); t += 1 / 30) game.update(1 / 30);
       expect(game.visitors).not.toContain(storm);
       expect(events.some((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'leave')).toBe(true);
@@ -601,24 +716,71 @@ describe('Game', () => {
       expect(dog.form).toBe('hotdog');
       expect(elephant.form).toBe('mouse');
       expect(events.filter((e) => e.type === 'transform' && e.form)).toHaveLength(2);
+      storm.nextLightning = 100; // the cloud lingers now; no second strike while we wait
       advance(game, 8);
       expect(dog.form).toBeNull();
       expect(elephant.form).toBeNull();
       expect(events.filter((e) => e.type === 'transform' && e.form === null)).toHaveLength(2);
     });
 
-    it('pops balloons in the path of the bolt', () => {
+    it('shoves balloons near the bolt aside instead of popping them', () => {
       const { game, events } = makeGame();
       game.balloons = [];
       const storm = game.spawnVisitor('storm');
       storm.x = W / 2;
-      const under = game.spawnBalloon({ x: W / 2, y: H * 0.6 })!;
-      const aside = game.spawnBalloon({ x: 60, y: H * 0.6 })!;
+      const under = game.spawnBalloon({ x: W / 2 + 10, y: H * 0.6 })!;
+      const aside = game.spawnBalloon({ x: W / 2 - 130, y: storm.y - 60 })!; // above the cloud: out of the bolt's way
       advance(game, 0.2);
       game.press(1, storm.x, storm.y);
-      expect(game.balloons).not.toContain(under);
+      expect(game.balloons).toContain(under);
       expect(game.balloons).toContain(aside);
-      expect(events.some((e) => e.type === 'pop')).toBe(true);
+      expect(Math.abs(under.vx)).toBeGreaterThan(100);
+      expect(under.vyImpulse).toBeLessThan(0);
+      expect(aside.vx).toBe(0);
+      expect(events.some((e) => e.type === 'pop')).toBe(false);
+    });
+
+    it('can be grabbed, swiped around the sky and flung, without lightning on every move', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      advance(game, 0.5);
+      const hit = game.visitorHit(storm);
+      game.press(1, hit.x, hit.y);
+      expect(events.filter((e) => e.type === 'lightning')).toHaveLength(1);
+      for (let i = 1; i <= 6; i++) {
+        game.drag(1, hit.x - i * 10, hit.y + i * 4);
+        game.update(1 / 60);
+      }
+      expect(storm.x).toBeCloseTo(hit.x - 60, 0);
+      expect(storm.y).toBeCloseTo(hit.y + 24, 0);
+      expect(events.filter((e) => e.type === 'lightning')).toHaveLength(1);
+      game.release(1);
+      expect(storm.grabbedBy).toBeNull();
+      expect(storm.vx).toBeLessThan(0); // keeps the swing it was given
+      const x = storm.x;
+      advance(game, 0.1);
+      expect(storm.x).toBeLessThan(x);
+      advance(game, 10);
+      expect(game.visitors).toContain(storm); // still around, cruising (it bounces off the edges)
+      expect(storm.x).toBeGreaterThan(0);
+      expect(storm.x).toBeLessThan(W);
+    });
+
+    it('rain pushes balloons down and out from under the cloud', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      const left = game.spawnBalloon({ x: W / 2 - 15, y: H * 0.6 })!;
+      const right = game.spawnBalloon({ x: W / 2 + 15, y: H * 0.6 })!;
+      advance(game, 1);
+      expect(left.vx).toBeLessThan(0);
+      expect(right.vx).toBeGreaterThan(0);
+      expect(left.vyImpulse).toBeGreaterThan(0);
     });
   });
 
