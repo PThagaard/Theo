@@ -104,6 +104,7 @@ src/
   photos.ts     familiebilleder (IndexedDB, kun på telefonen) til foto-balloner. Ingen billeder i repoet
   samples.ts    optagelser fra src/lyde/ (filnavn = lyd); audio.ts spiller dem og falder tilbage på synthen
   cropper.ts    ansigts-klipper i forældremenuen
+  voices.ts     forældrenes indtalte ord og navne (MediaRecorder → IndexedDB, kun på telefonen); audio.ts siger dem
   stats.ts      tællere for alt (i dag / i alt / legetid), gemt i localStorage; vises i forældremenuen
   terrain.ts    bakkernes form, delt af spil (jordhøjde til besøgende) og tegning
   update.ts     bro til android/.../AppUpdatePlugin.java (søg/hent/installér ny version fra GitHub Releases)

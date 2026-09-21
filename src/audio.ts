@@ -248,6 +248,12 @@ export class AudioEngine {
   private readonly master: GainNode;
   private readonly sfxBus: GainNode;
   private readonly musicBus: GainNode;
+  /** The parents' recorded words play here, louder than effects and on top of the (ducked) music. */
+  private readonly voiceBus: GainNode;
+  private readonly voices = new Map<string, AudioBuffer>();
+  private readonly lastSaid = new Map<string, number>();
+  /** How many words have been said (the smoke test checks that touching the dog says "hund"). */
+  voicesSaid = 0;
   private readonly music: MusicPlayer;
   private sfxOn = true;
   private musicOn = true;
@@ -283,9 +289,63 @@ export class AudioEngine {
     this.musicBus.gain.value = MUSIC_LEVEL;
     this.musicBus.connect(this.master);
 
+    this.voiceBus = ctx.createGain();
+    this.voiceBus.gain.value = 1;
+    this.voiceBus.connect(this.master);
+
     this.synth = new Synth(ctx, makeNoise(ctx));
     this.music = new MusicPlayer(this.synth, this.musicBus, SONGS);
     this.ready = this.loadSamples();
+  }
+
+  // ---- The parents' voices -----------------------------------------------------
+
+  /** Decodes a recording from the parent menu so it can be said at once later. */
+  async loadVoice(key: string, blob: Blob): Promise<void> {
+    try {
+      this.voices.set(key, await this.ctx.decodeAudioData(await blob.arrayBuffer()));
+    } catch (error) {
+      this.voices.delete(key);
+      console.warn(`Stemmen "${key}" kunne ikke afkodes`, error);
+    }
+  }
+
+  forgetVoice(key: string): void {
+    this.voices.delete(key);
+  }
+
+  hasVoice(key: string): boolean {
+    return this.voices.has(key);
+  }
+
+  /**
+   * Says a word in a parent's voice a moment after the touch (so the effect sound leads), at most once per
+   * `cooldown` seconds for that word, with the music turned down while it speaks. Returns false when there
+   * is no recording for the word.
+   */
+  say(key: string, delay = 0.35, cooldown = 1.5): boolean {
+    const buffer = this.voices.get(key);
+    if (!buffer || !this.sfxOn) return false;
+    const now = this.ctx.currentTime;
+    if (now - (this.lastSaid.get(key) ?? -Infinity) < cooldown) return false;
+    this.lastSaid.set(key, now);
+    const when = now + delay;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.voiceBus);
+    source.start(when);
+    if (this.timer) {
+      // Duck the music under the voice, then bring it back.
+      const gain = this.musicBus.gain;
+      const level = MUSIC_LEVEL * this.musicLevel;
+      gain.cancelScheduledValues(when);
+      gain.setValueAtTime(gain.value, when);
+      gain.linearRampToValueAtTime(level * 0.25, when + 0.15);
+      gain.setValueAtTime(level * 0.25, when + buffer.duration);
+      gain.linearRampToValueAtTime(level, when + buffer.duration + 0.6);
+    }
+    this.voicesSaid++;
+    return true;
   }
 
   // ---- Recordings ----------------------------------------------------------

@@ -48,7 +48,7 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 - ✅ **Aldersprofiler og pause** – *8–12 mdr* (standard), *1–2 år* og *2+ år* styrer, hvor meget der sker ad gangen;
   efter 5/10/20 minutter falder verdenen i søvn (solnedgang, måne, vuggevise), til en forælder vækker den. Det er
   den evidensbaserede brug af "nat": som blid slutning på en kort session, ikke som mere indhold.
-- 💡 **Næste: jeres stemmer** – mor og far indtaler ord ("hund", "ballon", "traktor") og navnene på familiebillederne
+- ✅ **Jeres stemmer** – mor og far indtaler ord ("hund", "ballon", "traktor") og navnene på familiebillederne
   ("Mor!", "Far!", "Theo!") i forældremenuen; appen siger ordet med jeres stemme, når Theo rører tingen eller
   popper billedet. Kendt stemme + kontingens er den sprogstøtte, forskningen peger på. Træner: ordforråd,
   genkendelse af stemmer, sammenhæng mellem ord og ting.

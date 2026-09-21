@@ -50,7 +50,8 @@ export const VIEWPORTS = {
 
 /** Launches Chromium with a touch-enabled, phone-like context. Collects console errors in `problems`. */
 export async function openPhone(viewport = VIEWPORTS.phone) {
-  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  // A fake microphone, so the parents' voice recording can be exercised without a real device.
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
   const context = await browser.newContext({ viewport, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   const problems = [];

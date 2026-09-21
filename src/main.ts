@@ -11,6 +11,7 @@ import { Renderer } from './render';
 import { Stats } from './stats';
 import type { VisitorKind } from './types';
 import { appUpdate } from './update';
+import { listVoices, photoVoiceKey, removeVoice, saveVoice, startRecording, wordForVisitor } from './voices';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const game = new Game();
@@ -33,12 +34,24 @@ function ensureAudio(): void {
       audio.setSfxEnabled(settings.sfx);
       audio.setMusicLevel(AGE_PROFILES[settings.age].music);
       audio.setMusicEnabled(settings.music);
+      void loadVoicesIntoAudio();
     } catch (error) {
       console.warn('Lyd kunne ikke startes', error);
       return;
     }
   }
   void audio.unlock();
+}
+
+/** The parents' recorded words, decoded into the audio engine (again whenever they change). */
+let loadedVoiceKeys: string[] = [];
+async function loadVoicesIntoAudio(): Promise<void> {
+  if (!audio) return;
+  const engine = audio;
+  const voices = await listVoices();
+  for (const key of loadedVoiceKeys) if (!voices.some((voice) => voice.key === key)) engine.forgetVoice(key);
+  await Promise.all(voices.map((voice) => engine.loadVoice(voice.key, voice.blob)));
+  loadedVoiceKeys = voices.map((voice) => voice.key);
 }
 
 // Browsers only allow sound after a touch, so every kind of touch tries to unlock it.
@@ -63,6 +76,9 @@ game.onEvent((event) => {
       if (event.kind === 'star') audio?.chime();
       else if (event.kind === 'rainbow') audio?.boing();
       else if (event.kind === 'photo') audio?.tada();
+      // A parent's voice says who it was, or now and then "ballon".
+      if (event.kind === 'photo' && event.photoId) audio?.say(photoVoiceKey(event.photoId), 0.5, 2);
+      else audio?.say('ballon', 0.3, 4);
       haptic(ImpactStyle.Medium);
       stats.bump('pops');
       if (event.kind === 'star') stats.bump('popsStar');
@@ -93,11 +109,13 @@ game.onEvent((event) => {
       break;
     case 'sun':
       audio?.wee();
+      audio?.say('sol', 0.4, 2.5);
       haptic(ImpactStyle.Light);
       stats.bump('sun');
       break;
     case 'cloud':
       audio?.rain();
+      audio?.say('sky', 0.4, 2.5);
       haptic(ImpactStyle.Light);
       stats.bump('clouds');
       break;
@@ -114,11 +132,15 @@ game.onEvent((event) => {
         audio?.pluck();
         stats.bump('flowersPlucked');
       }
+      audio?.say('blomst', 0.4, 2.5);
       haptic(ImpactStyle.Light);
       break;
     case 'visitor':
       visitorSound(event.kind, event.what);
+      if (event.what === 'appear' && event.kind === 'storm') audio?.say('regn', 1.5, 20);
       if (event.what === 'poke') {
+        const word = wordForVisitor(event.kind);
+        if (word) audio?.say(word, 0.45, 2);
         haptic(ImpactStyle.Light);
         stats.bump('visitorsPoked');
         stats.bump(`visitor:${event.kind}`);
@@ -142,6 +164,7 @@ game.onEvent((event) => {
     case 'lightning':
       if (event.quick) audio?.zap();
       else audio?.thunder();
+      if (!event.quick) audio?.say('lyn', 0.6, 4);
       haptic(event.quick ? ImpactStyle.Light : ImpactStyle.Heavy);
       stats.bump('lightning');
       break;
@@ -235,6 +258,14 @@ const panel = new ParentPanel(settings, {
     snapshot: () => stats.snapshot,
     reset: () => stats.reset(),
     photoNames: () => Object.fromEntries(familyPhotos.map((photo) => [photo.id, photo.name || 'Familie'])),
+  },
+  voices: {
+    list: listVoices,
+    save: saveVoice,
+    remove: removeVoice,
+    record: startRecording,
+    play: (key) => audio?.say(key, 0, 0) ?? false,
+    onChange: () => void loadVoicesIntoAudio(),
   },
   photos: {
     max: MAX_PHOTOS,

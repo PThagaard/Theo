@@ -178,6 +178,90 @@ body {
   opacity: 0.65;
 }
 
+/* The parents' voices: one row per word, hold to record. */
+.voice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.voice-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voice-label img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+.voice-record {
+  flex: none;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.voice-record.is-recording {
+  background: #f06a6a;
+  color: #fff;
+}
+
+.voice-play,
+.voice-remove {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.voice-play {
+  background: #5ed37a;
+  color: #fff;
+}
+
+.voice-remove {
+  background: #f3f0f8;
+  color: var(--ink);
+}
+
+.voice-play[hidden],
+.voice-remove[hidden] {
+  display: none;
+}
+
 .segmented button {
   flex: 1;
   padding: 12px 4px;

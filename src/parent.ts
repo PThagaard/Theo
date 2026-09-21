@@ -4,6 +4,7 @@ import type { StoredPhoto } from './photos';
 import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
 import type { AppUpdate, UpdateCheck } from './update';
 import { DEFAULT_AGE, type Age } from './game';
+import { MIN_VOICE_SECONDS, VOICE_WORDS, photoVoiceKey, type Recording, type StoredVoice } from './voices';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -39,6 +40,18 @@ export interface PhotoHooks {
   onChange(photos: StoredPhoto[]): void;
 }
 
+export interface VoiceHooks {
+  list(): Promise<StoredVoice[]>;
+  save(key: string, blob: Blob, seconds: number): Promise<StoredVoice>;
+  remove(key: string): Promise<void>;
+  /** Starts a microphone recording (the phone asks for permission the first time). */
+  record(): Promise<Recording>;
+  /** Plays a recording back; false when the sound engine has not got it (yet). */
+  play(key: string): boolean;
+  /** Called after a recording was saved or removed. */
+  onChange(): void;
+}
+
 export interface StatsHooks {
   snapshot(): StatsSnapshot;
   reset(): void;
@@ -54,6 +67,7 @@ export interface ParentPanelHooks {
   photos?: PhotoHooks;
   update?: AppUpdate;
   stats?: StatsHooks;
+  voices?: VoiceHooks;
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
@@ -187,6 +201,12 @@ export class ParentPanel {
   private readonly photoStatus = element<HTMLElement>('photo-status');
   private photos: StoredPhoto[] = [];
   private cropper: Cropper | null = null;
+  private readonly voiceSection = element<HTMLElement>('voice-section');
+  private readonly voiceList = element<HTMLElement>('voice-list');
+  private readonly voiceStatus = element<HTMLElement>('voice-status');
+  private voices = new Map<string, StoredVoice>();
+  /** The recording in progress (or on its way: the permission prompt may still be open). */
+  private recording: { key: string; button: HTMLButtonElement; started: Promise<Recording>; released: boolean } | null = null;
   private readonly updateSection = element<HTMLElement>('update-section');
   private readonly updateStatus = element<HTMLElement>('update-status');
   private readonly updateCheck = element<HTMLButtonElement>('update-check');
@@ -275,6 +295,32 @@ export class ParentPanel {
       if (button?.dataset.remove) void this.removePhoto(button.dataset.remove);
     });
     void this.loadPhotos();
+
+    this.voiceSection.hidden = !hooks.voices;
+    if (hooks.voices) {
+      this.voiceList.addEventListener('pointerdown', (event) => {
+        const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button.voice-record');
+        if (!button?.dataset.key) return;
+        event.preventDefault();
+        void this.startVoice(button.dataset.key, button);
+      });
+      for (const type of ['pointerup', 'pointercancel'] as const) {
+        document.addEventListener(type, () => void this.stopVoice(), true);
+      }
+      this.voiceList.addEventListener('contextmenu', (event) => event.preventDefault());
+      this.voiceList.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const play = target.closest<HTMLButtonElement>('button.voice-play');
+        if (play?.dataset.key) {
+          if (!hooks.voices?.play(play.dataset.key)) this.voiceStatus.textContent = 'Lyden er ikke klar endnu. Prøv igen om et øjeblik.';
+          this.armAutoClose();
+          return;
+        }
+        const remove = target.closest<HTMLButtonElement>('button.voice-remove');
+        if (remove?.dataset.key) void this.removeVoice(remove.dataset.key);
+      });
+      void this.loadVoices();
+    }
 
     this.statsSection.hidden = !hooks.stats;
     new HoldButton(element('stats-reset'), () => {
@@ -408,6 +454,125 @@ export class ParentPanel {
     this.hooks.photos.onChange([...this.photos]);
   }
 
+  // ---- The parents' voices -----------------------------------------------------
+
+  private async loadVoices(): Promise<void> {
+    const hooks = this.hooks.voices;
+    if (!hooks) return;
+    this.voices = new Map((await hooks.list()).map((voice) => [voice.key, voice]));
+    this.renderVoices();
+  }
+
+  /** One row per word, and one per family photo (its name), each with hold-to-record, play and remove. */
+  private renderVoices(): void {
+    if (!this.hooks.voices) return;
+    const rows: Array<{ key: string; label: string; emoji?: string; image?: string }> = [
+      ...VOICE_WORDS.map((word) => ({ key: word.key, label: word.label, emoji: word.emoji })),
+      ...this.photos.map((photo, i) => ({ key: photoVoiceKey(photo.id), label: photo.name || `Billede ${i + 1}`, image: photo.dataUrl })),
+    ];
+    this.voiceList.replaceChildren(
+      ...rows.map((row) => {
+        const item = document.createElement('div');
+        item.className = 'voice-row';
+        const label = document.createElement('span');
+        label.className = 'voice-label';
+        if (row.image) {
+          const image = document.createElement('img');
+          image.src = row.image;
+          image.alt = '';
+          label.append(image);
+        }
+        label.append(`${row.emoji ? `${row.emoji} ` : ''}${row.label}`);
+        const has = this.voices.has(row.key);
+        const record = document.createElement('button');
+        record.type = 'button';
+        record.className = 'voice-record';
+        record.dataset.key = row.key;
+        record.textContent = has ? '🎙️ Optag igen' : '🎙️ Hold og sig ordet';
+        const play = document.createElement('button');
+        play.type = 'button';
+        play.className = 'voice-play';
+        play.dataset.key = row.key;
+        play.textContent = '▶';
+        play.setAttribute('aria-label', `Afspil ${row.label}`);
+        play.hidden = !has;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'voice-remove';
+        remove.dataset.key = row.key;
+        remove.textContent = '✕';
+        remove.setAttribute('aria-label', `Fjern ${row.label}`);
+        remove.hidden = !has;
+        item.append(label, record, play, remove);
+        return item;
+      }),
+    );
+  }
+
+  private async startVoice(key: string, button: HTMLButtonElement): Promise<void> {
+    const hooks = this.hooks.voices;
+    if (!hooks || this.recording) return;
+    button.classList.add('is-recording');
+    button.textContent = '● Optager …';
+    this.voiceStatus.textContent = 'Sig ordet, og slip knappen.';
+    const started = hooks.record();
+    this.recording = { key, button, started, released: false };
+    this.armAutoClose();
+    try {
+      await started;
+      // The finger may have lifted while the phone asked for permission: then there is nothing to keep.
+      if (this.recording?.released) await this.stopVoice();
+    } catch (error) {
+      this.recording = null;
+      this.renderVoices();
+      this.voiceStatus.textContent = 'Telefonen gav ikke lov til mikrofonen. Tillad den under appens tilladelser, og prøv igen.';
+      console.warn('Optagelse kunne ikke starte', error);
+    }
+  }
+
+  private async stopVoice(): Promise<void> {
+    const current = this.recording;
+    const hooks = this.hooks.voices;
+    if (!current || !hooks) return;
+    current.released = true;
+    let recorder: Recording;
+    try {
+      recorder = await current.started;
+    } catch {
+      return; // startVoice reports the error
+    }
+    if (this.recording !== current) return;
+    this.recording = null;
+    try {
+      const { blob, seconds } = await recorder.stop();
+      if (seconds < MIN_VOICE_SECONDS || blob.size === 0) {
+        this.voiceStatus.textContent = 'Det blev for kort. Hold knappen nede, mens du siger ordet.';
+      } else {
+        const voice = await hooks.save(current.key, blob, seconds);
+        this.voices.set(current.key, voice);
+        this.voiceStatus.textContent = `Gemt (${seconds.toFixed(1).replace('.', ',')} s). Tryk ▶ for at høre den.`;
+        hooks.onChange();
+      }
+    } catch (error) {
+      this.voiceStatus.textContent = 'Optagelsen kunne ikke gemmes. Prøv igen.';
+      console.warn('Optagelse fejlede', error);
+    } finally {
+      this.renderVoices();
+      this.armAutoClose();
+    }
+  }
+
+  private async removeVoice(key: string): Promise<void> {
+    const hooks = this.hooks.voices;
+    if (!hooks) return;
+    await hooks.remove(key);
+    this.voices.delete(key);
+    this.voiceStatus.textContent = 'Fjernet.';
+    this.renderVoices();
+    hooks.onChange();
+    this.armAutoClose();
+  }
+
   /** Opens the cropper for a picked picture. The menu stays open while the parent frames the face. */
   private async cropPhoto(file: Blob): Promise<void> {
     const hooks = this.hooks.photos;
@@ -467,6 +632,7 @@ export class ParentPanel {
         return item;
       }),
     );
+    this.renderVoices();
     const count = this.photos.length;
     const full = count >= hooks.max;
     this.photoPick.parentElement!.hidden = full;

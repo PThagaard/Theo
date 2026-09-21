@@ -3,6 +3,20 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – jeres stemmer
+
+- **Jeres egne stemmer** (forældremenu → *Familie* → *Jeres stemmer*): hold knappen ved et ord nede, sig ordet, slip.
+  Ord: ballon, hund, elefant, fugl, sommerfugl, snegl, traktor, sol, sky, blomst, regn, lyn, og navnet på hvert
+  familiebillede ("Mor!", "Far!", "Theo!"). Når Theo rører tingen, siger appen ordet med jeres stemme et øjeblik efter
+  lyden, og musikken dæmpes imens. Popper han en familie-ballon, siger den navnet. Hvert ord højst hvert andet sekund
+  ("ballon" sjældnere), så det aldrig bliver til snak. Optagelserne bliver på telefonen. ▶ afspiller, ✕ fjerner.
+- Telefonen spørger om lov til mikrofonen første gang, I optager (kun til det).
+
+**Test på telefonen:** (1) Menu → *Familie* → *Jeres stemmer*: hold ved *Hund*, sig "hund", slip; tillad
+mikrofonen første gang. Tryk ▶: I hører jer selv. (2) Indtal *Ballon*, *Traktor* og navnet på et familiebillede
+(Anna må gerne læse dem alle ind). (3) Luk menuen: rør hunden → "vov" og så "hund" med jeres stemme, musikken dæmpes
+kort. Pop et familiebillede → "ta-daa" og navnet. (4) Genstart appen: stemmerne er der stadig.
+
 ## 2026-09-21 – alder, pause og forskningsgrundlag
 
 - **Alder** i forældremenuen (*Leg*): *8–12 mdr* (standard), *1–2 år*, *2+ år*. Den yngste profil holder verdenen
