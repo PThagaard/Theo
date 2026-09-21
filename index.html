@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Theos Balloner" />
+    <meta name="theme-color" content="#4fb3ff" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Theos Balloner</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <canvas id="game" aria-label="Pop ballonerne"></canvas>
+
+    <button id="parent-button" type="button" aria-label="Forældremenu (hold knappen nede)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M7 10V8a5 5 0 0 1 10 0v2h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1zm2 0h6V8a3 3 0 0 0-6 0v2zm3 4a1.5 1.5 0 0 0-.75 2.8V18a.75.75 0 0 0 1.5 0v-1.2A1.5 1.5 0 0 0 12 14z"
+          fill="currentColor"
+        />
+      </svg>
+    </button>
+
+    <div id="parent-panel" hidden>
+      <div class="card" role="dialog" aria-labelledby="parent-title">
+        <div class="card-balloon" aria-hidden="true">🎈</div>
+        <h1 id="parent-title">Theos Balloner</h1>
+        <p class="subtitle">Forældremenu</p>
+        <label class="row">
+          <span class="row-label">🎵 Musik</span>
+          <input type="checkbox" id="opt-music" />
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+        <label class="row">
+          <span class="row-label">🔊 Lyde</span>
+          <input type="checkbox" id="opt-sfx" />
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+        <button id="parent-close" type="button">Tilbage til ballonerne</button>
+        <p class="hint">
+          Tip: Slå <b>Guidet adgang</b> (iPhone) eller <b>Fastgør app</b> (Android) til, så små fingre ikke kan
+          forlade appen.
+        </p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "appId": "com.pthagaard.theoballoner",
+  "appName": "Theos Balloner",
+  "webDir": "dist",
+  "backgroundColor": "#6fc3ff",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#6fc3ff",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "backgroundColor": "#6fc3ff",
+    "allowMixedContent": false,
+    "initialViewportFitValueHint": "cover"
+  }
+}

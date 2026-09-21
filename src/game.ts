@@ -1,0 +1,408 @@
+import { BALLOON_COLORS, GOLD, RAINBOW, RAINBOW_COLOR, SPARKLE_COLORS } from './palette';
+import { Rng, TAU, clamp, easeOutBack } from './rng';
+import type { Balloon, BalloonKind, Face, GameEvent, Particle, ParticleShape } from './types';
+
+/**
+ * Pure game logic: balloons, touches, pops and particles.
+ * No DOM or canvas access here, so it can be unit tested in Node.
+ */
+
+export interface GameConfig {
+  /** Hard cap on balloons on screen at once. */
+  maxBalloons: number;
+  /** The game keeps spawning from the bottom until this many are on screen. */
+  targetBalloons: number;
+  /** Seconds between natural spawns. */
+  spawnInterval: number;
+  /** A little celebration happens every N pops. */
+  celebrateEvery: number;
+  /** Max particles kept alive (protects older phones). */
+  maxParticles: number;
+}
+
+export const DEFAULT_CONFIG: GameConfig = {
+  maxBalloons: 12,
+  targetBalloons: 6,
+  spawnInterval: 1.1,
+  celebrateEvery: 10,
+  maxParticles: 500,
+};
+
+/** How far outside the balloon outline a tap still counts (1 = exact outline). Babies are not precise. */
+export const TAP_HIT_FACTOR = 1.6;
+/** Hit area while a finger is sliding over the screen. */
+export const DRAG_HIT_FACTOR = 1.15;
+/** A balloon that was just made by a touch can't be popped by the same sliding finger for this long. */
+const DRAG_MIN_AGE = 0.4;
+const INFLATE_TIME = 0.45;
+
+const KINDS: Array<{ kind: BalloonKind; weight: number }> = [
+  { kind: 'plain', weight: 40 },
+  { kind: 'dots', weight: 22 },
+  { kind: 'stripes', weight: 18 },
+  { kind: 'star', weight: 10 },
+  { kind: 'rainbow', weight: 10 },
+];
+
+const FACES: Face[] = ['happy', 'happy', 'happy', 'surprised', 'sleepy', 'wink'];
+
+interface PointerState {
+  x: number;
+  y: number;
+  travelled: number;
+}
+
+export interface SpawnOptions {
+  x?: number;
+  y?: number;
+  /** Start tiny and inflate (used for balloons made by touching the sky). */
+  inflate?: boolean;
+}
+
+export class Game {
+  readonly config: GameConfig;
+  width = 0;
+  height = 0;
+  balloons: Balloon[] = [];
+  particles: Particle[] = [];
+  /** Seconds since the game started. */
+  time = 0;
+  /** Total balloons popped. */
+  pops = 0;
+  /** Seconds since the last celebration (a very long time before the first one). */
+  sinceCelebration = 1e9;
+
+  private nextId = 1;
+  private spawnTimer = 0.4;
+  private listeners: Array<(event: GameEvent) => void> = [];
+  private pointers = new Map<number, PointerState>();
+  private rng: Rng;
+  private initialised = false;
+
+  constructor(config: Partial<GameConfig> = {}, seed?: number) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.rng = new Rng(seed);
+  }
+
+  /** Size factor: about 1 on a phone, about 2 on a tablet. */
+  get unit(): number {
+    return Math.max(0.5, Math.min(this.width, this.height) / 400);
+  }
+
+  onEvent(listener: (event: GameEvent) => void): void {
+    this.listeners.push(listener);
+  }
+
+  private emit(event: GameEvent): void {
+    for (const listener of this.listeners) listener(event);
+  }
+
+  resize(width: number, height: number): void {
+    const first = !this.initialised;
+    this.width = width;
+    this.height = height;
+    if (first) {
+      this.initialised = true;
+      // Start with a few balloons already floating so the screen is never empty.
+      for (let i = 0; i < 5; i++) {
+        const balloon = this.spawnBalloon();
+        if (balloon) balloon.y = this.rng.range(height * 0.25, height * 1.05);
+      }
+      return;
+    }
+    for (const b of this.balloons) {
+      b.baseX = clamp(b.baseX, b.r, width - b.r);
+    }
+  }
+
+  /** A finger (or mouse) touched the screen. */
+  press(id: number, x: number, y: number): void {
+    this.pointers.set(id, { x, y, travelled: 0 });
+    const balloon = this.findBalloonAt(x, y, TAP_HIT_FACTOR);
+    if (balloon) {
+      this.pop(balloon);
+      return;
+    }
+    // Touching empty sky is rewarded too: sparkles, and a brand new balloon inflates under the finger.
+    this.sparkleBurst(x, y, 8);
+    this.emit({ type: 'sparkle', x, y });
+    if (this.balloons.length < this.config.maxBalloons) {
+      const created = this.spawnBalloon({ x, y, inflate: true });
+      if (created) this.emit({ type: 'spawn', x, y });
+    }
+  }
+
+  /** A finger moved while touching. Sliding over balloons pops them. */
+  drag(id: number, x: number, y: number): void {
+    const pointer = this.pointers.get(id);
+    if (!pointer) return;
+    pointer.travelled += Math.hypot(x - pointer.x, y - pointer.y);
+    pointer.x = x;
+    pointer.y = y;
+    if (pointer.travelled > 26 * this.unit) {
+      pointer.travelled = 0;
+      this.sparkleBurst(x, y, 1);
+    }
+    const balloon = this.findBalloonAt(x, y, DRAG_HIT_FACTOR, DRAG_MIN_AGE);
+    if (balloon) this.pop(balloon);
+  }
+
+  release(id: number): void {
+    this.pointers.delete(id);
+  }
+
+  /** Finds the balloon closest to a point, within `factor` times its outline. */
+  findBalloonAt(x: number, y: number, factor: number, minAge = 0): Balloon | null {
+    let best: Balloon | null = null;
+    let bestDistance = Infinity;
+    for (const b of this.balloons) {
+      // A balloon the child just made should not burst under the very finger that made it.
+      if (b.tapped && b.age < minAge) continue;
+      const scale = Math.max(0.3, b.scale);
+      const rx = b.r * scale * factor;
+      const ry = b.r * 1.15 * scale * factor;
+      const dx = (x - b.x) / rx;
+      const dy = (y - b.y) / ry;
+      const distance = dx * dx + dy * dy;
+      if (distance <= 1 && distance < bestDistance) {
+        bestDistance = distance;
+        best = b;
+      }
+    }
+    return best;
+  }
+
+  spawnBalloon(options: SpawnOptions = {}): Balloon | null {
+    if (this.balloons.length >= this.config.maxBalloons) return null;
+    const u = this.unit;
+    const r = u * this.rng.range(40, 56);
+    const kind = this.pickKind();
+    const color = kind === 'star' ? GOLD : kind === 'rainbow' ? RAINBOW_COLOR : this.rng.pick(BALLOON_COLORS);
+    const x = options.x ?? this.rng.range(r * 1.3, Math.max(r * 1.3, this.width - r * 1.3));
+    const y = options.y ?? this.height + r * 1.6;
+    const swayAmp = u * this.rng.range(8, 22);
+    const swayPhase = this.rng.range(0, TAU);
+    const balloon: Balloon = {
+      id: this.nextId++,
+      x,
+      y,
+      // Choose baseX so the balloon starts exactly where it was created (no jump on the first frame).
+      baseX: x - swayAmp * Math.sin(swayPhase),
+      r,
+      color,
+      kind,
+      face: this.rng.pick(FACES),
+      vy: (this.height / 800) * this.rng.range(45, 85),
+      swayAmp,
+      swayFreq: this.rng.range(0.25, 0.5),
+      swayPhase,
+      scale: options.inflate ? 0 : 1,
+      inflate: options.inflate ? 0 : 1,
+      age: 0,
+      blinkTimer: this.rng.range(1.5, 5),
+      blink: 0,
+      tapped: !!options.inflate,
+    };
+    this.balloons.push(balloon);
+    return balloon;
+  }
+
+  update(dt: number): void {
+    this.time += dt;
+    this.sinceCelebration += dt;
+
+    this.spawnTimer -= dt;
+    if (this.spawnTimer <= 0) {
+      // Refill quickly when the screen is nearly empty so there is always something to pop.
+      const hurry = this.balloons.length < 3 ? 0.45 : 1;
+      this.spawnTimer = this.config.spawnInterval * hurry * this.rng.range(0.7, 1.3);
+      if (this.balloons.length < this.config.targetBalloons) this.spawnBalloon();
+    }
+
+    for (let i = this.balloons.length - 1; i >= 0; i--) {
+      const b = this.balloons[i];
+      b.age += dt;
+      if (b.inflate < 1) {
+        b.inflate = Math.min(1, b.inflate + dt / INFLATE_TIME);
+        b.scale = easeOutBack(b.inflate);
+      } else {
+        b.scale = 1;
+      }
+      b.y -= b.vy * dt * (0.3 + 0.7 * b.inflate);
+      b.x = b.baseX + b.swayAmp * Math.sin(TAU * b.swayFreq * b.age + b.swayPhase);
+      if (b.blink > 0) {
+        b.blink -= dt;
+      } else {
+        b.blinkTimer -= dt;
+        if (b.blinkTimer <= 0) {
+          b.blink = 0.13;
+          b.blinkTimer = this.rng.range(1.5, 5);
+        }
+      }
+      if (b.y < -b.r * 2.5) this.balloons.splice(i, 1);
+    }
+
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        this.particles.splice(i, 1);
+        continue;
+      }
+      p.vy += p.gravity * dt;
+      const damping = Math.max(0, 1 - p.drag * dt);
+      p.vx *= damping;
+      p.vy *= damping;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.spin * dt;
+    }
+  }
+
+  private pickKind(): BalloonKind {
+    const total = KINDS.reduce((sum, k) => sum + k.weight, 0);
+    let roll = this.rng.range(0, total);
+    for (const k of KINDS) {
+      roll -= k.weight;
+      if (roll <= 0) return k.kind;
+    }
+    return 'plain';
+  }
+
+  private pop(balloon: Balloon): void {
+    const index = this.balloons.indexOf(balloon);
+    if (index < 0) return;
+    this.balloons.splice(index, 1);
+    this.pops++;
+
+    const u = this.unit;
+    const scale = Math.max(0.3, balloon.scale);
+    const r = balloon.r * scale;
+
+    // Expanding ring.
+    this.addParticle({
+      x: balloon.x,
+      y: balloon.y,
+      vx: 0,
+      vy: 0,
+      life: 0.4,
+      maxLife: 0.4,
+      size: r,
+      color: balloon.color.light,
+      shape: 'ring',
+      rot: 0,
+      spin: 0,
+      gravity: 0,
+      drag: 0,
+    });
+
+    // Confetti.
+    const count = Math.round(14 + r / u / 4);
+    const colors =
+      balloon.kind === 'rainbow'
+        ? RAINBOW
+        : balloon.kind === 'star'
+          ? [GOLD.main, GOLD.light, '#ffffff']
+          : [balloon.color.main, balloon.color.light, this.rng.pick(RAINBOW), '#ffffff'];
+    const lovey = balloon.color.name === 'pink' || balloon.color.name === 'red';
+    for (let i = 0; i < count; i++) {
+      const angle = this.rng.range(0, TAU);
+      const speed = u * this.rng.range(120, 420);
+      let shape: ParticleShape;
+      if (balloon.kind === 'star') shape = this.rng.chance(0.7) ? 'star' : 'sparkle';
+      else if (lovey && this.rng.chance(0.35)) shape = 'heart';
+      else shape = this.rng.chance(0.5) ? 'rect' : 'circle';
+      const life = this.rng.range(0.8, 1.5);
+      this.addParticle({
+        x: balloon.x + Math.cos(angle) * r * 0.5,
+        y: balloon.y + Math.sin(angle) * r * 0.55,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - u * 90,
+        life,
+        maxLife: life,
+        size: u * this.rng.range(5, 11),
+        color: this.rng.pick(colors),
+        shape,
+        rot: this.rng.range(0, TAU),
+        spin: this.rng.range(-12, 12),
+        gravity: u * 700,
+        drag: 1.6,
+      });
+    }
+
+    // The string falls down on its own.
+    this.addParticle({
+      x: balloon.x,
+      y: balloon.y + r * 1.3,
+      vx: u * this.rng.range(-20, 20),
+      vy: u * 30,
+      life: 1.3,
+      maxLife: 1.3,
+      size: u * 50 * scale,
+      color: balloon.color.dark,
+      shape: 'string',
+      rot: 0,
+      spin: 0,
+      gravity: u * 350,
+      drag: 1.2,
+    });
+
+    const size = clamp((balloon.r / u - 40) / 16, 0, 1);
+    this.emit({ type: 'pop', x: balloon.x, y: balloon.y, size, kind: balloon.kind });
+
+    if (this.pops % this.config.celebrateEvery === 0) this.celebrate();
+  }
+
+  private celebrate(): void {
+    const u = this.unit;
+    for (let i = 0; i < 46; i++) {
+      const life = this.rng.range(2.2, 3.6);
+      this.addParticle({
+        x: this.rng.range(0, this.width),
+        y: -u * this.rng.range(10, 220),
+        vx: u * this.rng.range(-40, 40),
+        vy: u * this.rng.range(60, 200),
+        life,
+        maxLife: life,
+        size: u * this.rng.range(6, 12),
+        color: this.rng.pick(RAINBOW),
+        shape: this.rng.chance(0.6) ? 'rect' : this.rng.chance(0.5) ? 'circle' : 'star',
+        rot: this.rng.range(0, TAU),
+        spin: this.rng.range(-8, 8),
+        gravity: u * 60,
+        drag: 0.6,
+      });
+    }
+    this.sinceCelebration = 0;
+    this.emit({ type: 'celebrate', pops: this.pops });
+  }
+
+  private sparkleBurst(x: number, y: number, count: number): void {
+    const u = this.unit;
+    for (let i = 0; i < count; i++) {
+      const angle = this.rng.range(0, TAU);
+      const speed = u * this.rng.range(40, 160);
+      const life = this.rng.range(0.35, 0.7);
+      this.addParticle({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - u * 40,
+        life,
+        maxLife: life,
+        size: u * this.rng.range(4, 9),
+        color: this.rng.pick(SPARKLE_COLORS),
+        shape: 'sparkle',
+        rot: this.rng.range(0, TAU),
+        spin: this.rng.range(-6, 6),
+        gravity: u * 120,
+        drag: 2,
+      });
+    }
+  }
+
+  private addParticle(particle: Particle): void {
+    if (this.particles.length >= this.config.maxParticles) this.particles.shift();
+    this.particles.push(particle);
+  }
+}

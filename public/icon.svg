@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb3ff"/>
+      <stop offset="1" stop-color="#a8e1ff"/>
+    </linearGradient>
+    <radialGradient id="red" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#ff9db0"/>
+      <stop offset="0.5" stop-color="#ff4d6d"/>
+      <stop offset="1" stop-color="#c9184a"/>
+    </radialGradient>
+    <radialGradient id="yellow" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#fff3a6"/>
+      <stop offset="0.5" stop-color="#ffd93d"/>
+      <stop offset="1" stop-color="#e0a800"/>
+    </radialGradient>
+    <radialGradient id="blue" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#a6c8ff"/>
+      <stop offset="0.5" stop-color="#4d96ff"/>
+      <stop offset="1" stop-color="#2456c9"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <g fill="#fff" opacity="0.9">
+    <circle cx="180" cy="220" r="60"/><circle cx="240" cy="200" r="75"/><circle cx="310" cy="230" r="55"/>
+    <circle cx="820" cy="640" r="50"/><circle cx="870" cy="620" r="65"/><circle cx="930" cy="650" r="45"/>
+  </g>
+  <!-- back balloons -->
+  <g>
+    <path d="M300 660 q 20 60 0 130" stroke="#3b2a4a" stroke-opacity="0.5" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <ellipse cx="300" cy="520" rx="150" ry="172" fill="url(#yellow)"/>
+    <path d="M300 690 l -24 34 h 48 z" fill="#e0a800"/>
+    <ellipse cx="240" cy="440" rx="24" ry="40" transform="rotate(-30 240 440)" fill="#fff" opacity="0.6"/>
+  </g>
+  <g>
+    <path d="M740 640 q -20 60 0 130" stroke="#3b2a4a" stroke-opacity="0.5" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <ellipse cx="740" cy="500" rx="150" ry="172" fill="url(#blue)"/>
+    <path d="M740 670 l -24 34 h 48 z" fill="#2456c9"/>
+    <ellipse cx="680" cy="420" rx="24" ry="40" transform="rotate(-30 680 420)" fill="#fff" opacity="0.6"/>
+  </g>
+  <!-- front balloon with face -->
+  <g>
+    <path d="M512 780 q 30 70 -10 150" stroke="#3b2a4a" stroke-opacity="0.55" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <ellipse cx="512" cy="560" rx="225" ry="258" fill="url(#red)"/>
+    <path d="M512 815 l -36 48 h 72 z" fill="#c9184a"/>
+    <ellipse cx="420" cy="440" rx="36" ry="62" transform="rotate(-32 420 440)" fill="#fff" opacity="0.6"/>
+    <!-- cheeks -->
+    <ellipse cx="395" cy="610" rx="30" ry="20" fill="#ff698c" opacity="0.4"/>
+    <ellipse cx="629" cy="610" rx="30" ry="20" fill="#ff698c" opacity="0.4"/>
+    <!-- eyes -->
+    <ellipse cx="436" cy="535" rx="34" ry="42" fill="#fff"/>
+    <ellipse cx="588" cy="535" rx="34" ry="42" fill="#fff"/>
+    <circle cx="441" cy="543" r="19" fill="#3b2a4a"/>
+    <circle cx="593" cy="543" r="19" fill="#3b2a4a"/>
+    <circle cx="431" cy="531" r="7" fill="#fff"/>
+    <circle cx="583" cy="531" r="7" fill="#fff"/>
+    <!-- smile -->
+    <path d="M448 620 q 64 60 128 0" stroke="#3b2a4a" stroke-width="14" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- confetti -->
+  <g>
+    <rect x="130" y="760" width="40" height="24" rx="4" fill="#ffd93d" transform="rotate(20 150 772)"/>
+    <rect x="840" y="300" width="40" height="24" rx="4" fill="#5ed37a" transform="rotate(-25 860 312)"/>
+    <circle cx="200" cy="880" r="16" fill="#b56cff"/>
+    <circle cx="900" cy="860" r="14" fill="#ff8c42"/>
+    <rect x="110" y="380" width="34" height="20" rx="4" fill="#ff7ad9" transform="rotate(35 127 390)"/>
+    <circle cx="640" cy="180" r="14" fill="#ffd93d"/>
+    <rect x="450" y="140" width="34" height="20" rx="4" fill="#3ddad7" transform="rotate(-15 467 150)"/>
+  </g>
+</svg>

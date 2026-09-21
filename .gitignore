@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+
+# Native build output (projekterne selv er med i git)
+ios/App/Pods/
+ios/App/build/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/DerivedData/
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+android/app/*.iml
+android/captures/
+android/.cxx/

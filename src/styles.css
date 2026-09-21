@@ -1,0 +1,193 @@
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --sky: #4fb3ff;
+  --ink: #3b2a4a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sky);
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* Small translucent lock in the corner. Hold it for two seconds to open the parent menu. */
+#parent-button {
+  --progress: 0;
+  position: fixed;
+  top: calc(var(--safe-top) + 10px);
+  left: calc(var(--safe-left) + 10px);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(60, 40, 90, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: pointer;
+  z-index: 5;
+}
+
+#parent-button::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(#ff7ad9 calc(var(--progress) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+  mask: radial-gradient(circle, transparent 62%, #000 64%);
+}
+
+/* Android WebView reports no safe-area insets, so keep clear of camera cut-outs by hand. */
+.platform-android #parent-button {
+  top: max(28px, calc(var(--safe-top) + 10px));
+  left: max(16px, calc(var(--safe-left) + 10px));
+}
+
+#parent-button svg {
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+#parent-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(40, 30, 80, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+#parent-panel[hidden] {
+  display: none;
+}
+
+.card {
+  width: min(100%, 360px);
+  padding: 28px 24px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.card-balloon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.card h1 {
+  margin: 8px 0 2px;
+  font-size: 26px;
+}
+
+.subtitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  opacity: 0.6;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-top: 1px solid #eee;
+  font-size: 21px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.row input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 36px;
+  border-radius: 18px;
+  background: #d7d3e0;
+  transition: background 0.2s;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+.row input:checked + .switch {
+  background: #5ed37a;
+}
+
+.row input:checked + .switch::after {
+  transform: translateX(28px);
+}
+
+#parent-close {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px;
+  border: 0;
+  border-radius: 18px;
+  background: #4d96ff;
+  color: #fff;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hint {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.65;
+}
