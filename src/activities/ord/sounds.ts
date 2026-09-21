@@ -28,6 +28,9 @@ function thingSound(audio: AudioEngine, thing: Thing): void {
       break;
   }
   if (thing.kind === 'balloon') audio.boing();
+  else if (thing.kind === 'cow') audio.moo();
+  else if (thing.kind === 'cat') audio.meow();
+  else if (thing.kind === 'car') audio.beep();
   else if (thing.kind === 'sun') audio.wee();
   else if (thing.kind === 'cloud') audio.rain();
   else if (thing.kind === 'flower') audio.twirl();
@@ -50,6 +53,10 @@ export function handleOrdEvent(event: OrdEvent, thing: Thing, ctx: ActivityConte
       ctx.say(event.key, 0.6, 1.5);
       ctx.haptic(ImpactStyle.Medium);
       ctx.stats.bump('ordPeeks');
+      break;
+    case 'rustle':
+      audio?.rustle();
+      ctx.haptic(ImpactStyle.Light);
       break;
     case 'next':
       audio?.wee();

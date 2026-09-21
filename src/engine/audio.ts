@@ -922,4 +922,108 @@ export class AudioEngine {
       this.synth.tone(this.sfxBus, 'sine', f * 1.5, when + offset, 0.2, 0.004, 0.16, { to: f, glide: 0.1 });
     });
   }
+
+  // ---- Ord's own things ------------------------------------------------------
+
+  /**
+   * A friendly "muuuh" for the cow: a held, nasal call around 200–300 Hz (a phone speaker loses anything
+   * lower), the "m" opening into the vowel, then falling away.
+   */
+  moo(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('ko', when)) return;
+    const ctx = this.ctx;
+    const length = 1.2;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(0.2, when + 0.12);
+    gain.gain.setValueAtTime(0.2, when + 0.75);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    const formant = ctx.createBiquadFilter();
+    formant.type = 'peaking';
+    formant.frequency.value = 620;
+    formant.Q.value = 2;
+    formant.gain.value = 8;
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.setValueAtTime(700, when);
+    lowpass.frequency.linearRampToValueAtTime(1500, when + 0.25);
+    formant.connect(lowpass).connect(gain).connect(this.sfxBus);
+    for (const [type, base, detune] of [
+      ['sawtooth', 240, -6],
+      ['sawtooth', 240, 6],
+      ['triangle', 120, 0],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.detune.value = detune;
+      osc.frequency.setValueAtTime(base * 1.15, when);
+      osc.frequency.exponentialRampToValueAtTime(base, when + 0.3);
+      osc.frequency.setValueAtTime(base, when + 0.7);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.8, when + length);
+      osc.connect(formant);
+      osc.start(when);
+      osc.stop(when + length + 0.05);
+    }
+  }
+
+  /** "Mjav" for the cat: a quick rise and a longer fall, bright enough to carry on a small speaker. */
+  meow(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('kat', when)) return;
+    const ctx = this.ctx;
+    const length = 0.65;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(0.4, when + 0.06);
+    gain.gain.setValueAtTime(0.4, when + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+    // The mouth shape: "mj" opening into "a", closing towards "v".
+    const mouth = ctx.createBiquadFilter();
+    mouth.type = 'bandpass';
+    mouth.Q.value = 1.2;
+    mouth.frequency.setValueAtTime(900, when);
+    mouth.frequency.linearRampToValueAtTime(2200, when + 0.15);
+    mouth.frequency.linearRampToValueAtTime(1300, when + length);
+    mouth.connect(gain).connect(this.sfxBus);
+    for (const detune of [-5, 5]) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.detune.value = detune;
+      osc.frequency.setValueAtTime(520, when);
+      osc.frequency.exponentialRampToValueAtTime(880, when + 0.16);
+      osc.frequency.setValueAtTime(880, when + 0.3);
+      osc.frequency.exponentialRampToValueAtTime(430, when + length);
+      osc.connect(mouth);
+      osc.start(when);
+      osc.stop(when + length + 0.05);
+    }
+  }
+
+  /** The little car's horn: two short "dyt dyt" chords (a major third, like a real horn). */
+  beep(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    if (this.sample('bil', when)) return;
+    for (const offset of [0, 0.22]) {
+      for (const freq of [440, 554]) {
+        this.synth.tone(this.sfxBus, 'square', freq, when + offset, 0.07, 0.008, 0.18, { filter: 1600 });
+        this.synth.tone(this.sfxBus, 'sawtooth', freq, when + offset, 0.08, 0.008, 0.18, { filter: 2200 });
+      }
+    }
+  }
+
+  /** Leaves rustling when the bush is touched but not yet opened: dry and light, with a little "hmm?" */
+  rustle(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    for (const [offset, freq] of [
+      [0, 2600],
+      [0.07, 3400],
+      [0.15, 2900],
+      [0.24, 3800],
+    ] as const) {
+      this.synth.noiseBurst(this.sfxBus, when + offset, 0.16, 0.09, 'bandpass', freq, 0.8);
+    }
+    // Two rising notes, so it sounds like a question, never a warning.
+    this.synth.tone(this.sfxBus, 'sine', 660, when + 0.1, 0.08, 0.01, 0.16, { to: 880, glide: 0.12 });
+  }
 }

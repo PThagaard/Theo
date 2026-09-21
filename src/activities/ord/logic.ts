@@ -1,4 +1,4 @@
-import { AGE_PROFILES, DEFAULT_AGE, type Age } from '../../engine/age';
+import { DEFAULT_AGE, type Age } from '../../engine/age';
 import { Rng } from '../../engine/rng';
 import { photoVoiceKey } from '../../engine/voices';
 import type { VisitorKind } from '../balloner/types';
@@ -12,7 +12,7 @@ import type { VisitorKind } from '../balloner/types';
 export interface Thing {
   /** The word key (engine/voices.ts VOICE_WORDS), or `photo:<id>` for a family photo. */
   key: string;
-  kind: 'creature' | 'balloon' | 'sun' | 'cloud' | 'flower' | 'photo';
+  kind: 'creature' | 'balloon' | 'sun' | 'cloud' | 'flower' | 'cow' | 'cat' | 'car' | 'photo';
   creature?: VisitorKind;
   photoId?: string;
 }
@@ -23,7 +23,10 @@ export const BASE_THINGS: ReadonlyArray<Thing> = [
   { key: 'fugl', kind: 'creature', creature: 'bird' },
   { key: 'sommerfugl', kind: 'creature', creature: 'butterfly' },
   { key: 'snegl', kind: 'creature', creature: 'snail' },
+  { key: 'ko', kind: 'cow' },
+  { key: 'kat', kind: 'cat' },
   { key: 'traktor', kind: 'creature', creature: 'tractor' },
+  { key: 'bil', kind: 'car' },
   { key: 'ballon', kind: 'balloon' },
   { key: 'sol', kind: 'sun' },
   { key: 'sky', kind: 'cloud' },
@@ -35,6 +38,7 @@ export type ThingState = 'enter' | 'idle' | 'react' | 'leave';
 export type OrdEvent =
   | { type: 'touch'; key: string; x: number; y: number }
   | { type: 'peek'; key: string; x: number; y: number }
+  | { type: 'rustle'; key: string; x: number; y: number }
   | { type: 'next'; key: string }
   | { type: 'enter'; key: string }
   | { type: 'sparkle'; x: number; y: number };
@@ -46,6 +50,12 @@ const LEAVE_TIME = 0.5;
 const REACT_TIME = 0.9;
 /** Every n-th thing hides behind the bush, by age (object permanence is the game at 8–12 months). */
 const HIDE_EVERY: Record<Age, number> = { '8-12': 3, '1-2': 3, '2+': 4 };
+/**
+ * Touches on the bush before it opens, by age. The youngest get the thing at once: a clear answer to the
+ * touch is the whole point at 8–12 months. Older children enjoy a rustle of suspense first.
+ */
+const BUSH_TOUCHES: Record<Age, number> = { '8-12': 1, '1-2': 2, '2+': 2 };
+const RUSTLE_TIME = 0.6;
 /** Seconds of no touching before the next thing comes by itself; 0 = never (the youngest decide themselves). */
 const AUTO_NEXT: Record<Age, number> = { '8-12': 0, '1-2': 40, '2+': 25 };
 const SLEEP_TIME = 8;
@@ -70,6 +80,10 @@ export class OrdGame {
   hidden = false;
   /** 0 = the bush covers the thing, 1 = it has jumped aside. */
   bushOpen = 0;
+  /** Touches on the bush since the thing hid there. */
+  bushTouches = 0;
+  /** 1 right after a touch that only made the bush rustle, fading to 0. */
+  rustle = 0;
   /** Seconds since the last touch. */
   idle = 0;
   asleep = false;
@@ -165,13 +179,24 @@ export class OrdGame {
   private bringNext(): void {
     this.current = this.pickNext();
     this.shown++;
-    this.hidden = this.shown % HIDE_EVERY[this.age] === 0;
-    this.bushOpen = this.hidden ? 0 : 1;
+    if (this.shown % HIDE_EVERY[this.age] === 0) this.hide();
+    else {
+      this.hidden = false;
+      this.bushOpen = 1;
+    }
     this.x = this.width + this.size * 2;
     this.state = 'enter';
     this.stateAge = 0;
     this.idle = 0;
     this.emit({ type: 'enter', key: this.current.key });
+  }
+
+  /** The current thing hides behind the bush (also used by the tests to force a titte-bøh). */
+  hide(): void {
+    this.hidden = true;
+    this.bushOpen = 0;
+    this.bushTouches = 0;
+    this.rustle = 0;
   }
 
   press(id: number, x: number, y: number): void {
@@ -185,15 +210,22 @@ export class OrdGame {
     const hit = this.hit;
     const onThing = Math.hypot(x - hit.x, y - hit.y) <= hit.r;
     if (this.hidden) {
-      if (onThing) {
-        // Titte-bøh!
-        this.hidden = false;
-        this.state = 'react';
-        this.stateAge = 0;
-        this.emit({ type: 'peek', key: this.current.key, x, y });
-      } else {
+      if (!onThing) {
         this.emit({ type: 'sparkle', x, y });
+        return;
       }
+      this.bushTouches++;
+      if (this.bushTouches < BUSH_TOUCHES[this.age]) {
+        // The bush shakes: "something is in there!" It opens on the next touch.
+        this.rustle = 1;
+        this.emit({ type: 'rustle', key: this.current.key, x, y });
+        return;
+      }
+      // Titte-bøh!
+      this.hidden = false;
+      this.state = 'react';
+      this.stateAge = 0;
+      this.emit({ type: 'peek', key: this.current.key, x, y });
       return;
     }
     if (onThing) {
@@ -247,6 +279,7 @@ export class OrdGame {
     this.stateAge += dt;
     this.idle += dt;
     this.dusk = this.asleep ? Math.min(1, this.dusk + dt / SLEEP_TIME) : Math.max(0, this.dusk - dt / WAKE_TIME);
+    this.rustle = Math.max(0, this.rustle - dt / RUSTLE_TIME);
     const target = this.centerX;
     switch (this.state) {
       case 'enter': {
@@ -286,6 +319,5 @@ export class OrdGame {
       this.stateAge = 0;
     }
     if (this.asleep && this.state === 'enter') this.stateAge = 0; // wait at the edge
-    void AGE_PROFILES;
   }
 }

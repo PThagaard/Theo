@@ -3,11 +3,12 @@ import { BALLOON_COLORS, HILLS } from '../balloner/palette';
 import { Renderer } from '../balloner/render';
 import { hillY } from '../balloner/terrain';
 import type { Balloon, Cloud, Flower, Visitor } from '../balloner/types';
+import { drawCar, drawCat, drawCow } from './figures';
 import type { OrdGame, Thing } from './logic';
 
 /**
  * Draws the Ord stage: the balloon world's sky and hills (borrowed from its renderer, so the dog is the
- * same dog), one big thing in the middle, and a bush for hiding behind. Calm: no sun, clouds or extras.
+ * same dog), one big thing in the middle, and a bush for hiding behind. Calm: nothing else moves.
  */
 export class OrdRenderer {
   private readonly base: Renderer;
@@ -50,8 +51,10 @@ export class OrdRenderer {
     if (game.hidden || game.bushOpen < 1) {
       const open = game.hidden ? 0 : game.bushOpen;
       const eased = 1 - (1 - open) * (1 - open);
-      const rustle = game.hidden ? Math.sin(base.time * 7) * size * 0.04 : 0;
-      this.drawBush(game.x + eased * size * 2.8 + rustle, y + size * 0.1, size);
+      // Hiding: a small idle rustle; after a touch that did not open it, a big shake and a hop ("hmm?").
+      const shake = game.hidden ? Math.sin(base.time * 7) * size * 0.04 + Math.sin(base.time * 34) * size * 0.14 * game.rustle : 0;
+      const hop = game.hidden ? Math.sin((1 - game.rustle) * Math.PI) * size * 0.18 * (game.rustle > 0 ? 1 : 0) : 0;
+      this.drawBush(game.x + eased * size * 2.8 + shake, y + size * 0.1 - hop, size);
     }
     ctx.restore();
     if (game.dusk > 0) base.drawNight(game.dusk);
@@ -96,6 +99,19 @@ export class OrdRenderer {
         boost: 0,
       };
       base.drawFlower(flower, base.time);
+      return;
+    }
+    if (thing.kind === 'cow' || thing.kind === 'cat' || thing.kind === 'car') {
+      // Ord's own figures (figures.ts): feet at the origin, facing the way they move.
+      const moving = game.state === 'enter' || game.state === 'leave';
+      ctx.save();
+      ctx.translate(x, y - lift);
+      ctx.scale(moving ? -1 : 1, 1);
+      const view = { s: size, t: base.time, react: bounce, moving };
+      if (thing.kind === 'cow') drawCow(ctx, view);
+      else if (thing.kind === 'cat') drawCat(ctx, view);
+      else drawCar(ctx, view);
+      ctx.restore();
       return;
     }
     if (thing.kind === 'creature' && thing.creature) {

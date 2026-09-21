@@ -29,6 +29,9 @@ export const SAMPLE_NAMES = {
   regn: 'regn, der loopes mens uvejrsskyen er på skærmen',
   traktor: 'traktoren dytter (tryk på traktoren)',
   'traktor-motor': 'motoren putter, når traktoren kører ud fra gården',
+  ko: 'koen siger muh (tryk på koen i Ord)',
+  kat: 'katten mjaver (tryk på katten i Ord)',
+  bil: 'bilen dytter (tryk på bilen i Ord)',
 } as const;
 
 export type SampleName = keyof typeof SAMPLE_NAMES;

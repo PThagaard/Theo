@@ -291,7 +291,7 @@ await page.mouse.down();
 await page.mouse.move(viewport.width * 0.2, viewport.height * 0.4, { steps: 12 });
 await page.mouse.up();
 await page.waitForTimeout(1500);
-const ordHidden = await page.evaluate(() => { const g = window.__theo.game; g.hidden = true; g.bushOpen = 0; return g.hit; });
+const ordHidden = await page.evaluate(() => { const g = window.__theo.game; g.hide(); return g.hit; });
 await page.waitForTimeout(200);
 await page.screenshot({ path: `${OUT}/${tag}-23-ord-bush.png` });
 await page.touchscreen.tap(ordHidden.x, ordHidden.y);
@@ -299,6 +299,25 @@ await page.waitForTimeout(300);
 const ordStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { touched: s.ordTouched ?? 0, next: s.ordNext ?? 0, peeks: s.ordPeeks ?? 0, key: window.__theo.game.current.key }; });
 console.log('ord:', JSON.stringify(ordStats));
 check(ordStats.touched >= 1 && ordStats.next >= 1 && ordStats.peeks >= 1, 'Ord did not react to touch, swipe and peek-a-boo');
+// For 2+ the bush rustles on the first touch and opens on the second.
+const ordRustle = await page.evaluate(() => { const g = window.__theo.game; g.setAge('2+'); g.hide(); return g.hit; });
+await page.touchscreen.tap(ordRustle.x, ordRustle.y);
+await page.waitForTimeout(120);
+await page.screenshot({ path: `${OUT}/${tag}-23b-ord-rustle.png` });
+check(await page.evaluate(() => window.__theo.game.hidden && window.__theo.game.rustle > 0), 'the bush should rustle, not open, on the first touch for 2+');
+await page.waitForTimeout(700);
+await page.touchscreen.tap(ordRustle.x, ordRustle.y);
+await page.waitForTimeout(300);
+check(await page.evaluate(() => !window.__theo.game.hidden), 'the bush should open on the second touch');
+// Ord's own figures: the cow, the cat and the car, each touched once.
+for (const kind of ['cow', 'cat', 'car']) {
+  await page.evaluate((k) => { const g = window.__theo.game; g.current = g.things.find((t) => t.kind === k); g.setAge('8-12'); }, kind);
+  await page.waitForTimeout(150);
+  await page.touchscreen.tap(ordHit.x, ordHit.y);
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${OUT}/${tag}-25-ord-${kind}.png` });
+}
+check((await page.evaluate(() => window.__theo.stats.snapshot.today.ordTouched)) >= ordStats.touched + 3, 'the cow, cat and car did not count as touched');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -338,7 +357,11 @@ const flowerTap = await page.evaluate(() => {
   // A visitor on the ground (the tractor, the dog) takes a sliding finger before the flowers do; clear them.
   g.visitors = [];
   g.visitorTimer = 30;
-  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  // Balloons drifting through the flower bed would take the swipe first (the next step spawns new ones).
+  g.balloons = [];
+  g.spawnTimer = 30;
+  // The storm may have boosted or plucked some flowers just before; start from a whole, calm flower bed.
+  for (const f of g.flowers) { f.boost = 0; f.growth = 1; f.regrow = 0; f.flying = null; }
   const f = g.flowers[Math.floor(g.flowers.length / 2)];
   return g.flowerHead(f);
 });
@@ -347,12 +370,21 @@ await page.waitForTimeout(120);
 const spun = await page.evaluate(() => window.__theo.game.flowers.filter((f) => f.rainbow > 0).length);
 console.log('flowers spinning after tap:', spun);
 check(spun >= 1, 'tapping a flower did not make it spin');
-await page.mouse.move(8, flowerTap.y);
+// Swipe through every flower head in turn (the hills put them at different heights on a wide screen).
+const flowerHeads = await page.evaluate(() => window.__theo.game.flowers.map((f) => window.__theo.game.flowerHead(f)).sort((a, b) => a.x - b.x));
+await page.mouse.move(8, flowerHeads[0].y);
 await page.mouse.down();
-await page.mouse.move(viewport.width - 8, flowerTap.y, { steps: 60 });
+for (const head of flowerHeads) {
+  // Paced like a real swipe: the input layer hands the game one position per frame, so a burst of
+  // synthetic moves would skip most heads on a wide screen.
+  await page.mouse.move(head.x, head.y, { steps: 4 });
+  await page.waitForTimeout(25);
+}
+await page.mouse.move(viewport.width - 8, flowerHeads[flowerHeads.length - 1].y, { steps: 6 });
 await page.mouse.up();
 await page.waitForTimeout(250);
-const plucked = await page.evaluate(() => window.__theo.game.flowers.filter((f) => f.flying).length);
+// A plucked head flies briefly and then regrows, so count the flowers that are still growing back too.
+const plucked = await page.evaluate(() => window.__theo.game.flowers.filter((f) => f.flying || f.growth < 1).length);
 console.log('flowers plucked by a swipe:', plucked);
 check(plucked >= 3, 'swiping over the flowers did not pluck them');
 await page.screenshot({ path: `${OUT}/${tag}-13-flowers.png` });
@@ -551,7 +583,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 20, sr);
+  const ctx = new OfflineAudioContext(1, sr * 24, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -574,6 +606,10 @@ const audio = await page.evaluate(async () => {
     ['thunder', 13.3, () => { engine.thunder(13.3); engine.zap(14.7); engine.squeak(15.4); engine.sizzle(15.8); engine.clearing(16.6); }],
     ['help', 17.4, () => { engine.help('dog', 17.4); engine.help('elephant', 17.8); engine.land(18.5); }],
     ['honk', 18.8, () => { engine.honk(18.8); engine.putter(19.3); }],
+    ['moo', 19.8, () => engine.moo(19.8)],
+    ['meow', 21.2, () => engine.meow(21.2)],
+    ['beep', 22.0, () => engine.beep(22.0)],
+    ['rustle', 22.7, () => engine.rustle(22.7)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -589,7 +625,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 20;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 24;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -601,7 +637,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 20);
+  out.total = stats(0, 24);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));
@@ -623,6 +659,8 @@ for (const [name, v] of Object.entries(audio)) {
 check(audio.recordings.includes('elefant') && audio.recordings.includes('hund'), `recordings not loaded: ${audio.recordings.join(', ')}`);
 check(audio.trumpet.seconds >= 0.8, `the elephant trumpet is too short (${audio.trumpet.seconds} s)`);
 check(audio.bark.seconds >= 0.35, `the bark is too short (${audio.bark.seconds} s)`);
+check(audio.moo.seconds >= 0.7, `the moo is too short (${audio.moo.seconds} s)`);
+check(audio.meow.seconds >= 0.3, `the meow is too short (${audio.meow.seconds} s)`);
 
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/${tag}-07-later.png` });

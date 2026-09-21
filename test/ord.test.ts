@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BASE_THINGS, OrdGame, type OrdEvent } from '../src/activities/ord/logic';
+import { VOICE_WORDS } from '../src/engine/voices';
 
 const W = 390;
 const H = 844;
@@ -78,6 +79,38 @@ describe('Ord: one thing at a time', () => {
     expect(events.some((e) => e.type === 'peek')).toBe(true);
     advance(game, 1);
     expect(game.bushOpen).toBe(1);
+  });
+
+  it('has a word the parents can record for every thing, including the cow, the cat and the car', () => {
+    const keys = VOICE_WORDS.map((w) => w.key);
+    for (const thing of BASE_THINGS) expect(keys, `no voice word for ${thing.key}`).toContain(thing.key);
+    expect(BASE_THINGS.map((t) => t.kind)).toEqual(expect.arrayContaining(['cow', 'cat', 'car']));
+  });
+
+  it('for older children the bush only rustles on the first touch and opens on the second', () => {
+    const { game, events } = makeOrd();
+    game.setAge('2+');
+    advance(game, 1);
+    game.hide();
+    game.press(1, game.hit.x, game.hit.y);
+    game.release(1);
+    expect(game.hidden).toBe(true);
+    expect(game.rustle).toBe(1);
+    expect(events.some((e) => e.type === 'rustle')).toBe(true);
+    expect(events.some((e) => e.type === 'peek')).toBe(false);
+    advance(game, 1);
+    expect(game.rustle).toBe(0);
+    game.press(2, game.hit.x, game.hit.y);
+    game.release(2);
+    expect(game.hidden).toBe(false);
+    expect(events.some((e) => e.type === 'peek')).toBe(true);
+    // The next hidden thing starts afresh: two touches again.
+    swipe(game);
+    advance(game, 1.5);
+    game.hide();
+    game.press(3, game.hit.x, game.hit.y);
+    game.release(3);
+    expect(game.hidden).toBe(true);
   });
 
   it('never moves on by itself for the youngest, but does for older children after a while', () => {

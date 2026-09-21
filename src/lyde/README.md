@@ -19,8 +19,11 @@ Ingen kode skal ændres: næste build samler filen op. Mangler filen, eller kan 
 | `regn.mp3`            | regn, der loopes mens uvejrsskyen er på skærmen (skal kunne loope pænt)    |
 | `traktor.mp3`         | traktoren dytter, når man rører den                                        |
 | `traktor-motor.mp3`   | motoren putter, når traktoren kører ud fra gården                          |
+| `ko.mp3`              | koen siger muh, når man rører den (Ord)                                    |
+| `kat.mp3`             | katten mjaver, når man rører den (Ord)                                     |
+| `bil.mp3`             | bilen dytter, når man rører den (Ord)                                      |
 
-Listen vedligeholdes i `src/samples.ts` (`SAMPLE_NAMES`); en fil med et andet navn får enhedstesten til at fejle.
+Listen vedligeholdes i `src/engine/samples.ts` (`SAMPLE_NAMES`); en fil med et andet navn får enhedstesten til at fejle.
 
 **Format:** kort (½–2 sekunder, regn gerne 5–10), én lyd pr. fil, mono. Appen varierer selv tonehøjden lidt fra gang
 til gang, så én optagelse er nok. Klip og normalisér med værktøjet, som også gemmer som lille MP3:
