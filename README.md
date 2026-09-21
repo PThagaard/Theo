@@ -56,6 +56,19 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 
 **Lås:** brug knappen *Lås appen fast på skærmen* i forældremenuen (se nedenfor), så kan små fingre ikke forlade den.
 
+## Sådan bruger I den rigtigt
+
+Skærmen lærer ikke en baby noget i sig selv. Sundhedsstyrelsen anbefaler ingen skærm under to år uden en voksen,
+der deltager aktivt, og det er sådan, appen er tænkt: som et legetøj, I bruger sammen, i korte stunder.
+
+- **Sammen.** Sid med ham, peg og sæt ord på det, han rører: "Hund! Vov vov." "Ballon, pop!" Det er jeres ord, han
+  lærer af, ikke appens lyde.
+- **Kort.** 5–10 minutter ad gangen. Pausen i forældremenuen sørger for, at verdenen selv falder i søvn.
+- **Ikke før sengetid.** Skærm og søvn passer dårligt sammen, også for de mindste.
+- **Hans signaler bestemmer.** Kigger han væk, gnider øjne, klynker eller bliver "fjern", så er det slut for i dag,
+  uanset hvor lidt der er gået.
+- **Start i den rolige ende.** *8–12 mdr* er standard. Skru først op, når han tydeligt kan følge med og bede om mere.
+
 ## Sådan virker spillet
 
 - **Tryk på en ballon** – den popper med konfetti, en ring og et sjovt "pop". Store balloner har en dybere lyd end små,
@@ -90,6 +103,10 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Flere fingre / hele hånden** virker også. Trykfladen er ekstra stor, så man ikke skal ramme præcist.
 - **Gården** til højre: en rød lade med rygende skorsten, og en gammel traktor, der af og til kører ud, holder
   lidt og kører hjem igen. Tryk på den, og den dytter og hopper. Den kan løftes af en ballon som alle de andre.
+- **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
+  ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.
+  *Pause efter* 5/10/20 minutter lader verdenen falde stille i søvn: solen går ned, månen kommer frem, og kun et hold
+  på hjørneknappen vækker den igen. Kan slås fra.
 - **Hold fingeren stille** for en tredje slags leg: hold på en hvid sky, og den bliver mørk og til uvejrsskyen
   lige der; hold på tom himmel, og ballonen under fingeren vokser, til den sprænger (slip før, og kæmpeballonen
   flyver op); hold på solen, og den lader op til et solskinsbrag, hvor blomsterne skyder i vejret og ballonerne

@@ -79,7 +79,6 @@ const TRACTOR_PAUSE = 3.5;
 /** Where the little farm stands (fraction of the width) and where its chimney top is (units from the anchor). */
 const FARM_X = 0.85;
 export const FARM_CHIMNEY = { dx: 22, dy: -58 };
-const MAX_VISITORS = 2;
 /** The storm cloud is a rare treat: never in the first minute, and at least this long between storms. */
 const STORM_MIN_INTERVAL = 240;
 const STORM_FIRST_DELAY = 60;
@@ -190,6 +189,39 @@ const TEMPO: Record<Tempo, { target: number; interval: number; speed: number }> 
   vild: { target: 9, interval: 0.55, speed: 1.35 },
 };
 
+/**
+ * Age profiles (see CLAUDE.md, "Alderssvarende"): the younger the child, the fewer things at once, the slower,
+ * and the less that happens by itself. Everything else in the game is scaled by the active profile.
+ */
+export type Age = '8-12' | '1-2' | '2+';
+export interface AgeProfile {
+  /** Multiplies the tempo's target number of balloons. */
+  balloons: number;
+  /** Multiplies the time between natural balloon spawns. */
+  spawn: number;
+  /** Multiplies how fast balloons rise. */
+  speed: number;
+  /** Visitors on screen at once. */
+  visitors: number;
+  /** Multiplies the time between visits. */
+  visitInterval: number;
+  /** Whether the storm cloud may come by itself (a parent can always summon it by holding a cloud). */
+  storms: boolean;
+  /** Whether lightning may light up the whole screen (the bolt and the sound always happen). */
+  screenFlash: boolean;
+  /** Music level, so a parent's voice wins over the music for the youngest. */
+  music: number;
+}
+export const AGE_PROFILES: Record<Age, AgeProfile> = {
+  '8-12': { balloons: 0.5, spawn: 1.6, speed: 0.75, visitors: 1, visitInterval: 1.6, storms: false, screenFlash: false, music: 0.6 },
+  '1-2': { balloons: 0.8, spawn: 1.2, speed: 0.9, visitors: 2, visitInterval: 1.2, storms: true, screenFlash: true, music: 0.8 },
+  '2+': { balloons: 1, spawn: 1, speed: 1, visitors: 2, visitInterval: 1, storms: true, screenFlash: true, music: 1 },
+};
+export const DEFAULT_AGE: Age = '8-12';
+/** Falling asleep takes this long (the sun sets, the sky darkens); waking up is quicker. */
+const SLEEP_TIME = 8;
+const WAKE_TIME = 2.5;
+
 export interface SpawnOptions {
   x?: number;
   y?: number;
@@ -227,6 +259,11 @@ export class Game {
   private photoIds: string[] = [];
   private nextPhoto = 0;
   private tempo: Tempo = 'normal';
+  private age: Age = DEFAULT_AGE;
+  /** True while the world is asleep (pause after a long session); touches do almost nothing. */
+  asleep = false;
+  /** 0 = day, 1 = night: the sun has set and everything has settled down. */
+  dusk = 0;
   private visitorTimer = FIRST_VISIT_DELAY;
   private nextVisitorId = 1;
   private nextFlowerId = 1;
@@ -308,6 +345,56 @@ export class Game {
     return this.tempo;
   }
 
+  /** The age profile decides how much happens at once and how fast (CLAUDE.md, "Alderssvarende"). */
+  setAge(age: Age): void {
+    const before = AGE_PROFILES[this.age].speed;
+    this.age = age;
+    const factor = AGE_PROFILES[age].speed / before;
+    for (const b of this.balloons) b.vy *= factor;
+  }
+
+  get currentAge(): Age {
+    return this.age;
+  }
+
+  get profile(): AgeProfile {
+    return AGE_PROFILES[this.age];
+  }
+
+  /** How many balloons the sky keeps in the air for the current tempo and age. */
+  get targetBalloons(): number {
+    return Math.max(1, Math.round(TEMPO[this.tempo].target * this.profile.balloons));
+  }
+
+  /**
+   * The world goes to sleep: no new balloons or visitors, the ones here drift off, the sun sets. A parent
+   * wakes it up again (by opening the menu). This is the gentle end of a session, never a punishment.
+   */
+  sleep(): void {
+    if (this.asleep) return;
+    this.asleep = true;
+    for (const b of this.balloons) b.heldBy = undefined;
+    for (const v of this.visitors) {
+      if (v.state === 'gone' || v.state === 'carried' || v.state === 'falling') continue;
+      if (v.kind === 'elephant' || v.kind === 'snail' || v.kind === 'storm' || v.kind === 'butterfly') {
+        v.state = 'leave';
+        v.stateAge = 0;
+        if (v.kind === 'butterfly') {
+          v.targetX = v.x;
+          v.targetY = -80 * this.unit;
+        }
+      }
+    }
+    for (const pointer of this.pointers.values()) {
+      this.cancelHold(pointer);
+      this.flingStorm(pointer);
+    }
+  }
+
+  wake(): void {
+    this.asleep = false;
+  }
+
   /** Family photos available for photo balloons (ids only; the renderer holds the pictures). */
   setPhotos(ids: string[]): void {
     this.photoIds = [...ids];
@@ -381,6 +468,11 @@ export class Game {
 
   /** A finger (or mouse) touched the screen. */
   press(id: number, x: number, y: number): void {
+    if (this.asleep) {
+      // Shh: a soft twinkle, nothing more, until a parent wakes the world up.
+      this.sparkleBurst(x, y, 3);
+      return;
+    }
     const trail: Trail = { id, hue: this.rng.range(0, 360), points: [{ x, y, t: this.time }], active: true };
     this.trails.push(trail);
     const pointer: PointerState = { id, x, y, downX: x, downY: y, held: 0, hold: null, grab: null, moveDx: 0, moveDy: 0, vx: 0, vy: 0, travelled: 0, totalTravelled: 0, glideTravelled: 0, lastGlide: -1, trail };
@@ -862,7 +954,7 @@ export class Game {
   }
 
   private pickVisitorKind(): VisitorKind {
-    const stormAllowed = this.time > STORM_FIRST_DELAY && this.time - this.lastStorm > STORM_MIN_INTERVAL && !this.storm;
+    const stormAllowed = this.profile.storms && this.time > STORM_FIRST_DELAY && this.time - this.lastStorm > STORM_MIN_INTERVAL && !this.storm;
     const weights = stormAllowed ? [...VISITOR_WEIGHTS, { kind: 'storm' as VisitorKind, weight: STORM_WEIGHT }] : VISITOR_WEIGHTS;
     const total = weights.reduce((sum, k) => sum + k.weight, 0);
     let roll = this.rng.range(0, total);
@@ -1050,7 +1142,7 @@ export class Game {
     storm.lastBolt = this.time;
     storm.lightning = LIGHTNING_FLASH;
     // The bolt comes every time; the big flash across the sky only when the last one is long enough ago.
-    const flash = this.time - storm.lastFlash >= SCREEN_FLASH_INTERVAL;
+    const flash = this.profile.screenFlash && this.time - storm.lastFlash >= SCREEN_FLASH_INTERVAL;
     if (flash) {
       storm.flash = SCREEN_FLASH_TIME;
       storm.lastFlash = this.time;
@@ -1220,10 +1312,10 @@ export class Game {
   }
 
   private updateVisitors(dt: number): void {
-    this.visitorTimer -= dt;
+    if (!this.asleep) this.visitorTimer -= dt;
     if (this.visitorTimer <= 0) {
-      this.visitorTimer = this.rng.range(VISIT_INTERVAL[0], VISIT_INTERVAL[1]);
-      if (this.visitors.length < MAX_VISITORS) this.spawnVisitor();
+      this.visitorTimer = this.rng.range(VISIT_INTERVAL[0], VISIT_INTERVAL[1]) * this.profile.visitInterval;
+      if (this.visitors.length < this.profile.visitors) this.spawnVisitor();
     }
     const u = this.unit;
     const W = this.width;
@@ -1500,7 +1592,7 @@ export class Game {
       color,
       kind,
       face: this.rng.pick(FACES),
-      vy: (this.height / 800) * this.rng.range(45, 85) * TEMPO[this.tempo].speed,
+      vy: (this.height / 800) * this.rng.range(45, 85) * TEMPO[this.tempo].speed * this.profile.speed,
       swayAmp,
       swayFreq: this.rng.range(0.25, 0.5),
       swayPhase,
@@ -1545,13 +1637,15 @@ export class Game {
     if (!this.sunCharging) this.sunCharge = Math.max(0, this.sunCharge - dt / 0.5);
     for (const c of this.clouds) if (!c.holding) c.dark = Math.max(0, c.dark - dt / 0.7);
 
+    this.dusk = this.asleep ? Math.min(1, this.dusk + dt / SLEEP_TIME) : Math.max(0, this.dusk - dt / WAKE_TIME);
+
     this.spawnTimer -= dt;
-    if (this.spawnTimer <= 0) {
+    if (this.spawnTimer <= 0 && !this.asleep) {
       // Refill quickly when the screen is nearly empty so there is always something to pop.
       const hurry = this.balloons.length < 3 ? 0.45 : 1;
       const tempo = TEMPO[this.tempo];
-      this.spawnTimer = this.config.spawnInterval * tempo.interval * hurry * this.rng.range(0.7, 1.3);
-      if (this.balloons.length < Math.min(tempo.target, this.config.maxBalloons)) this.spawnBalloon();
+      this.spawnTimer = this.config.spawnInterval * tempo.interval * this.profile.spawn * hurry * this.rng.range(0.7, 1.3);
+      if (this.balloons.length < Math.min(this.targetBalloons, this.config.maxBalloons)) this.spawnBalloon();
     }
 
     const damping = Math.max(0, 1 - 2.5 * dt);

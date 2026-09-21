@@ -45,9 +45,13 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   samme behov (Theo bestemmer selv, hvad der sker, ved at holde): hold på himlen, og ballonen vokser, til den
   sprænger; hold på solen, og den lader op til et solskinsbrag. Træner: en tredje bevægelse ud over tryk og swipe,
   tålmodighed og forventning ("nu sker det snart").
-- 💡 **Dag og nat** – himlen skifter langsomt over dagen (eller efter klokken), og natten får sit eget indhold: måne,
-  stjerner der tændes ved tryk, ildfluer, ugle, stille vuggeviser og roligere tempo før sengetid (far's idé, til
-  senere). Træner: ro før søvn, kontrast-syn, nye ting at opdage i en kendt verden.
+- ✅ **Aldersprofiler og pause** – *8–12 mdr* (standard), *1–2 år* og *2+ år* styrer, hvor meget der sker ad gangen;
+  efter 5/10/20 minutter falder verdenen i søvn (solnedgang, måne, vuggevise), til en forælder vækker den. Det er
+  den evidensbaserede brug af "nat": som blid slutning på en kort session, ikke som mere indhold.
+- 💡 **Næste: jeres stemmer** – mor og far indtaler ord ("hund", "ballon", "traktor") og navnene på familiebillederne
+  ("Mor!", "Far!", "Theo!") i forældremenuen; appen siger ordet med jeres stemme, når Theo rører tingen eller
+  popper billedet. Kendt stemme + kontingens er den sprogstøtte, forskningen peger på. Træner: ordforråd,
+  genkendelse af stemmer, sammenhæng mellem ord og ting.
 - 💡 **Rasle** – hele skærmen er en rangle: tryk giver klokker, ryst giver rasle-lyd og hoppende kugler, tilt får kuglerne
   til at rulle (accelerometer). Træner: årsag-virkning, kropslig kontrol, lyd-opmærksomhed.
 - 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle

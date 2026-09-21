@@ -2,7 +2,7 @@ import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { AudioEngine } from './audio';
-import { Game } from './game';
+import { AGE_PROFILES, Game } from './game';
 import { attachInput, attachShake } from './input';
 import { kidLock } from './kidlock';
 import { ParentPanel, loadSettings, saveSettings } from './parent';
@@ -31,6 +31,7 @@ function ensureAudio(): void {
     try {
       audio = AudioEngine.create();
       audio.setSfxEnabled(settings.sfx);
+      audio.setMusicLevel(AGE_PROFILES[settings.age].music);
       audio.setMusicEnabled(settings.music);
     } catch (error) {
       console.warn('Lyd kunne ikke startes', error);
@@ -215,14 +216,19 @@ function visitorSound(kind: VisitorKind, what: 'appear' | 'poke' | 'leave'): voi
 // ---- Parent menu and kid lock ----------------------------------------------
 
 game.setTempo(settings.tempo);
+game.setAge(settings.age);
 const panel = new ParentPanel(settings, {
   onChange: (updated) => {
     saveSettings(updated);
     audio?.setSfxEnabled(updated.sfx);
     audio?.setMusicEnabled(updated.music);
+    audio?.setMusicLevel(AGE_PROFILES[updated.age].music);
     game.setTempo(updated.tempo);
+    game.setAge(updated.age);
     applyFamilyPhotos();
   },
+  // Opening the menu (a two second hold by a parent) wakes the world after a pause.
+  onOpen: () => wakeUp(),
   lock: kidLock,
   update: appUpdate,
   stats: {
@@ -295,6 +301,23 @@ window.addEventListener('resize', resize);
 window.visualViewport?.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 
+// ---- Pause after a long session -------------------------------------------
+// Short sessions are what the research asks for (CLAUDE.md, "Alderssvarende"): after the chosen number of
+// minutes of actual play, the world calmly goes to sleep until a parent wakes it by opening the menu.
+let sessionSeconds = 0;
+function wakeUp(): void {
+  if (!game.asleep) return;
+  game.wake();
+  audio?.wake();
+  sessionSeconds = 0;
+  stats.bump('pauses');
+}
+function fallAsleep(): void {
+  if (game.asleep) return;
+  game.sleep();
+  audio?.sleep();
+}
+
 let lastFrame = performance.now();
 let loggedErrors = 0;
 function frame(now: number): void {
@@ -304,7 +327,12 @@ function frame(now: number): void {
     game.update(dt);
     renderer.draw(game, dt);
     // Play time: the half minute after every touch counts, so pauses don't inflate the numbers.
-    if (!panel.isOpen && now - lastTouch < 30000) stats.addPlayTime(dt);
+    const playing = !panel.isOpen && now - lastTouch < 30000 && !game.asleep;
+    if (playing) {
+      stats.addPlayTime(dt);
+      sessionSeconds += dt;
+      if (settings.pauseAfter > 0 && sessionSeconds >= settings.pauseAfter * 60) fallAsleep();
+    }
   } catch (error) {
     // Never let one bad frame freeze the game for a small child.
     if (loggedErrors++ < 5) console.error('Fejl i spil-loopet', error);

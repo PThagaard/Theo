@@ -3,6 +3,26 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – alder, pause og forskningsgrundlag
+
+- **Alder** i forældremenuen (*Leg*): *8–12 mdr* (standard), *1–2 år*, *2+ år*. Den yngste profil holder verdenen
+  rolig: tre balloner i stedet for seks, langsommere, ét besøg ad gangen og sjældnere, intet uvejr af sig selv (man
+  kan stadig fremkalde det ved at holde på en sky), lynet lyser aldrig hele skærmen op, og musikken er lavere, så
+  jeres stemmer vinder. De ældre profiler skruer op trin for trin. Alt nyt fremover skal rette sig efter profilerne
+  (regel i CLAUDE.md).
+- **Pause efter** 5/10/20 minutter (standard 10, kan slås fra): verdenen falder stille i søvn. Ballonerne driver væk,
+  dyrene går hjem, solen går ned bag bakkerne, en mørkeblå nat med stjerner og en sovende måne lægger sig over
+  alting, musikken toner ud i en langsom "Lille stjerne". Et tryk giver kun et lille glimt. Hold hjørneknappen (som
+  når menuen åbnes), så vågner verdenen igen. Tælles i Theos leg (pauser).
+- README har fået afsnittet *Sådan bruger I den rigtigt* (sammen, kort, ikke før sengetid, hans signaler
+  bestemmer), og CLAUDE.md et afsnit om forskningsgrundlaget med regler for al kode.
+
+**Test på telefonen:** (1) Forældremenu → *Leg*: *Alder* står på *8–12 mdr*. Luk menuen: der er kun få balloner,
+de stiger roligt, og der er højst ét dyr ad gangen. (2) Sæt *Alder* til *2+ år*: straks flere og hurtigere balloner.
+Sæt den tilbage. (3) Sæt *Pause efter* til *5 min*, og leg i fem minutter (eller lad Theo): verdenen falder i søvn
+med solnedgang, måne og vuggevise; tryk giver kun små glimt. Hold hjørneknappen: menuen åbner, og verdenen vågner
+bag den. (4) Lyn i den yngste profil: skyen lyser op, men hele skærmen blinker ikke.
+
 ## 2026-09-21 – opdateringer næsten af sig selv
 
 - **Appen finder selv nye versioner.** Kort efter start (højst hver 12. time) spørger den GitHub Releases, og er der

@@ -61,3 +61,12 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - "Forældremenuen skal have lidt mere system, så tællere, indstillinger og billeder ikke ligger i én lang liste"
   → behov: forældrene skal hurtigt finde det, de kom for (oftest: opdatering eller lås) → fire faner, menuen husker
   den sidste.
+
+## 2026-09-21 – "hvad siger viden om babyer og skærm?" (far)
+
+- Spørgsmål: har vi for mange aktiviteter, for højt tempo, er det korrekt for alderen? Svar: skærmen lærer ikke en
+  8 måneder gammel noget i sig selv (Sundhedsstyrelsen, WHO, AAP); det eneste, der virker, er kontingens sammen med en
+  voksen. Vi havde for meget på skærmen ad gangen for alderen.
+- Beslutning (far: "lav alle 5"): aldersprofiler med *8–12 mdr* som standard, pause efter 10 minutter, README-afsnit
+  om brug, forskningsregler i CLAUDE.md, og jeres egne stemmer som næste projekt (Anna læser ordene ind).
+- Dag/nat som indhold er droppet; "nat" bruges kun som den blide afslutning på en session.

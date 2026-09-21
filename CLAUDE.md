@@ -39,6 +39,34 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
    og kilden står i `src/lyde/README.md`. Synthen er altid reserve, hvis filen mangler. Grafik tegnes i kode eller er
    vores egen.
 
+## Alderssvarende (forskningsgrundlag)
+
+Det, vi ved: skærmen lærer ikke et barn under to år noget i sig selv. Sundhedsstyrelsen anbefaler ingen skærm
+under to år uden en voksen, der deltager aktivt; WHO ingen skærmtid under ét år; AAP ingen under 18 måneder. Det
+eneste, forskningen finder virker for små børn på en skærm, er *kontingens* (barnets egen handling giver et svar med
+det samme) sammen med en voksen, der sætter ord på. Højt tempo, mange samtidige stimuli, pludselige lyde, lange
+sessioner og skærm før sengetid er det, der skader. Kilder: Sundhedsstyrelsens anbefalinger om skærmbrug (2023/24),
+WHO's retningslinjer for 0–5 år (2019), AAP's medieanbefalinger, Choi & Kirkorian (2016) og Kirkorian m.fl. (2021)
+om kontingens og "video deficit".
+
+Derfor gælder for **al kode**, nu og fremover:
+
+- **Appen er et legetøj, I bruger sammen, i korte stunder.** Ikke et læringsprogram. Dens værdi er, at Theos
+  handling giver et svar, og at forældrene sætter ord på. README fortæller forældrene det.
+- **Aldersprofiler er loven.** `AGE_PROFILES` i `game.ts` (`8-12` mdr er standard, `1-2` år, `2+` år) styrer, hvor
+  meget der er på skærmen ad gangen, hvor hurtigt, hvor tit noget sker af sig selv, uvejr, blink og musikstyrke.
+  Hver ny funktion skal svare på: hvad gør den i den yngste profil? Som regel: mindre, langsommere eller slet ikke.
+  Ingen ny funktion må gøre den yngste profil travlere.
+- **Kontingens frem for underholdning.** For de mindste sker det vigtige kun, når barnet rører noget. Ting, der
+  starter af sig selv (besøg, uvejr, lyn), holdes få og rolige i den yngste profil.
+- **Én ting ad gangen, roligt.** Bløde bevægelser, ingen skærmblink for de mindste, moderat lyd, plads til
+  forældrenes stemme (musikken er lavere for de mindste).
+- **Korte sessioner.** Pausen (verdenen falder i søvn efter 10 minutter, forældrene kan ændre eller slå den fra) er
+  en del af produktet, ikke en detalje. Den må aldrig føles som straf: solen går ned, alt lægger sig til rette.
+- **Kendte stemmer.** Forældrenes egne indtalte ord ("hund", "mor") er den sprogstøtte, der giver mening; syntetiske
+  stemmer er ikke et mål.
+- **Ikke før sengetid** og altid sammen med en voksen: det står i README, appen kan ikke sikre det.
+
 ## Sådan forstår vi ønsker fra forældrene
 
 Et forslag fra Theos forældre ("en hund, der går over græsset", "en elefant bag bakken") er et **eksempel på et
@@ -123,6 +151,12 @@ Arbejdsgang for en ændring:
 4. Ændrer du native kode: byg APK'en (lokalt med Android SDK eller lad CI gøre det) og tjek at den er grøn.
 5. Opdater `CHANGELOG.md` (og README hvis forældre-vejledningen ændrer sig). Commit på dansk, push.
 6. CI bygger APK og webapp. Prøv på telefonen. Skriv, hvad Theo gjorde, i `docs/OBSERVATIONER.md`.
+
+**Claude arbejder selvstændigt.** Når en ændring følger principperne og reglerne her, beslutter, bygger, tester,
+udgiver Claude og skriver testlisten uden at spørge først; forældrene svarer med, hvad Theo gjorde. Claude spørger
+kun ved uigenkaldelige indgreb (omskrivning af git-historik, sletning af brugerdata), ved ændringer af principperne
+eller aldersreglerne, ved noget der koster penge eller kræver konti, og når to læsninger af et ønske giver helt
+forskellige produkter.
 
 Git: én lang levende branch er fint i den private fase (standard-branchen). Commit-beskeder: dansk, første linje
 under 72 tegn, brødtekst forklarer hvorfor. Commit aldrig hemmeligheder. Signeringsnøglen i `android/keystore/` er

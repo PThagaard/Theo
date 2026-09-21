@@ -10,6 +10,7 @@ function makeGame(seed = 42): { game: Game; events: GameEvent[] } {
   const events: GameEvent[] = [];
   game.onEvent((event) => events.push(event));
   game.resize(W, H);
+  game.setAge('2+'); // the busiest profile: most tests were written against it; the youngest has its own tests
   return { game, events };
 }
 
@@ -422,6 +423,67 @@ describe('Game', () => {
     });
   });
 
+  describe('age profiles and the pause', () => {
+    it('starts on the youngest profile: few balloons, one visitor, no storms by themselves, no screen flash', () => {
+      const game = new Game({}, 5);
+      game.resize(W, H);
+      const events: GameEvent[] = [];
+      game.onEvent((e) => events.push(e));
+      expect(game.currentAge).toBe('8-12');
+      expect(game.targetBalloons).toBe(3);
+      let mostVisitors = 0;
+      for (let t = 0; t < 600; t += 1 / 20) {
+        game.update(1 / 20);
+        mostVisitors = Math.max(mostVisitors, game.visitors.filter((v) => v.state !== 'gone').length);
+      }
+      expect(events.filter((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'appear')).toHaveLength(0);
+      expect(mostVisitors).toBeLessThanOrEqual(1);
+      expect(game.balloons.length).toBeLessThanOrEqual(4);
+      // A storm a parent summons still strikes, but never lights up the whole screen.
+      game.balloons = [];
+      game.visitors = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      advance(game, 0.5);
+      game.press(1, storm.x, storm.y);
+      game.release(1);
+      const bolt = events.find((e) => e.type === 'lightning');
+      expect(bolt).toMatchObject({ flash: false });
+    });
+
+    it('lets older children have more going on', () => {
+      const { game } = makeGame();
+      game.setAge('1-2');
+      expect(game.targetBalloons).toBe(5);
+      expect(game.profile.visitors).toBe(2);
+      game.setAge('2+');
+      expect(game.targetBalloons).toBe(6);
+      expect(game.profile.storms).toBe(true);
+    });
+
+    it('goes to sleep calmly and wakes up when a parent says so', () => {
+      const { game } = makeGame();
+      advance(game, 1);
+      game.sleep();
+      expect(game.asleep).toBe(true);
+      const count = game.balloons.length;
+      advance(game, 10);
+      expect(game.dusk).toBe(1);
+      expect(game.balloons.length).toBeLessThanOrEqual(count); // nothing new arrives
+      expect(game.visitors.filter((v) => v.state !== 'gone' && v.state !== 'leave')).toHaveLength(0);
+      const before = game.balloons.length;
+      game.press(1, W / 2, H * 0.45);
+      game.release(1);
+      expect(game.balloons.length).toBe(before); // a touch is only a twinkle now
+      game.wake();
+      advance(game, 3);
+      expect(game.dusk).toBe(0);
+      advance(game, 15);
+      expect(game.balloons.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('the farm and its tractor', () => {
     it('smokes from the farmhouse chimney now and then', () => {
       const { game } = makeGame();
@@ -724,6 +786,7 @@ describe('Game', () => {
     it('is rare: never in the first minute, then at most every four minutes', () => {
       const game = new Game({}, 5);
       game.resize(W, H);
+      game.setAge('2+');
       let storms = 0;
       game.onEvent((e) => {
         if (e.type === 'visitor' && e.kind === 'storm' && e.what === 'appear') storms++;

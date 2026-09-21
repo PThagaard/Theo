@@ -99,7 +99,12 @@ export class Renderer {
     const ctx = this.ctx;
     ctx.fillStyle = this.sky ?? SKY.middle;
     ctx.fillRect(0, 0, this.W, this.H);
+    // Asleep: the sun sinks behind the hills (it is drawn before them).
+    ctx.save();
+    const setting = game.dusk * game.dusk * (3 - 2 * game.dusk);
+    ctx.translate(0, setting * this.H * 0.55);
     this.drawSun(game, dt);
+    ctx.restore();
     this.drawRainbow(game.rainbowGlow > 0 ? Math.min(1, game.rainbowGlow / 2) : 0);
     for (const cloud of game.clouds) this.drawCloud(cloud);
     for (const v of game.visitors) if (v.kind === 'storm') this.drawStorm(v);
@@ -116,6 +121,7 @@ export class Renderer {
     for (const b of game.balloons) this.drawBalloon(b);
     for (const trail of game.trails) this.drawTrail(trail, game.time);
     for (const p of game.particles) this.drawParticle(p);
+    if (game.dusk > 0) this.drawNight(game.dusk);
     // The whole sky lights up for an instant when lightning strikes.
     const flash = game.visitors.reduce((max, v) => Math.max(max, v.kind === 'storm' ? v.flash : 0), 0);
     if (flash > 0) {
@@ -238,6 +244,48 @@ export class Renderer {
       ctx.arc(dx, dy, r, 0, TAU);
     }
     ctx.fill();
+    ctx.restore();
+  }
+
+  /** Night falls softly over everything: a blue veil, a moon and a few slow stars. Calm, never scary. */
+  private drawNight(dusk: number): void {
+    const ctx = this.ctx;
+    const u = this.u;
+    ctx.save();
+    ctx.fillStyle = `rgba(24, 28, 80, ${0.55 * dusk})`;
+    ctx.fillRect(0, 0, this.W, this.H);
+    ctx.globalAlpha = Math.max(0, dusk - 0.3) / 0.7;
+    // Stars, fixed places, twinkling slowly.
+    ctx.fillStyle = '#fff6c4';
+    for (let i = 0; i < 14; i++) {
+      const x = ((i * 0.618 + 0.13) % 1) * this.W;
+      const y = ((i * 0.382 + 0.07) % 1) * this.H * 0.45;
+      const twinkle = 0.6 + 0.4 * Math.sin(this.time * 1.5 + i);
+      this.starPath(x, y, (3 + (i % 3)) * u * twinkle, 4, 0.4);
+      ctx.fill();
+    }
+    // A sleepy crescent moon in the top left, away from the sun's old spot.
+    const mx = this.W * 0.2;
+    const my = this.H * 0.14;
+    const r = 26 * u;
+    ctx.fillStyle = '#fff1a8';
+    ctx.beginPath();
+    ctx.arc(mx, my, r, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = `rgba(24, 28, 80, ${0.55 * dusk + 0.45})`;
+    ctx.beginPath();
+    ctx.arc(mx + r * 0.45, my - r * 0.2, r * 0.85, 0, TAU);
+    ctx.fill();
+    // Closed, smiling eyes on the lit part.
+    ctx.strokeStyle = '#b9962a';
+    ctx.lineWidth = 2 * u;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(mx - r * 0.35, my + r * 0.05, r * 0.14, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(mx - r * 0.3, my + r * 0.4, r * 0.18, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
     ctx.restore();
   }
 

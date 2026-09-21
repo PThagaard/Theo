@@ -3,6 +3,7 @@ import type { KidLock } from './kidlock';
 import type { StoredPhoto } from './photos';
 import { STAT_LABELS, formatMinutes, type StatsSnapshot } from './stats';
 import type { AppUpdate, UpdateCheck } from './update';
+import { DEFAULT_AGE, type Age } from './game';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -11,6 +12,7 @@ import type { AppUpdate, UpdateCheck } from './update';
  */
 
 export type Tempo = 'rolig' | 'normal' | 'vild';
+export type PauseAfter = 0 | 5 | 10 | 20;
 
 export interface Settings {
   music: boolean;
@@ -19,6 +21,10 @@ export interface Settings {
   autoLock: boolean;
   /** How busy the sky is. */
   tempo: Tempo;
+  /** The child's age: decides how much happens at once (see AGE_PROFILES in game.ts). */
+  age: Age;
+  /** Minutes of play before the world goes to sleep (0 = never). */
+  pauseAfter: PauseAfter;
   /** Show family photos on balloons. */
   familyBalloons: boolean;
 }
@@ -42,6 +48,8 @@ export interface StatsHooks {
 
 export interface ParentPanelHooks {
   onChange(settings: Settings): void;
+  /** The menu opened (a parent held the corner button). */
+  onOpen?(): void;
   lock?: KidLock;
   photos?: PhotoHooks;
   update?: AppUpdate;
@@ -56,8 +64,10 @@ const BACKGROUND_CHECK_KEY = 'theos-balloner.lastUpdateCheck';
 const BACKGROUND_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 type TabName = 'leg' | 'familie' | 'theo' | 'telefon';
 const TABS: TabName[] = ['leg', 'familie', 'theo', 'telefon'];
-const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', familyBalloons: true };
+const DEFAULTS: Settings = { music: true, sfx: true, autoLock: false, tempo: 'normal', age: DEFAULT_AGE, pauseAfter: 10, familyBalloons: true };
 const TEMPOS: Tempo[] = ['rolig', 'normal', 'vild'];
+const AGES: Age[] = ['8-12', '1-2', '2+'];
+const PAUSES: PauseAfter[] = [0, 5, 10, 20];
 const HOLD_MS = 2000;
 const AUTO_CLOSE_MS = 15000;
 
@@ -67,6 +77,8 @@ export function loadSettings(): Settings {
     if (raw) {
       const stored = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
       if (!TEMPOS.includes(stored.tempo)) stored.tempo = 'normal';
+      if (!AGES.includes(stored.age)) stored.age = DEFAULT_AGE;
+      if (!PAUSES.includes(stored.pauseAfter)) stored.pauseAfter = 10;
       return stored;
     }
   } catch {
@@ -163,6 +175,8 @@ export class ParentPanel {
   private readonly autoLockToggle = element<HTMLInputElement>('opt-autolock');
   private readonly familyToggle = element<HTMLInputElement>('opt-family');
   private readonly tempoButtons = Array.from(element<HTMLElement>('tempo-options').querySelectorAll<HTMLButtonElement>('button[data-tempo]'));
+  private readonly ageButtons = Array.from(element<HTMLElement>('age-options').querySelectorAll<HTMLButtonElement>('button[data-age]'));
+  private readonly pauseButtons = Array.from(element<HTMLElement>('pause-options').querySelectorAll<HTMLButtonElement>('button[data-pause]'));
   private readonly lockSection = element<HTMLElement>('lock-section');
   private readonly lockButton = element<HTMLButtonElement>('lock-button');
   private readonly lockStatus = element<HTMLElement>('lock-status');
@@ -231,6 +245,21 @@ export class ParentPanel {
       });
     }
     this.renderTempo();
+    for (const button of this.ageButtons) {
+      button.addEventListener('click', () => {
+        this.settings.age = button.dataset.age as Age;
+        this.renderChoices();
+        this.changed();
+      });
+    }
+    for (const button of this.pauseButtons) {
+      button.addEventListener('click', () => {
+        this.settings.pauseAfter = Number(button.dataset.pause) as PauseAfter;
+        this.renderChoices();
+        this.changed();
+      });
+    }
+    this.renderChoices();
 
     this.photoSection.hidden = !hooks.photos;
     if (hooks.photos) this.cropper = new Cropper((dataUrl) => this.storeFace(dataUrl));
@@ -312,6 +341,7 @@ export class ParentPanel {
 
   open(): void {
     this.panel.hidden = false;
+    this.hooks.onOpen?.();
     this.armAutoClose();
     this.renderStats();
     void this.showVersion();
@@ -344,6 +374,19 @@ export class ParentPanel {
     for (const button of this.tempoButtons) {
       button.classList.toggle('is-selected', button.dataset.tempo === this.settings.tempo);
       button.setAttribute('aria-pressed', String(button.dataset.tempo === this.settings.tempo));
+    }
+  }
+
+  private renderChoices(): void {
+    for (const button of this.ageButtons) {
+      const selected = button.dataset.age === this.settings.age;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+    for (const button of this.pauseButtons) {
+      const selected = Number(button.dataset.pause) === this.settings.pauseAfter;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
     }
   }
 

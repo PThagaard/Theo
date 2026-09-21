@@ -251,6 +251,8 @@ export class AudioEngine {
   private readonly music: MusicPlayer;
   private sfxOn = true;
   private musicOn = true;
+  /** Age profile factor on the music level, so a parent's voice wins over the music for the youngest. */
+  private musicLevel = 1;
   private timer: ReturnType<typeof setInterval> | null = null;
   /** Decoded recordings from src/lyde/, by file name. */
   private readonly samples = new Map<string, AudioBuffer>();
@@ -386,10 +388,31 @@ export class AudioEngine {
     else this.stopMusic();
   }
 
+  /** 0–1 on top of the normal music level (age profiles turn the music down for the youngest). */
+  setMusicLevel(factor: number): void {
+    this.musicLevel = clamp(factor, 0, 1);
+    if (this.timer) this.fadeMusicBus(MUSIC_LEVEL * this.musicLevel, 0.5);
+  }
+
+  /** The world goes to sleep: the music fades out and a slow music-box lullaby plays once. */
+  sleep(): void {
+    this.stopMusic();
+    if (!this.sfxOn) return;
+    const when = this.ctx.currentTime + 1.5;
+    // "Lille stjerne": the first line, slow and soft.
+    const notes = [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60];
+    notes.forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + i * 0.62, i === 6 || i === 13 ? 1.4 : 0.6, 0.16));
+  }
+
+  /** A parent woke the world up: the music comes back. */
+  wake(): void {
+    this.startMusic();
+  }
+
   startMusic(): void {
     if (!this.musicOn || this.timer) return;
     const now = this.ctx.currentTime;
-    this.fadeMusicBus(MUSIC_LEVEL, 0.3);
+    this.fadeMusicBus(MUSIC_LEVEL * this.musicLevel, 0.3);
     this.music.start(now + 0.15);
     this.music.scheduleUntil(now + LOOKAHEAD);
     this.timer = setInterval(() => this.music.scheduleUntil(this.ctx.currentTime + LOOKAHEAD), TICK_MS);

@@ -164,6 +164,7 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['lightning', 'Lyn'],
   ['bursts', 'Balloner sprængt (holdt til de revnede)'],
   ['sunbursts', 'Solskinsbrag'],
+  ['pauses', 'Pauser (verdenen sov)'],
   ['transformations', 'Dyr forvandlet'],
 ];
 

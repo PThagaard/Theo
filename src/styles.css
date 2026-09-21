@@ -171,6 +171,13 @@ body {
   gap: 6px;
 }
 
+.row-help {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.65;
+}
+
 .segmented button {
   flex: 1;
   padding: 12px 4px;

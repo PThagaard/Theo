@@ -278,6 +278,18 @@ const sunbursts = await page.evaluate(() => window.__theo.stats.snapshot.today.s
 console.log('sunbursts', sunbursts);
 check(sunbursts > 0, 'holding the sun did not make a sunburst');
 
+// The pause: the world falls asleep (sun sets, night veil, moon), touches only twinkle, and a parent wakes it.
+await page.evaluate(() => window.__theo.game.sleep());
+await page.waitForTimeout(2500);
+const asleep = await page.evaluate(() => { const g = window.__theo.game; const n = g.balloons.length; g.press(77, g.width / 2, g.height * 0.45); g.release(77); return { dusk: g.dusk, spawned: g.balloons.length - n }; });
+console.log('asleep: dusk', asleep.dusk.toFixed(2), 'balloons made by a touch', asleep.spawned);
+check(asleep.dusk > 0.2 && asleep.spawned === 0, 'the world did not go to sleep properly');
+await page.waitForTimeout(6000);
+await page.screenshot({ path: `${OUT}/${tag}-21-sleep.png` });
+await page.evaluate(() => window.__theo.game.wake());
+await page.waitForTimeout(3000);
+check((await page.evaluate(() => window.__theo.game.dusk)) === 0, 'the world did not wake up');
+
 // Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
 const flowerTap = await page.evaluate(() => {
   const g = window.__theo.game;
@@ -343,6 +355,11 @@ console.log('parent panel open after hold:', open);
 if (!open) throw new Error('parent panel did not open');
 await page.screenshot({ path: `${OUT}/${tag}-06-parent.png` });
 await page.click('#tab-leg');
+// The youngest profile is the default; parents can move up as the child grows.
+check(await page.evaluate(() => window.__theo.game.currentAge) === '8-12', 'the youngest age profile should be the default');
+await page.click('#age-options button[data-age="2+"]');
+check(await page.evaluate(() => window.__theo.game.currentAge) === '2+', 'the age setting did not reach the game');
+await page.click('#pause-options button[data-pause="5"]');
 await page.click('label:has(#opt-music)');
 await page.click('#tempo-options button[data-tempo="vild"]');
 // The pages of the menu: only "Leg", "Familie" and "Theos leg" show on the web (no lock or update there).
@@ -355,6 +372,7 @@ await page.click('#tab-leg');
 const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
 console.log('stored settings:', stored);
 check(JSON.parse(stored).tempo === 'vild', 'tempo was not stored');
+check(JSON.parse(stored).age === '2+' && JSON.parse(stored).pauseAfter === 5, 'age or pause was not stored');
 check(await page.evaluate(() => window.__theo.game.currentTempo) === 'vild', 'tempo did not reach the game');
 check(await page.evaluate(() => document.getElementById('update-section').hidden), 'update section should be hidden on the web');
 await page.click('#parent-close');

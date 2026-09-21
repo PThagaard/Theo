@@ -41,6 +41,15 @@
           <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
         </div>
         <section class="tab-page" data-tab="leg">
+        <div class="row row-stacked">
+          <span class="row-label">👶 Alder</span>
+          <div id="age-options" class="segmented" role="group" aria-label="Alder">
+            <button type="button" data-age="8-12">8–12 mdr</button>
+            <button type="button" data-age="1-2">1–2 år</button>
+            <button type="button" data-age="2+">2+ år</button>
+          </div>
+          <p class="row-help">Færre ting ad gangen og roligere for de mindste. Alt i spillet retter sig efter dette.</p>
+        </div>
         <label class="row">
           <span class="row-label">🎵 Musik</span>
           <input type="checkbox" id="opt-music" />
@@ -58,6 +67,16 @@
             <button type="button" data-tempo="normal">🙂 Normal</button>
             <button type="button" data-tempo="vild">🚀 Vild</button>
           </div>
+        </div>
+        <div class="row row-stacked">
+          <span class="row-label">😴 Pause efter</span>
+          <div id="pause-options" class="segmented" role="group" aria-label="Pause efter">
+            <button type="button" data-pause="0">Aldrig</button>
+            <button type="button" data-pause="5">5 min</button>
+            <button type="button" data-pause="10">10 min</button>
+            <button type="button" data-pause="20">20 min</button>
+          </div>
+          <p class="row-help">Så falder verdenen stille i søvn. Hold hjørneknappen for at vække den igen.</p>
         </div>
         </section>
         <section class="tab-page" data-tab="familie" hidden>
