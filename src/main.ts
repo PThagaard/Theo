@@ -106,6 +106,16 @@ game.onEvent((event) => {
       haptic(ImpactStyle.Heavy);
       stats.bump('shakes');
       break;
+    case 'flower':
+      if (event.what === 'spin') {
+        audio?.twirl();
+        stats.bump('flowersSpun');
+      } else {
+        audio?.pluck();
+        stats.bump('flowersPlucked');
+      }
+      haptic(ImpactStyle.Light);
+      break;
     case 'visitor':
       visitorSound(event.kind, event.what);
       if (event.what === 'poke') {

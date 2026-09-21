@@ -1,23 +1,14 @@
 import type { Game } from './game';
 import { TRAIL_LIFE } from './game';
-import { FLOWER_COLORS, HILLS, RAINBOW, SKY } from './palette';
-import { Rng, TAU, clamp, easeOutBack } from './rng';
+import { HILLS, RAINBOW, SKY } from './palette';
+import { TAU, clamp, easeOutBack } from './rng';
 import { hillY } from './terrain';
-import type { Balloon, Cloud, Particle, Trail, Visitor } from './types';
+import type { Balloon, Cloud, Flower, Particle, Trail, Visitor } from './types';
 
 /**
  * Draws the world on a 2D canvas: sky, smiling sun, rainbow, clouds, flowery
  * hills, the balloons with their faces, the finger ribbons and all the confetti.
  */
-
-interface Flower {
-  /** Horizontal position as a fraction of the width. */
-  fx: number;
-  color: string;
-  size: number;
-  phase: number;
-  petals: number;
-}
 
 /** Puff circles that make up each cloud: [dx, dy, radius]. The game picks a shape index. */
 const CLOUD_SHAPES: ReadonlyArray<ReadonlyArray<readonly [number, number, number]>> = [
@@ -49,10 +40,8 @@ export class Renderer {
   private readonly ctx: CanvasRenderingContext2D;
   private W = 1;
   private H = 1;
-  private flowers: Flower[] = [];
   private sunAngle = 0;
   private sky: CanvasGradient | null = null;
-  private rng = new Rng(20240101);
   private time = 0;
   private photos = new Map<string, HTMLImageElement>();
 
@@ -98,19 +87,6 @@ export class Renderer {
   }
 
   private buildScenery(): void {
-    const u = this.u;
-    const rng = this.rng;
-    this.flowers = [];
-    const flowerCount = 6 + Math.round(this.W / 70);
-    for (let i = 0; i < flowerCount; i++) {
-      this.flowers.push({
-        fx: (i + rng.range(0.15, 0.85)) / flowerCount,
-        color: rng.pick(FLOWER_COLORS),
-        size: u * rng.range(5, 8),
-        phase: rng.range(0, TAU),
-        petals: rng.int(5, 6),
-      });
-    }
     const gradient = this.ctx.createLinearGradient(0, 0, 0, this.H);
     gradient.addColorStop(0, SKY.top);
     gradient.addColorStop(0.55, SKY.middle);
@@ -130,7 +106,7 @@ export class Renderer {
     // The elephant peeks up from between the hills, so it is drawn before the front hill.
     for (const v of game.visitors) if (v.kind === 'elephant') this.drawVisitor(v);
     this.drawHill(1);
-    this.drawFlowers();
+    for (const f of game.flowers) this.drawFlower(f, game);
     for (const v of game.visitors) if (v.kind !== 'elephant') this.drawVisitor(v);
     for (const b of game.balloons) this.drawString(b);
     for (const b of game.balloons) this.drawBalloon(b);
@@ -258,37 +234,71 @@ export class Renderer {
     ctx.fill();
   }
 
-  private drawFlowers(): void {
+  /** A flower on the hill (or its head flying through the air after being plucked). */
+  private drawFlower(f: Flower, game: Game): void {
     const ctx = this.ctx;
     const u = this.u;
-    for (const flower of this.flowers) {
-      const x = flower.fx * this.W;
-      const y = this.hillY(x, 1) + 4 * u;
-      const sway = Math.sin(this.time * 1.6 + flower.phase) * 0.12;
+    const x = f.fx * this.W;
+    const baseY = this.hillY(x, 1) + 4 * u;
+    const growth = f.growth < 1 ? clamp(easeOutBack(f.growth), 0, 1.3) : 1;
+    const sway = Math.sin(this.time * 1.6 + f.phase) * 0.12;
+
+    if (f.flying) {
+      // The plucked head tumbles through the air with a little stem still attached.
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(sway);
+      ctx.translate(f.flying.x, f.flying.y);
+      ctx.rotate(f.angle);
       ctx.strokeStyle = HILLS.frontDark;
       ctx.lineWidth = 2 * u;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(0, -flower.size * 2.2);
+      ctx.lineTo(0, f.size * 1.4);
       ctx.stroke();
-      ctx.translate(0, -flower.size * 2.4);
-      ctx.fillStyle = flower.color;
-      for (let i = 0; i < flower.petals; i++) {
-        const a = (i / flower.petals) * TAU;
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * flower.size * 0.75, Math.sin(a) * flower.size * 0.75, flower.size * 0.5, 0, TAU);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#ffdf5e';
-      ctx.beginPath();
-      ctx.arc(0, 0, flower.size * 0.42, 0, TAU);
-      ctx.fill();
+      this.drawFlowerHead(f, 1, game.time);
       ctx.restore();
     }
+
+    if (growth <= 0.02) {
+      // Only a stub is left where the flower was plucked.
+      ctx.fillStyle = HILLS.frontDark;
+      ctx.beginPath();
+      ctx.arc(x, baseY, 2 * u, 0, TAU);
+      ctx.fill();
+      return;
+    }
+
+    ctx.save();
+    ctx.translate(x, baseY);
+    ctx.rotate(sway);
+    ctx.strokeStyle = HILLS.frontDark;
+    ctx.lineWidth = 2 * u;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -f.size * 2.2 * growth);
+    ctx.stroke();
+    ctx.translate(0, -f.size * 2.4 * growth);
+    ctx.rotate(f.angle);
+    this.drawFlowerHead(f, growth, game.time);
+    ctx.restore();
+  }
+
+  private drawFlowerHead(f: Flower, scale: number, now: number): void {
+    const ctx = this.ctx;
+    const size = f.size * scale;
+    for (let i = 0; i < f.petals; i++) {
+      const a = (i / f.petals) * TAU;
+      // A tapped flower shimmers: every petal runs through the rainbow at its own offset.
+      ctx.fillStyle = f.rainbow > 0 ? `hsl(${(now * 260 + i * 60 + f.id * 40) % 360}, 90%, 62%)` : f.color;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * size * 0.75, Math.sin(a) * size * 0.75, size * 0.5, 0, TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle = f.rainbow > 0 ? '#ffffff' : '#ffdf5e';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.42, 0, TAU);
+    ctx.fill();
   }
 
   // ---- Visitors ------------------------------------------------------------

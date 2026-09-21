@@ -143,6 +143,8 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['swipes', 'Swipes'],
   ['harpNotes', 'Harpetoner'],
   ['skyTouches', 'Tryk på himlen'],
+  ['flowersSpun', 'Blomster snurret'],
+  ['flowersPlucked', 'Blomster plukket'],
   ['sun', 'Solen drejet'],
   ['clouds', 'Skyer regnet'],
   ['shakes', 'Rystet'],

@@ -26,7 +26,11 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   egen stemme.
 - ✅ **Besøg** – hund, elefant, fugl, sommerfugl, snegl og stjerneskud kommer forbi, reagerer på tryk og ryst og går
   igen. Træner: opmærksomhed og forventning ("hvem kommer nu?"), dyrelyde til ordforråd, tracking af bevægelse.
-  Næste: flere dyr (kat, kanin, frø, bi), blomster der vrikker, en stemme der siger dyrets navn.
+  Næste: flere dyr (kat, kanin, frø, bi), en stemme der siger dyrets navn.
+- ✅ **Levende blomster** – tryk snurrer og farveskifter, swipe plukker (flyver, snurrer, vokser igen). Træner:
+  årsag-virkning med to forskellige svar på to forskellige bevægelser (tryk vs. swipe).
+- 🔨 **Uvejrssky** – sjældent besøg med regn, lyn og torden, hvor alle elementer reagerer (hund → hotdog,
+  elefant → mus, balloner presses ned, blomster vokser). Træner: forventning, overraskelse, "hvad sker der nu?".
 - 💡 **Rasle** – hele skærmen er en rangle: tryk giver klokker, ryst giver rasle-lyd og hoppende kugler, tilt får kuglerne
   til at rulle (accelerometer). Træner: årsag-virkning, kropslig kontrol, lyd-opmærksomhed.
 - 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle

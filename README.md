@@ -65,6 +65,8 @@ Vil du bygge en ny version manuelt, så kør workflowet *Byg app* under fanen **
 - **Tryk på solen** – den snurrer rundt, kniber øjnene sammen og siger "wiii". **Tryk på en sky** – den vrikker og
   drypper regn med små plip-lyde.
 - **Ryst telefonen** – alt hopper i vejret, det rasler og drysser konfetti.
+- **Blomsterne** – tryk på en blomst: den snurrer rundt og skifter farver i nogle sekunder. Swipe hen over
+  blomsterne: de plukkes, flyver op i luften, snurrer og daler ned, og vokser op igen lidt efter.
 - **Besøg** – med jævne mellemrum kommer der nogen forbi: en hund, der går hen over græsset og hopper og gør, når
   man rører den; en elefant, der kigger op bag bakken og trumpeterer; en fugl, der slår en kolbøtte; en sommerfugl,
   der flagrer mellem blomsterne; en snegl, der gemmer sig i sit hus; og af og til et stjerneskud, der eksploderer i

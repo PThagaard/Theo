@@ -17,7 +17,9 @@ function makeGame(seed = 42): { game: Game; events: GameEvent[] } {
 function emptySpot(game: Game): [number, number] {
   for (let y = 80; y < H - 80; y += 12) {
     for (let x = 40; x < W - 40; x += 12) {
-      if (!game.findBalloonAt(x, y, TAP_HIT_FACTOR) && !game.isOnSun(x, y) && !game.findCloudAt(x, y)) return [x, y];
+      if (!game.findBalloonAt(x, y, TAP_HIT_FACTOR) && !game.isOnSun(x, y) && !game.findCloudAt(x, y) && !game.findFlowerAt(x, y)) {
+        return [x, y];
+      }
     }
   }
   throw new Error('Ingen ledig plads på skærmen');
@@ -347,6 +349,67 @@ describe('Game', () => {
     game.balloons.forEach((b, i) => expect(b.vy).toBeGreaterThan(before[i]));
     game.setTempo('normal');
     game.balloons.forEach((b, i) => expect(b.vy).toBeCloseTo(before[i], 6));
+  });
+
+  describe('flowers', () => {
+    it('grow along the front hill', () => {
+      const { game } = makeGame();
+      expect(game.flowers.length).toBeGreaterThan(5);
+      for (const f of game.flowers) {
+        const head = game.flowerHead(f);
+        expect(head.x).toBeGreaterThan(0);
+        expect(head.x).toBeLessThan(W);
+        expect(head.y).toBeLessThan(game.ground(head.x));
+        expect(head.y).toBeGreaterThan(H * 0.7);
+      }
+    });
+
+    it('spins and cycles colours for a few seconds when tapped', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const flower = game.flowers[2];
+      const head = game.flowerHead(flower);
+      game.press(1, head.x + 6, head.y - 4);
+      game.release(1);
+      expect(events.find((e) => e.type === 'flower')).toMatchObject({ what: 'spin' });
+      expect(flower.rainbow).toBeGreaterThan(4);
+      expect(flower.spin).not.toBe(0);
+      advance(game, 1);
+      expect(flower.angle).not.toBe(0);
+      advance(game, 5);
+      expect(flower.rainbow).toBe(0);
+      expect(flower.spin).toBe(0);
+    });
+
+    it('plucks flowers a finger swipes over; they fly, spin and grow back', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const y = game.flowerHead(game.flowers[0]).y;
+      swipe(game, 1, [10, y], [W - 10, y], 80);
+      const plucked = game.flowers.filter((f) => f.flying);
+      expect(plucked.length).toBeGreaterThanOrEqual(3);
+      expect(events.filter((e) => e.type === 'flower' && e.what === 'pluck').length).toBe(plucked.length);
+      for (const f of plucked) {
+        expect(f.growth).toBe(0);
+        // Thrown upwards: still above the flower bed even though gravity has been pulling for a moment.
+        expect(f.flying!.y).toBeLessThan(y);
+      }
+      advance(game, 0.4);
+      for (const f of plucked) expect(f.angle).not.toBe(0);
+      // A plucked flower can't be plucked or spun again until it has grown back.
+      expect(game.findFlowerAt(game.flowerHead(plucked[0]).x, y)).toBeNull();
+      advance(game, 7);
+      for (const f of game.flowers) {
+        expect(f.flying).toBeNull();
+        expect(f.growth).toBe(1);
+      }
+    });
+
+    it('spin a little when the phone is shaken', () => {
+      const { game } = makeGame();
+      game.shake();
+      expect(game.flowers.some((f) => f.spin !== 0)).toBe(true);
+    });
   });
 
   describe('visitors', () => {

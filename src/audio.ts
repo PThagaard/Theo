@@ -492,6 +492,23 @@ export class AudioEngine {
     [96, 100, 103].forEach((midi, i) => this.synth.musicBox(this.sfxBus, midi, when + 0.05 + i * 0.09, 0.5, 0.25));
   }
 
+  // ---- Flowers -------------------------------------------------------------
+
+  /** Sparkly upward twirl when a flower is tapped and starts spinning. */
+  twirl(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    [84, 88, 91, 96].forEach((midi, i) => {
+      this.synth.tone(this.sfxBus, 'triangle', midiToFreq(midi), when + i * 0.06, 0.16, 0.004, 0.32, { filter: 3000 });
+    });
+  }
+
+  /** A quick "plop" and a whoosh when a flower is plucked and flies off. */
+  pluck(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    this.synth.tone(this.sfxBus, 'sine', 320, when, 0.28, 0.005, 0.14, { to: 760, glide: 0.09 });
+    this.synth.noiseBurst(this.sfxBus, when + 0.02, 0.12, 0.28, 'lowpass', 900, 0.6);
+  }
+
   // ---- Visitors ------------------------------------------------------------
 
   /**

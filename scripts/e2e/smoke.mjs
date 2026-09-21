@@ -36,7 +36,7 @@ await page.screenshot({ path: `${OUT}/${tag}-02-pop.png` });
 const empty = await page.evaluate((f) => {
   const g = window.__theo.game;
   // Look for a spot with a wide margin, so a balloon drifting a few pixels can't slide under the tap.
-  const clear = (x, y) => !g.findBalloonAt(x, y, f) && !g.findCloudAt(x, y) && !g.isOnSun(x, y);
+  const clear = (x, y) => !g.findBalloonAt(x, y, f) && !g.findCloudAt(x, y) && !g.isOnSun(x, y) && !g.findFlowerAt(x, y);
   for (let y = 120; y < g.height - 120; y += 10) {
     for (let x = 60; x < g.width - 60; x += 10) {
       if (clear(x, y) && clear(x - 30, y - 30) && clear(x + 30, y + 30) && clear(x - 30, y + 30) && clear(x + 30, y - 30)) return [x, y];
@@ -162,6 +162,28 @@ check(pokedKinds.includes('dog') && pokedKinds.includes('elephant'), 'dog or ele
 await page.waitForTimeout(250);
 await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
+
+// Flowers: tap one (spin + rainbow), then swipe along the flower bed (pluck) and photograph the flight.
+const flowerTap = await page.evaluate(() => {
+  const g = window.__theo.game;
+  for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
+  const f = g.flowers[Math.floor(g.flowers.length / 2)];
+  return g.flowerHead(f);
+});
+await page.touchscreen.tap(flowerTap.x, flowerTap.y);
+await page.waitForTimeout(120);
+const spun = await page.evaluate(() => window.__theo.game.flowers.filter((f) => f.rainbow > 0).length);
+console.log('flowers spinning after tap:', spun);
+check(spun >= 1, 'tapping a flower did not make it spin');
+await page.mouse.move(8, flowerTap.y);
+await page.mouse.down();
+await page.mouse.move(viewport.width - 8, flowerTap.y, { steps: 60 });
+await page.mouse.up();
+await page.waitForTimeout(250);
+const plucked = await page.evaluate(() => window.__theo.game.flowers.filter((f) => f.flying).length);
+console.log('flowers plucked by a swipe:', plucked);
+check(plucked >= 3, 'swiping over the flowers did not pluck them');
+await page.screenshot({ path: `${OUT}/${tag}-13-flowers.png` });
 
 // Pop until a celebration happens.
 let guard = 0;
@@ -312,7 +334,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 12, sr);
+  const ctx = new OfflineAudioContext(1, sr * 14, sr);
   const engine = new AudioEngine(ctx);
   const marks = [
     ['pop big', 0.2, () => engine.pop(1, 0.2)],
@@ -330,6 +352,7 @@ const audio = await page.evaluate(async () => {
     ['bark', 8.6, () => engine.bark(8.6)],
     ['trumpet', 9.3, () => engine.trumpet(9.3)],
     ['chirp', 11.3, () => { engine.chirp(11.3); engine.flutter(11.55); engine.blub(11.7); engine.rumble(11.75); }],
+    ['twirl', 12.5, () => { engine.twirl(12.5); engine.pluck(12.9); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -345,7 +368,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 12;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 14;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -357,7 +380,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 12);
+  out.total = stats(0, 14);
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));
   const str = (o, s) => { for (let i = 0; i < s.length; i++) wav.setUint8(o + i, s.charCodeAt(i)); };

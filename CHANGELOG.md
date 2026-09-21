@@ -3,6 +3,18 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-21 – levende blomster
+
+- **Tryk på en blomst:** den snurrer rundt og skifter farver gennem regnbuen i 4–5 sekunder med en lille
+  snurre-lyd og gnister.
+- **Swipe hen over blomsterne:** de plukkes med et "plop", flyver op i luften i swipe-retningen, snurrer rundt og
+  daler ned; et par sekunder senere vokser de op igen. Ryst får blomsterne til at vrikke.
+- Tælles i "Theos leg" (blomster snurret / plukket).
+
+**Test på telefonen:** (1) Tryk på en blomst nederst: den snurrer og skifter farver et par sekunder. (2) Swipe langs
+blomsterne: de flyver op og snurrer, og der er kun en stub tilbage, indtil de vokser op igen efter ca. 3 sekunder.
+(3) Ryst: blomsterne vrikker.
+
 ## 2026-09-21 – tællere for alt
 
 - **Theos leg** i forældremenuen: tabel med *i dag* og *i alt* for balloner poppet (og heraf familie-, stjerne- og

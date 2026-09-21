@@ -1,7 +1,19 @@
-import { BALLOON_COLORS, GOLD, RAINBOW, RAINBOW_COLOR, SPARKLE_COLORS } from './palette';
+import { BALLOON_COLORS, FLOWER_COLORS, GOLD, RAINBOW, RAINBOW_COLOR, SPARKLE_COLORS } from './palette';
 import { Rng, TAU, clamp, easeOutBack } from './rng';
 import { hillY } from './terrain';
-import type { Balloon, BalloonKind, Cloud, Face, GameEvent, Particle, ParticleShape, Trail, Visitor, VisitorKind } from './types';
+import type {
+  Balloon,
+  BalloonKind,
+  Cloud,
+  Face,
+  Flower,
+  GameEvent,
+  Particle,
+  ParticleShape,
+  Trail,
+  Visitor,
+  VisitorKind,
+} from './types';
 
 /**
  * Pure game logic: balloons, clouds, the sun, touches, swipes, pops and particles.
@@ -64,6 +76,10 @@ const MAX_VISITORS = 2;
 const VISITOR_POKE_INTERVAL = 0.35;
 const FIRST_VISIT_DELAY = 8;
 const VISIT_INTERVAL: [number, number] = [14, 32];
+/** Flowers: how long a tapped flower cycles colours, and how long a plucked one takes to grow back. */
+const FLOWER_RAINBOW_TIME = 4.5;
+const FLOWER_REGROW_DELAY = 3;
+const FLOWER_REGROW_TIME = 0.6;
 /** Share of new balloons that carry a family photo, when photos exist. */
 const PHOTO_CHANCE = 0.3;
 /** How long the photo stays up after its balloon pops (seconds). */
@@ -119,6 +135,7 @@ export class Game {
   balloons: Balloon[] = [];
   clouds: Cloud[] = [];
   visitors: Visitor[] = [];
+  flowers: Flower[] = [];
   particles: Particle[] = [];
   trails: Trail[] = [];
   /** Seconds since the game started. */
@@ -137,6 +154,7 @@ export class Game {
   private tempo: Tempo = 'normal';
   private visitorTimer = FIRST_VISIT_DELAY;
   private nextVisitorId = 1;
+  private nextFlowerId = 1;
   private listeners: Array<(event: GameEvent) => void> = [];
   private pointers = new Map<number, PointerState>();
   private rng: Rng;
@@ -209,6 +227,23 @@ export class Game {
         if (balloon) balloon.y = this.rng.range(height * 0.25, height * 1.05);
       }
       const u = this.unit;
+      const flowerCount = 6 + Math.round(width / 70);
+      for (let i = 0; i < flowerCount; i++) {
+        this.flowers.push({
+          id: this.nextFlowerId++,
+          fx: (i + this.rng.range(0.15, 0.85)) / flowerCount,
+          color: this.rng.pick(FLOWER_COLORS),
+          size: u * this.rng.range(5, 8),
+          petals: this.rng.int(5, 6),
+          phase: this.rng.range(0, TAU),
+          angle: 0,
+          spin: 0,
+          rainbow: 0,
+          growth: 1,
+          regrow: 0,
+          flying: null,
+        });
+      }
       const cloudCount = 4 + Math.round(width / 300);
       for (let i = 0; i < cloudCount; i++) {
         this.clouds.push({
@@ -242,6 +277,11 @@ export class Game {
     const visitor = this.findVisitorAt(x, y);
     if (visitor) {
       this.pokeVisitor(visitor, x, y);
+      return;
+    }
+    const flower = this.findFlowerAt(x, y);
+    if (flower) {
+      this.spinFlower(flower, x, y);
       return;
     }
     const cloud = this.findCloudAt(x, y);
@@ -310,7 +350,96 @@ export class Game {
       this.pokeVisitor(visitor, x, y);
       return;
     }
+    if (moved > 1) {
+      const flower = this.findFlowerAt(x, y);
+      if (flower) {
+        this.pluckFlower(flower, dx / moved, dy / moved);
+        return;
+      }
+    }
     if (this.isOnSun(x, y) && this.sunHit > SUN_POKE_INTERVAL) this.pokeSun(x, y);
+  }
+
+  // ---- Flowers ---------------------------------------------------------------
+
+  /** Where a flower's head is (its stem grows from the ground). */
+  flowerHead(f: Flower): { x: number; y: number } {
+    const x = f.fx * this.width;
+    return { x, y: this.ground(x) + 4 * this.unit - f.size * 2.4 * f.growth };
+  }
+
+  findFlowerAt(x: number, y: number): Flower | null {
+    let best: Flower | null = null;
+    let bestDistance = Infinity;
+    for (const f of this.flowers) {
+      if (f.flying || f.growth < 0.5) continue;
+      const head = this.flowerHead(f);
+      const r = Math.max(f.size * 3.2, 24 * this.unit);
+      const distance = Math.hypot(x - head.x, y - head.y) / r;
+      if (distance <= 1 && distance < bestDistance) {
+        bestDistance = distance;
+        best = f;
+      }
+    }
+    return best;
+  }
+
+  /** A tap makes the flower spin and shimmer through the rainbow for a few seconds. */
+  private spinFlower(f: Flower, x: number, y: number): void {
+    f.spin = (this.rng.chance(0.5) ? 1 : -1) * this.rng.range(12, 18);
+    f.rainbow = FLOWER_RAINBOW_TIME;
+    const head = this.flowerHead(f);
+    this.sparkleBurst(head.x, head.y, 6, [f.color, '#ffffff', '#fff6a8']);
+    this.emit({ type: 'flower', x, y, what: 'spin' });
+  }
+
+  /** A swipe plucks the flower: the head flies off in the swipe's direction, spinning, and grows back later. */
+  private pluckFlower(f: Flower, dirX: number, dirY: number): void {
+    const u = this.unit;
+    const head = this.flowerHead(f);
+    f.flying = {
+      x: head.x,
+      y: head.y,
+      vx: dirX * 140 * u + this.rng.range(-40, 40) * u,
+      vy: -this.rng.range(240, 360) * u + Math.min(0, dirY) * 120 * u,
+      life: 2.6,
+    };
+    f.spin = (dirX >= 0 ? 1 : -1) * this.rng.range(8, 16);
+    f.growth = 0;
+    f.regrow = FLOWER_REGROW_DELAY;
+    this.sparkleBurst(head.x, head.y, 5, [f.color, '#b5e48c', '#ffffff']);
+    this.emit({ type: 'flower', x: head.x, y: head.y, what: 'pluck' });
+  }
+
+  private updateFlowers(dt: number): void {
+    const u = this.unit;
+    for (const f of this.flowers) {
+      f.rainbow = Math.max(0, f.rainbow - dt);
+      if (f.flying) {
+        const fly = f.flying;
+        fly.vy += 420 * u * dt;
+        const drag = Math.max(0, 1 - 0.6 * dt);
+        fly.vx *= drag;
+        fly.vy *= drag;
+        fly.x += fly.vx * dt;
+        fly.y += fly.vy * dt;
+        fly.life -= dt;
+        f.angle += f.spin * dt;
+        if (fly.life <= 0 || fly.y > this.height + 40 * u) {
+          f.flying = null;
+          f.spin = 0;
+          f.angle = 0;
+        }
+        continue;
+      }
+      if (f.growth < 1) {
+        f.regrow -= dt;
+        if (f.regrow <= 0) f.growth = Math.min(1, f.growth + dt / FLOWER_REGROW_TIME);
+      }
+      f.angle += f.spin * dt;
+      f.spin *= Math.max(0, 1 - 1.1 * dt);
+      if (Math.abs(f.spin) < 0.05) f.spin = 0;
+    }
   }
 
   // ---- Visitors --------------------------------------------------------------
@@ -600,6 +729,9 @@ export class Game {
       c.vx = clamp(c.vx + u * this.rng.range(-160, 160), -220 * u, 220 * u);
     }
     this.sunHit = 0;
+    for (const f of this.flowers) {
+      if (!f.flying) f.spin += (this.rng.chance(0.5) ? 1 : -1) * this.rng.range(6, 12);
+    }
     for (const v of this.visitors) {
       if (v.kind === 'dog' && v.lift <= 0.01) v.vy = -260 * u;
       if ((v.kind === 'elephant' && v.state === 'idle') || v.kind === 'snail' || v.kind === 'bird') {
@@ -779,6 +911,7 @@ export class Game {
     }
 
     this.updateVisitors(dt);
+    this.updateFlowers(dt);
 
     for (let i = this.trails.length - 1; i >= 0; i--) {
       const trail = this.trails[i];

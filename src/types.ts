@@ -97,6 +97,28 @@ export interface Visitor {
   lift: number;
 }
 
+/** A flower on the hills: spins and cycles colours when tapped, flies off when swiped, grows back. */
+export interface Flower {
+  id: number;
+  /** Horizontal position as a fraction of the width. */
+  fx: number;
+  color: string;
+  size: number;
+  petals: number;
+  phase: number;
+  /** Rotation of the head (radians) and how fast it spins (rad/s). */
+  angle: number;
+  spin: number;
+  /** Seconds left of colour cycling after a tap. */
+  rainbow: number;
+  /** 0 = just plucked, 1 = fully grown. */
+  growth: number;
+  /** Seconds until a plucked flower starts growing back. */
+  regrow: number;
+  /** The head while it flies through the air after being plucked. */
+  flying: { x: number; y: number; vx: number; vy: number; life: number } | null;
+}
+
 export interface TrailPoint {
   x: number;
   y: number;
@@ -150,4 +172,6 @@ export type GameEvent =
   /** A balloon was blown away by a swipe (once per balloon per swipe). */
   | { type: 'blow' }
   /** A finger lifted after a real swipe of at least `length` px. */
-  | { type: 'swipe'; length: number };
+  | { type: 'swipe'; length: number }
+  /** A flower was tapped (spin) or swiped away (pluck). */
+  | { type: 'flower'; x: number; y: number; what: 'spin' | 'pluck' };
