@@ -32,6 +32,8 @@ export interface Activity {
   shake(): void;
   /** The phone's roll from the motion sensor (radians, positive = right side down), for water that stays level. */
   tilt?(roll: number): void;
+  /** The phone's acceleration in screen coordinates (m/s², gravity included, x right, y up), for things that feel every move. */
+  motion?(x: number, y: number): void;
   /** Settings changed in the parent menu (age, tempo, family balloons, …). */
   applySettings(settings: Settings): void;
   /** The family photos, for whatever the activity does with faces. */

@@ -175,6 +175,60 @@ describe('Bolde: the bouncing balls', () => {
     expect(events.slice(before).filter((e) => e.type === 'bounce')).toHaveLength(0);
   });
 
+  it('a ball held against the mat is quiet: no storm of bounces, sounds or vibration', () => {
+    const { game, events } = makeRoom('2+');
+    settle(game);
+    const ball = game.balls[2];
+    game.press(1, ball.x, ball.y);
+    const before = events.length;
+    // Drag it into the mat and hold it there, moving a little, for a second.
+    for (let i = 0; i < 60; i++) {
+      game.drag(1, ball.x + (i % 2), game.floorY + 40);
+      game.update(1 / 60);
+    }
+    const bounces = events.slice(before).filter((e) => e.type === 'bounce');
+    expect(bounces.length).toBeLessThanOrEqual(3);
+    expect(ball.y).toBeLessThanOrEqual(game.floorY - ball.r + 0.01);
+    game.release(1);
+  });
+
+  it('bounce sounds are spaced out, even when a pile of balls is stirred', () => {
+    const { game, events } = makeRoom('2+');
+    settle(game);
+    for (const ball of game.balls) {
+      ball.x = W / 2 + (ball.id % 3) * 5;
+      ball.y = game.floorY - ball.r * (1 + (ball.id % 4));
+      ball.vy = -400;
+    }
+    const before = events.length;
+    advance(game, 2);
+    const bounces = events.slice(before).filter((e) => e.type === 'bounce').length;
+    expect(bounces).toBeLessThanOrEqual(2 / 0.05 + 1);
+  });
+
+  it('the balls feel the phone: a tilt read from the sensor rolls them, and a sideways jerk throws them', () => {
+    const { game } = makeRoom();
+    settle(game);
+    // Right side held down: the reaction to gravity leans to the left of the screen.
+    game.setMotion(-5, 8.4);
+    advance(game, 2.5);
+    expect(game.tilt).toBeGreaterThan(0.3);
+    expect(Math.max(...game.balls.map((ball) => ball.x))).toBeGreaterThan(W - game.ballR * 1.6);
+    // Level again, then a hard jerk of the phone to the right: the balls are thrown to the left.
+    game.setMotion(0, 9.8);
+    advance(game, 2);
+    const xs = game.balls.map((ball) => ball.x);
+    game.setMotion(25, 9.8);
+    advance(game, 0.25);
+    game.setMotion(0, 9.8);
+    advance(game, 0.3);
+    expect(game.balls.some((ball, i) => ball.x < xs[i] - 20)).toBe(true);
+    // Lying flat says nothing about down: the last "down" stays and the balls rest.
+    game.setMotion(0, 0);
+    advance(game, 2);
+    expect(game.balls.every((ball) => ball.resting)).toBe(true);
+  });
+
   it('tilting the phone rolls the balls down to the low side', () => {
     const { game } = makeRoom();
     settle(game);

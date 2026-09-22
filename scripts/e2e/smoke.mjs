@@ -6,6 +6,16 @@ import { OUT, VIEWPORTS, check, openPhone, serveDist, waitForGame } from './lib.
 const server = await serveDist();
 const url = server.url;
 
+/**
+ * A motion-sensor reading in screen coordinates (x right, y up, m/s², gravity included), turned into the device's
+ * own axes for the way the screen is turned, the way a real phone would report it.
+ */
+const motion = (sx, sy) => page.evaluate(([sx, sy]) => {
+  const angle = screen.orientation?.angle ?? 0;
+  const [x, y] = angle === 90 ? [sy, -sx] : angle === 270 ? [-sy, sx] : angle === 180 ? [-sx, -sy] : [sx, sy];
+  window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z: 0 } }));
+}, [sx, sy]);
+
 /** A short 16-bit mono WAV (a soft sine), standing in for a song the parents add from their phone. */
 function makeWav(seconds, freq, rate = 22050) {
   const n = Math.floor(seconds * rate);
@@ -403,7 +413,7 @@ check(await page.evaluate(() => window.__theo.game.ducks[0].rainbow > 0), 'a lon
 // Tilting the phone (synthetic motion readings, right side down, enough of them for the smoothing to follow):
 // the water climbs the right side.
 for (let i = 0; i < 12; i++) {
-  await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: -5, y: 8.4, z: 0 } })));
+  await motion(-5, 8.4);
   await page.waitForTimeout(45);
 }
 await page.waitForTimeout(1500);
@@ -411,7 +421,7 @@ await page.screenshot({ path: `${OUT}/${tag}-32c-bobler-tilt.png` });
 check(await page.evaluate(() => { const g = window.__theo.game; return g.tilt > 0.05 && g.surfaceY(g.width * 0.9) < g.surfaceY(g.width * 0.1); }), 'tilting the phone should tilt the water');
 // Level again: enough level readings for the smoothing to follow, so the water is flat for the rest of the bath.
 for (let i = 0; i < 12; i++) {
-  await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.8, z: 0 } })));
+  await motion(0, 9.8);
   await page.waitForTimeout(45);
 }
 await page.evaluate(() => window.__theo.game.setTilt(0));
@@ -592,6 +602,24 @@ await page.waitForTimeout(150);
 // The mat as a trampoline, then a shake.
 await page.touchscreen.tap(room.w * 0.5, room.floorY + 12);
 await page.waitForTimeout(150);
+// Tilting the phone (readings the sensor would give with the right side held down): the balls roll right and
+// gather in a row against the low wall (on a tablet six balls in a row reach well past the middle).
+const meanX = () => page.evaluate(() => { const g = window.__theo.game; return g.balls.reduce((sum, b) => sum + b.x, 0) / g.balls.length / g.width; });
+const meanBefore = await meanX();
+for (let i = 0; i < 12; i++) {
+  await motion(-5, 8.4);
+  await page.waitForTimeout(45);
+}
+await page.waitForTimeout(3500);
+const rolled = await page.evaluate(() => { const g = window.__theo.game; return { tilt: +g.tilt.toFixed(2), left: +Math.min(...g.balls.map((b) => b.x / g.width)).toFixed(2) }; });
+const meanAfter = await meanX();
+console.log('bolde tilt:', JSON.stringify({ ...rolled, meanBefore: +meanBefore.toFixed(2), meanAfter: +meanAfter.toFixed(2) }));
+check(rolled.tilt > 0.2 && rolled.left > 0.25 && meanAfter - meanBefore > 0.1, 'tilting the phone should roll the balls to the low side');
+for (let i = 0; i < 12; i++) {
+  await motion(0, 9.8);
+  await page.waitForTimeout(45);
+}
+await page.waitForTimeout(600);
 const ballShook = await page.evaluate(() => {
   const g = window.__theo.game; const before = g.shakes;
   const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));

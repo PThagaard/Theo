@@ -148,3 +148,10 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   kolonner; røgtesten kører på tværs. "Skyen i ballonspillet: hvis man long-presser, skal den blive god igen" →
   behov: Theo (og forældrene) skal selv kunne slutte uvejret, ikke bare starte det → hold på uvejrsskyen, til den
   er hvid igen; regnen stopper, regnbuen kommer.
+- 22.9.2026, forældrene: "Theos Trommer er sjovt og nemt for ham at forstå. Det er godt lavet!" → trommerne
+  virker for Theo; slå-og-banke-legetøjet rammer trinnet.
+- "Theos Bolde mangler lidt. Det er sjovt at bruge boldene, men hvorfor bevæger de sig ikke, når jeg bevæger
+  telefonen eller ryster den? Og holder jeg fast i en bold og bevæger den, vibrerer telefonen konstant, og
+  musik/lyd stopper" → to fejl: sensoren blev læst i portræt-akser (nu drejet efter skærmens retning, og boldene
+  bruger hele accelerationen som "ned", så ryk og ryst mærkes), og en holdt bold mod måtten gav 120 hop i sekundet
+  med lyd og vibration (nu stille, og bunker af bolde lyder højst få gange i sekundet).

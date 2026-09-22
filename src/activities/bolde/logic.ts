@@ -36,6 +36,8 @@ export interface Ball {
   resting: boolean;
   /** When a swipe last pushed it (so one swipe pushes once). */
   lastPush: number;
+  /** When it last made a bounce sound (a ball in a pile must not rattle the speaker). */
+  lastSound: number;
 }
 
 export interface Sparkle {
@@ -87,6 +89,11 @@ const SOUND_STRENGTH = 0.22;
 export const CELEBRATE_EVERY = 10;
 const MAX_TILT = 0.45;
 const SHAKE_COOLDOWN = 0.5;
+/** Gravity as the phone reports it: a jerk of the phone pushes the balls like extra gravity, up to this much of it. */
+const MAX_DOWN = 2.5;
+/** The least time between two bounce sounds from one ball, and between any two at all. */
+const BALL_SOUND_GAP = 0.15;
+const SOUND_GAP = 0.05;
 const SLEEP_TIME = 8;
 const WAKE_TIME = 2.5;
 
@@ -125,6 +132,15 @@ export class BoldeGame {
   tilt = 0;
   private tiltTarget = 0;
   private tiltSpeed = 0;
+  /**
+   * Which way is down for the balls, in screen coordinates, 1 = plain gravity: from the phone's own motion, so a
+   * tilt rolls them, a jerk throws them and a shake jiggles them, the way real balls in a box behave.
+   */
+  private downX = 0;
+  private downY = 1;
+  private downTargetX = 0;
+  private downTargetY = 1;
+  private lastBounceSound = -Infinity;
   /** Seconds since the last celebration (a very long time before the first one). */
   sinceCelebration = 1e9;
   private age: Age = DEFAULT_AGE;
@@ -243,6 +259,7 @@ export class BoldeGame {
         heldBy: null,
         resting: false,
         lastPush: -Infinity,
+        lastSound: -Infinity,
       });
       k++;
     }
@@ -387,6 +404,20 @@ export class BoldeGame {
   /** The phone's roll (radians, positive = right side down): the balls roll down to the low side. */
   setTilt(roll: number): void {
     this.tiltTarget = clamp(roll, -MAX_TILT, MAX_TILT);
+    this.downTargetX = Math.sin(this.tiltTarget);
+    this.downTargetY = Math.cos(this.tiltTarget);
+  }
+
+  /**
+   * The phone's acceleration in screen coordinates (m/s², gravity included, x right, y up). In the phone's own
+   * frame that is what "down" feels like for the balls: a tilt rolls them, a jerk throws them the other way, a
+   * shake jiggles them. Lying flat (or in free fall) the reading says nothing, and the last "down" stays.
+   */
+  setMotion(x: number, y: number): void {
+    if (Math.hypot(x, y) < 0.5) return;
+    this.downTargetX = clamp(-x / 9.8, -MAX_DOWN, MAX_DOWN);
+    this.downTargetY = clamp(y / 9.8, -MAX_DOWN, MAX_DOWN);
+    this.tiltTarget = clamp(Math.atan2(-x, Math.max(1, y)), -MAX_TILT, MAX_TILT);
   }
 
   sleep(): void {
@@ -430,10 +461,14 @@ export class BoldeGame {
     this.time += dt;
     this.sinceCelebration += dt;
     this.dusk = this.asleep ? Math.min(1, this.dusk + dt / SLEEP_TIME) : Math.max(0, this.dusk - dt / WAKE_TIME);
-    // The room's slope follows the phone with a soft spring, so it swings a little.
+    // The room's slope follows the phone with a soft spring, so it swings a little; "down" follows quickly, so
+    // even a short shake reaches the balls.
     const pull = (this.tiltTarget - this.tilt) * 14 - this.tiltSpeed * 3.2;
     this.tiltSpeed += pull * dt;
     this.tilt += this.tiltSpeed * dt;
+    const follow = Math.min(1, dt * 14);
+    this.downX += (this.downTargetX - this.downX) * follow;
+    this.downY += (this.downTargetY - this.downY) * follow;
     // Two small steps keep the bouncing steady even when a frame is late.
     const step = Math.min(dt, 1 / 30) / 2;
     for (let k = 0; k < 2; k++) this.stepPhysics(step);
@@ -471,20 +506,25 @@ export class BoldeGame {
   private stepPhysics(h: number): void {
     const u = this.unit;
     const g = this.gravity;
-    const gx = g * Math.sin(this.tilt);
-    const gy = g * Math.cos(this.tilt);
+    const gx = g * this.downX;
+    const gy = g * this.downY;
     const floor = this.floorY;
     const reference = this.referenceSpeed;
     for (const ball of this.balls) {
       const pointer = ball.heldBy !== null ? this.pointers.get(ball.heldBy) : undefined;
       if (pointer) {
-        // Held: it hurries after the hand.
+        // Held: it hurries after the hand and stays inside the room, with no bounces or sounds of its own (a
+        // ball pressed against the mat must not rattle the phone).
         ball.vx = (pointer.x - ball.x) * 18;
         ball.vy = (pointer.y - ball.y) * 18;
-      } else {
-        ball.vx += gx * h;
-        ball.vy += gy * h;
+        ball.x = clamp(ball.x + ball.vx * h, ball.r, Math.max(ball.r, this.width - ball.r));
+        ball.y = clamp(ball.y + ball.vy * h, ball.r, Math.max(ball.r, floor - ball.r));
+        ball.resting = false;
+        ball.angle += (ball.vx / ball.r) * h * 0.4;
+        continue;
       }
+      ball.vx += gx * h;
+      ball.vy += gy * h;
       ball.x += ball.vx * h;
       ball.y += ball.vy * h;
       // The walls, the ceiling and the floor: the balls never leave the room.
@@ -503,7 +543,7 @@ export class BoldeGame {
       if (ball.y > floor - ball.r) {
         ball.y = floor - ball.r;
         if (ball.vy > 0) this.bounce(ball, 'y', reference, RESTITUTION_FLOOR);
-        if (Math.abs(ball.vy) < 60 * u && !pointer) {
+        if (Math.abs(ball.vy) < 60 * u) {
           ball.vy = 0;
           ball.resting = true;
           // Rolling friction, and a rolling pattern.
@@ -557,7 +597,9 @@ export class BoldeGame {
           ball.squashAngle = ball === a ? Math.atan2(ny, nx) : Math.atan2(-ny, -nx);
           if (strength > 0.3) ball.happy = Math.max(ball.happy, 0.5);
         }
-        if (strength > SOUND_STRENGTH) this.emit({ type: 'bounce', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, size: (a.r + b.r) / 2 / this.ballR, strength });
+        if (strength > SOUND_STRENGTH && this.maySound(aHeld ? b : a)) {
+          this.emit({ type: 'bounce', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, size: (a.r + b.r) / 2 / this.ballR, strength });
+        }
       }
     }
     // Pushing apart must never push a ball through a wall or the floor.
@@ -575,12 +617,20 @@ export class BoldeGame {
     else ball.vy = -ball.vy * restitution;
     ball.squash = Math.max(ball.squash, strength);
     ball.squashAngle = axis === 'y' ? Math.PI / 2 : ball.x < this.width / 2 ? Math.PI : 0;
-    if (strength > SOUND_STRENGTH) {
+    if (strength > SOUND_STRENGTH && this.maySound(ball)) {
       if (axis === 'y') {
         this.bounces++;
         ball.happy = Math.max(ball.happy, 0.4);
       }
       this.emit({ type: 'bounce', x: ball.x, y: ball.y, size: ball.r / this.ballR, strength });
     }
+  }
+
+  /** Whether this ball may make a bounce sound now: not too soon after its last, nor right on top of another's. */
+  private maySound(ball: Ball): boolean {
+    if (this.time - ball.lastSound < BALL_SOUND_GAP || this.time - this.lastBounceSound < SOUND_GAP) return false;
+    ball.lastSound = this.time;
+    this.lastBounceSound = this.time;
+    return true;
   }
 }

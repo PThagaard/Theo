@@ -256,7 +256,10 @@ attachShake(() => {
   activity.shake();
 });
 // Tilting the phone: the bath's water stays level with the world.
-attachTilt((roll) => activity?.tilt?.(roll));
+attachTilt(
+  (roll) => activity?.tilt?.(roll),
+  (x, y) => activity?.motion?.(x, y),
+);
 
 // ---- Screen ----------------------------------------------------------------
 

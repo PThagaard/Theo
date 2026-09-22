@@ -128,8 +128,9 @@ titte-bøh, jeres ansigter og jeres ord.
   sekundet.
 - **Theos Bolde** (spil nr. 5): et legerum med store, bløde bolde med ansigter (tre for de mindste, op til seks).
   Rør en bold: den hopper. Hold fast og flyt hånden: den følger med og flyver den vej, hånden kaster. Tryk på
-  måtten: trampolin. Swipe skubber, ryst får alle til at hoppe, og drejer I telefonen, ruller boldene ned mod den
-  lave side. De forlader aldrig skærmen. Familien får ansigter på boldene.
+  måtten: trampolin. Swipe skubber, ryst får alle til at hoppe, og boldene mærker telefonen: hæld den, og de ruller
+  ned mod den lave side; ryk den, og de kastes den anden vej. De forlader aldrig skærmen. Familien får ansigter på
+  boldene.
 - **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
 - **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
   op, regnbuen kommer, og en almindelig sky driver videre.

@@ -70,24 +70,43 @@ export function attachInput(element: HTMLElement, handlers: InputHandlers): void
  * the first touch).
  */
 /**
- * The phone's roll, a few times a second, from the same motion sensor: how far the right side is held down
- * (radians, positive), smoothed so the water it drives moves calmly. Nothing without a sensor (desktop).
+ * The phone's motion from the same sensor, turned into screen coordinates whichever way the screen is turned
+ * (the app runs sideways): `onTilt` gets the roll a few times a second (radians, positive = right side held
+ * down), smoothed so the water it drives moves calmly; `onMotion` gets every reading whole (m/s², gravity
+ * included, x to the right and y up the screen) for things that feel every move. Nothing without a sensor.
  */
-export function attachTilt(onTilt: (roll: number) => void): void {
+export function attachTilt(onTilt: (roll: number) => void, onMotion?: (x: number, y: number) => void): void {
   if (typeof window.DeviceMotionEvent === 'undefined') return;
   let smoothed = 0;
   let last = 0;
   window.addEventListener('devicemotion', (event) => {
     const a = event.accelerationIncludingGravity;
     if (!a || a.x === null || a.y === null) return;
+    const [x, y] = toScreenAxes(a.x, a.y);
+    onMotion?.(x, y);
     // Upright, the reaction to gravity points up the screen (+y); tilting the right side down leans it to -x.
-    const roll = Math.atan2(-a.x, Math.max(1, a.y));
+    const roll = Math.atan2(-x, Math.max(1, y));
     smoothed += (roll - smoothed) * 0.25;
     const now = performance.now();
     if (now - last < 40) return;
     last = now;
     onTilt(smoothed);
   });
+}
+
+/** The sensor reports the device's own (portrait) axes; the screen may be turned by 90, 180 or 270 degrees. */
+function toScreenAxes(x: number, y: number): [number, number] {
+  const angle = screen.orientation?.angle ?? 0;
+  switch (angle) {
+    case 90:
+      return [-y, x];
+    case 180:
+      return [-x, -y];
+    case 270:
+      return [y, -x];
+    default:
+      return [x, y];
+  }
 }
 
 export function attachShake(onShake: () => void): void {

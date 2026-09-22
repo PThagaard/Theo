@@ -3,6 +3,22 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Boldene mærker telefonen, og en holdt bold er stille
+
+- **Boldene mærker nu alle telefonens bevægelser** (forældrene: "de bevæger sig ikke, når jeg bevæger eller ryster
+  telefonen"): hældning ruller dem mod den lave side, et ryk kaster dem den anden vej, og et ryst får dem til at
+  hoppe og rasle, som rigtige bolde i en kasse. Fejlen var, at bevægelsessensoren blev læst i telefonens
+  portræt-akser, så på tværs virkede hældningen ikke; nu drejes aflæsningen efter skærmens retning. Det gælder
+  også vandet i Badekarret. Løber boldene den forkerte vej, når I hælder telefonen, så sig til.
+- **En bold, man holder fast i, er stille** (forældrene: "telefonen vibrerer konstant, og lyden stopper"): før
+  hoppede en bold, der blev trykket mod måtten, 120 gange i sekundet med lyd og vibration hver gang, så alt andet
+  druknede. Nu følger en holdt bold hånden uden lyd, bolde i en bunke lyder højst nogle få gange i sekundet, og
+  telefonen vibrerer kun ved de hårde landinger.
+
+**Test på telefonen:** (1) Bolde: hæld telefonen til siden: boldene ruller derned. Ryk telefonen til siden og
+ryst den: de kastes og hopper. (2) Hold fast i en bold, træk den hen over måtten og de andre bolde: ingen
+vibrationsstorm, musikken spiller videre. (3) Badekar: hæld telefonen: vandet hælder nu også på tværs.
+
 ## 2026-09-22 – Altid på tværs, og uvejrsskyen kan gøres god igen
 
 - **Appen kører altid i landscape** (forældrenes ønske): Android låser til landscape (begge veje), iOS ligeså, og

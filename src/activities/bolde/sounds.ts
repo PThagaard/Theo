@@ -24,7 +24,7 @@ export function handleBoldeEvent(event: BoldeEvent, ctx: ActivityContext): void 
     case 'bounce':
       // Only the hard bounces reach here; soft ones stay quiet.
       audio?.bop(event.size, event.strength);
-      if (event.strength > 0.5) ctx.haptic(ImpactStyle.Light);
+      if (event.strength > 0.65) ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('ballBounces');
       break;
     case 'floor':

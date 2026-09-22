@@ -29,7 +29,8 @@ export function createBolde(canvas: HTMLCanvasElement, ctx: ActivityContext): Ac
     drag: (id, x, y) => game.drag(id, x, y),
     release: (id) => game.release(id),
     shake: () => game.shake(),
-    tilt: (roll) => game.setTilt(roll),
+    // The balls feel every move of the phone (a tilt, a jerk, a shake), not just its roll.
+    motion: (x, y) => game.setMotion(x, y),
     applySettings: (settings: Settings) => {
       game.setAge(settings.age);
       familyOn = settings.familyBalloons;
