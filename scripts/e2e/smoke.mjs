@@ -632,6 +632,65 @@ await page.waitForTimeout(2500);
 const ballStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; const g = window.__theo.game; return { taps: s.ballTaps ?? 0, throws: s.ballThrows ?? 0, bounces: s.ballBounces ?? 0, floor: s.ballFloorTaps ?? 0, shakes: s.ballShakes ?? 0, inside: g.balls.every((b) => b.x >= b.r - 1 && b.x <= g.width - b.r + 1 && b.y <= g.floorY - b.r + 1) }; });
 console.log('bolde stats:', JSON.stringify(ballStats), 'shook', ballShook);
 check(ballStats.taps >= 2 && ballStats.throws >= 1 && ballStats.bounces >= 1 && ballStats.floor >= 1 && ballShook >= 1 && ballStats.inside, 'Bolde did not answer tap, throw, the mat and shake, or a ball left the room');
+// Activity #6, "Lys": every touch makes light in the dark. A tap lights a star (two near each other join up), a
+// touch on a lit star makes it twinkle, a drawn finger leaves stardust, a still finger kindles a lantern that
+// floats up when let go, the lamps and the house are switches, the moon wakes, and a shake sends a shooting star.
+await page.evaluate(() => { window.__theo.startActivity('lys'); window.__theo.game.setAge('2+'); });
+check((await page.evaluate(() => window.__theo.activity.id)) === 'lys', 'the Lys activity did not start');
+await page.waitForTimeout(300);
+const night = await page.evaluate(() => { const g = window.__theo.game; return { w: g.width, h: g.height, moon: { x: g.moon.x, y: g.moon.y }, lamp: { x: g.lamps[0].x, y: g.lamps[0].headY }, house: { x: g.house.x, y: g.house.baseY - g.house.height * 0.5 }, fireflies: g.fireflies.length }; });
+console.log('lys:', JSON.stringify(night));
+check(night.fireflies === 4, 'the 2+ profile should have four fireflies');
+// The fireflies wander anywhere and catch a touch (as they should); they are parked on the right before each
+// press, so the checks below hit what they aim at.
+const parkFireflies = () => page.evaluate(() => { const g = window.__theo.game; g.fireflies.forEach((f, i) => { f.x = g.width * 0.93; f.y = g.height * (0.55 + i * 0.05); f.angle = 0; }); });
+await parkFireflies();
+await page.touchscreen.tap(night.w * 0.3, night.h * 0.3);
+await page.touchscreen.tap(night.w * 0.38, night.h * 0.36);
+await page.waitForTimeout(200);
+check(await page.evaluate(() => { const g = window.__theo.game; return g.lights.length === 2 && g.lights[1].linkId === g.lights[0].id; }), 'two taps should light two stars joined in a constellation');
+await page.touchscreen.tap(night.w * 0.3, night.h * 0.3);
+await page.waitForTimeout(100);
+check(await page.evaluate(() => { const g = window.__theo.game; return g.lights.length === 2 && g.lights[0].twinkle > 0.5; }), 'a touch on a lit star should make it twinkle, not light another');
+await parkFireflies();
+await page.mouse.move(night.w * 0.12, night.h * 0.45);
+await page.mouse.down();
+await page.mouse.move(night.w * 0.6, night.h * 0.5, { steps: 14 });
+await page.mouse.up();
+await page.waitForTimeout(100);
+check(await page.evaluate(() => window.__theo.game.sparkles.length > 10), 'a drawn finger should leave stardust');
+await page.screenshot({ path: `${OUT}/${tag}-60-lys.png` });
+// A still finger kindles a lantern that rises when let go.
+await parkFireflies();
+await page.mouse.move(night.w * 0.5, night.h * 0.42);
+await page.mouse.down();
+await page.waitForTimeout(900);
+check(await page.evaluate(() => { const g = window.__theo.game; return g.lanterns.length === 1 && g.lanterns[0].held !== null && g.lanterns[0].size > 0.3; }), 'a still finger should kindle a lantern');
+await page.screenshot({ path: `${OUT}/${tag}-61-lys-lantern.png` });
+await page.mouse.up();
+await page.waitForTimeout(900);
+check(await page.evaluate(() => { const g = window.__theo.game; const l = g.lanterns[0]; return !!l && l.held === null && l.y < g.height * 0.42 - 4; }), 'a let-go lantern should float up');
+// The switches and the moon.
+await parkFireflies();
+await page.touchscreen.tap(night.lamp.x, night.lamp.y);
+await page.touchscreen.tap(night.house.x, night.house.y);
+await page.touchscreen.tap(night.moon.x, night.moon.y);
+await page.waitForTimeout(250);
+check(await page.evaluate(() => { const g = window.__theo.game; return g.lamps[0].on && g.house.on && g.moon.awake > 0 && g.lamps[0].lit > 0.5; }), 'the lamp, the house and the moon should answer a touch');
+await page.touchscreen.tap(night.lamp.x, night.lamp.y);
+await page.waitForTimeout(100);
+check(await page.evaluate(() => !window.__theo.game.lamps[0].on), 'a second touch should switch the lamp off');
+const lysShook = await page.evaluate(() => {
+  const g = window.__theo.game; const before = g.shakes;
+  const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));
+  fire(0, 9.8, 0); fire(18, -12, 6);
+  return { shook: g.shakes - before, shooting: g.shooting !== null };
+});
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${OUT}/${tag}-62-lys-shake.png` });
+const lysStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { stars: s.lightsLit ?? 0, flares: s.lightFlares ?? 0, trails: s.lightTrails ?? 0, lanterns: s.lanterns ?? 0, lamps: s.lampsOn ?? 0, house: s.houseOn ?? 0, moon: s.moonTouched ?? 0, shooting: s.shootingStars ?? 0, shakes: s.lightShakes ?? 0 }; });
+console.log('lys stats:', JSON.stringify(lysStats), 'shook', JSON.stringify(lysShook));
+check(lysStats.stars >= 3 && lysStats.flares >= 1 && lysStats.trails >= 1 && lysStats.lanterns >= 1 && lysStats.lamps >= 1 && lysStats.house >= 1 && lysStats.moon >= 1 && lysShook.shook === 1 && lysShook.shooting && lysStats.shooting >= 1 && lysStats.shakes >= 1, 'Lys did not answer tap, draw, hold, the switches, the moon and shake');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -967,7 +1026,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 34, sr);
+  const ctx = new OfflineAudioContext(1, sr * 38, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -1008,6 +1067,11 @@ const audio = await page.evaluate(async () => {
     ['burst', 31.4, () => { for (let i = 0; i < 6; i++) engine.pop(1, 31.4 + i * 0.02); }],
     ['drum', 32.0, () => { engine.drum(60, 1, 32.0); engine.drum(67, 0.5, 32.3); engine.drum(72, 0.8, 32.55); }],
     ['bop', 32.9, () => { engine.bop(1, 1, 32.9); engine.bop(0.7, 0.5, 33.15); engine.bop(1.4, 0.9, 33.4); }],
+    ['bell', 33.8, () => { engine.bell(2, 33.8); engine.bell(6, 34.05); }],
+    ['kindle', 34.4, () => engine.kindle(34.4)],
+    ['switch', 35.0, () => { engine.switchOn(35.0); engine.switchOff(35.4); }],
+    ['hum', 35.8, () => engine.hum(35.8)],
+    ['shooting star', 36.8, () => engine.shootingStar(36.8)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -1023,7 +1087,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 34;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 38;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -1035,7 +1099,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 34);
+  out.total = stats(0, 38);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

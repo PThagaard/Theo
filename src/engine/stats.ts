@@ -206,6 +206,19 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['ballPushes', 'Bolde skubbet (swipe)'],
   ['ballShakes', 'Rystet (bolde)'],
   ['ballCelebrations', 'Bolde-fester'],
+  ['lightsLit', 'Stjerner tændt'],
+  ['lightFlares', '… heraf rørt igen (blink)'],
+  ['lightTrails', 'Stjernestøv tegnet (swipe)'],
+  ['lanterns', 'Lygter sendt op (holdt)'],
+  ['lanternTaps', 'Lygter fanget'],
+  ['lampsOn', 'Lamper tændt'],
+  ['houseOn', 'Lys i huset tændt'],
+  ['moonTouched', 'Månen rørt'],
+  ['shootingStars', 'Stjerneskud'],
+  ['firefliesTouched', 'Ildfluer rørt'],
+  ['lightShakes', 'Rystet (lys)'],
+  ['lightCelebrations', 'Lys-fester'],
+  ['lightPhotos', 'Familien i lygterne'],
 ];
 
 export function formatMinutes(seconds: number): string {

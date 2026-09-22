@@ -131,6 +131,11 @@ titte-bøh, jeres ansigter og jeres ord.
   måtten: trampolin. Swipe skubber, ryst får alle til at hoppe, og boldene mærker telefonen: hæld den, og de ruller
   ned mod den lave side; ryk den, og de kastes den anden vej. De forlader aldrig skærmen. Familien får ansigter på
   boldene.
+- **Theos Lys** (spil nr. 6): en mørk nat, hvor alt, Theo rører, bliver til lys. Tryk tænder en stjerne med en
+  klokke (stjerner tæt på hinanden får en streg imellem); træk fingeren, og der kommer stjernestøv; hold fingeren
+  stille, og en papirlygte vokser i hånden og svæver op, når I slipper (hver tredje med et familieansigt); lamperne
+  og huset er kontakter (tryk tænder, tryk slukker); månen vågner ved et tryk; ryst giver et stjerneskud. For de
+  mindste sker intet af sig selv; fra 1 år flyver der ildfluer rundt.
 - **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
 - **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
   op, regnbuen kommer, og en almindelig sky driver videre.

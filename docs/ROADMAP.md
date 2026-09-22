@@ -53,12 +53,16 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   popper billedet. Kendt stemme + kontingens er den sprogstøtte, forskningen peger på. Træner: ordforråd,
   genkendelse af stemmer, sammenhæng mellem ord og ting.
 - ✅ **Rasle** – foldet ind i *Bolde* (ryst giver rangle og hoppende bolde, tilt ruller dem).
-- 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle
-  toner er i samme skala, så det altid lyder godt. Træner: rytme, lyd/handling, tap-præcision.
+- ✅ **Tromme og klaver** – bygget som *Theos Trommer* (se 9–12 måneder): store farveflader i samme skala, så det
+  altid lyder godt; swipe spiller glissando. Træner: rytme, lyd/handling, tap-præcision.
 - 💡 **Fisk i dammen** – rolige fisk følger fingeren, tryk laver bobler, fisk der rammes vender og siger "blub".
   Træner: visuel tracking, rolig leg (god til at falde ned før søvn).
-- 💡 **Lys og mørke** – tryk tænder lygter/stjerner i en mørk himmel, som langsomt slukker igen. Høj kontrast.
-  Træner: årsag-virkning, kontrast-syn.
+- ✅ **Lys og mørke** (Theos Lys, spil nr. 6) – en mørk nat: tryk tænder en stjerne med en klokke (stjerner tæt
+  på hinanden bliver et stjernebillede), træk giver stjernestøv, hold tænder en papirlygte, der svæver op (hver
+  tredje med et familieansigt), lamperne og husets vindue er kontakter, månen vågner ved tryk, ryst giver et
+  stjerneskud. Alt klinger langsomt af, så natten aldrig fyldes op; intet blinker. For de mindste sker intet af
+  sig selv; fra 1 år ildfluer, fra 2 år stjerneskud af sig selv. Træner: årsag-virkning, kontrast-syn, at holde
+  stille (en tredje bevægelse), tænd/sluk. Udgivet 22.9.2026.
 
 ## 9–12 måneder: objektpermanens, pegen, imitation, første ord
 

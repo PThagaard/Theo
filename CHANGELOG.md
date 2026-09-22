@@ -3,6 +3,33 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Theos Lys: spil nr. 6, tænd lys i mørket
+
+- **Theos Lys** er nyt på forsiden: en mørk nat, hvor alt, Theo rører, bliver til lys. Det er roadmappens "Lys og
+  mørke": lys på mørkt er den kontrast, babyer ser bedst, og hver berøring svarer med det samme og klinger langsomt
+  af, så natten aldrig fyldes op, og intet blinker. **Tryk** tænder en stjerne, hvor fingeren lander, med en blød
+  klokke (lysere tone højere oppe); stjerner tæt på hinanden bliver til et stjernebillede med en tynd streg
+  imellem, og et tryk på en tændt stjerne får den til at blinke. **Træk fingeren**, og den efterlader stjernestøv
+  med harpetoner; stjerner på vejen blinker. **Hold fingeren stille**, og stjernen bliver til en papirlygte, der
+  vokser i hånden, følger den, og svæver op, når man slipper; hver tredje lygte har et familieansigt; en lygte i
+  luften kan fanges igen og skubbes med et swipe. **Lamperne** på bakken og **vinduet i huset** er kontakter: tændt
+  ved et tryk, slukket ved det næste (eller af sig selv efter 25 sekunder). **Månen** vågner og nynner ved et tryk.
+  **Ryst**, og et stjerneskud farer over himlen, mens alle stjerner blinker i en bølge. Drej telefonen, og
+  lygterne og stjernestøvet driver mod den lave side.
+- **Alder:** *8–12 mdr* har højst 10 stjerner ad gangen, som lyser i 12 sekunder, tre lygter, og intet sker af sig
+  selv. *1–2 år* har 16 stjerner og to ildfluer, der flyver rundt og siger pip, når de røres. *2+ år* har 24
+  stjerner, fire ildfluer og et stjerneskud af sig selv nu og da. Hver tiende stjerne fejrer månen med stjernedrys.
+- **Nye lyde** (syntetiseret, tjekket i røgtesten): klokke, lygten der tændes, kontakt til og fra, månens nynnen og
+  stjerneskuddet. Nye tællere under *Theos leg*.
+
+**Test på telefonen:** (1) Forsiden: *Theos Lys* er det sjette spil. (2) Tryk rundt på himlen: en stjerne med
+klokke hver gang; to tæt på hinanden får en streg imellem; tryk på en tændt stjerne: den blinker. (3) Træk fingeren:
+stjernestøv med harpetoner. (4) Hold fingeren stille: en lygte vokser i hånden; slip, og den svæver op; hold
+tre gange, og den tredje har et familieansigt (når familien er slået til). (5) Tryk på en lampe og på huset:
+tændt; tryk igen: slukket. (6) Tryk på månen: den åbner øjnene og nynner. (7) Ryst: stjerneskud. (8) Drej
+telefonen: lygterne driver til siden. Sig, om det er for mørkt eller for lyst, og om lyset og klokkerne er rolige
+nok.
+
 ## 2026-09-22 – Forældremenuen bruger den brede skærm
 
 - **Forældremenuen er tegnet om til den brede skærm** (forældrenes ønske: "settings skal redesignes, så det fylder

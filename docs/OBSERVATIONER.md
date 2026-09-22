@@ -159,3 +159,7 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   scrolle en evighed)" → behov: forældrene skal kunne overskue og ændre en indstilling hurtigt, mens Theo venter →
   menuen fylder skærmen: faner og *Tilbage* i en fast kolonne til venstre, hver side i spalter (to på telefonen,
   tre på tablet); *Leg* uden scroll, klipperen side om side.
+- 22.9.2026, "Fortsæt udviklingen" → *Theos Lys* bygget som spil nr. 6 fra roadmappens "Lys og mørke" (kontrast-
+  syn og årsag-virkning for 6–9 mdr; et tænd/sluk-legetøj, som ingen af de andre spil har). Forældrene: sig, om
+  Theo kigger længere på lysene end på de lyse spil, om han finder ud af at holde stille for lygten, og om han
+  trykker på lamperne igen for at slukke.

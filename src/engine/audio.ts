@@ -38,6 +38,8 @@ function rmsOf(buffer: AudioBuffer): number {
 
 /** C major pentatonic: every pop plays one of these, so mashing the screen sounds musical. */
 const POP_NOTES = [72, 74, 76, 79, 81, 84, 86, 88];
+/** The bells of the night's stars (C major pentatonic, G4 to C6): any two together sound right. */
+const BELL_NOTES = [67, 69, 72, 74, 76, 79, 81, 84];
 
 function makeNoise(ctx: BaseAudioContext): AudioBuffer {
   const length = Math.floor(ctx.sampleRate * 1.0);
@@ -1411,6 +1413,63 @@ export class AudioEngine {
     this.synth.tone(out, 'sine', f, when, 0.5 * s, 0.003, 0.14 + 0.06 * s, { to: f * 0.55, glide: 0.12 });
     this.synth.tone(out, 'triangle', f * 2, when, 0.12 * s, 0.003, 0.08, { to: f, glide: 0.06, filter: 1500 });
     this.synth.noiseBurst(out, when, 0.12 * s, 0.025, 'lowpass', 900, 0.7);
+  }
+
+  /** A star lights up: a soft bell, higher up the screen higher in pitch (`note` 0 at the bottom .. 7 at the top). */
+  bell(note: number, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    const midi = BELL_NOTES[clamp(Math.round(note), 0, BELL_NOTES.length - 1)];
+    this.synth.musicBox(out, midi, when, 1.0, 0.28);
+    // A soft breath under it, so it feels like a light coming on rather than a key being struck.
+    this.synth.tone(out, 'sine', midiToFreq(midi) * 0.5, when, 0.1, 0.05, 0.5);
+  }
+
+  /** A lantern kindles in the hand: a soft "fwoomp" of warm air and a low glow. */
+  kindle(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    this.synth.noiseBurst(out, when, 0.22, 0.35, 'lowpass', 700, 0.8);
+    this.synth.tone(out, 'sine', 160, when, 0.28, 0.06, 0.5, { to: 240, glide: 0.3 });
+    this.synth.tone(out, 'triangle', 480, when + 0.05, 0.07, 0.05, 0.4, { to: 720, glide: 0.3, filter: 1500 });
+  }
+
+  /** A switch turned on: a small click and two notes going up. */
+  switchOn(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    this.synth.noiseBurst(out, when, 0.3, 0.02, 'bandpass', 2400, 2);
+    this.synth.musicBox(out, 76, when + 0.02, 0.4, 0.2);
+    this.synth.musicBox(out, 84, when + 0.12, 0.6, 0.22);
+  }
+
+  /** A switch turned off: the click and two notes going down. */
+  switchOff(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    this.synth.noiseBurst(out, when, 0.3, 0.02, 'bandpass', 1800, 2);
+    this.synth.musicBox(out, 79, when + 0.02, 0.4, 0.18);
+    this.synth.musicBox(out, 72, when + 0.12, 0.5, 0.18);
+  }
+
+  /** The moon wakes: a warm, low hum of a chord, gentle as a lullaby. */
+  hum(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    [48, 55, 60, 64].forEach((midi, i) => {
+      const f = midiToFreq(midi);
+      this.synth.tone(out, 'sine', f, when + i * 0.04, 0.15, 0.12, 1.1, { filter: 1200 });
+      this.synth.tone(out, 'triangle', f, when + i * 0.04, 0.045, 0.15, 0.9, { filter: 800 });
+    });
+  }
+
+  /** A shooting star: a rising whoosh of air with a glitter of bells on its tail. */
+  shootingStar(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    this.synth.noiseBurst(out, when, 0.28, 0.7, 'bandpass', 1200, 0.6);
+    this.synth.tone(out, 'sine', 420, when, 0.12, 0.05, 0.6, { to: 1400, glide: 0.5 });
+    [84, 88, 91, 96].forEach((midi, i) => this.synth.musicBox(out, midi, when + 0.15 + i * 0.09, 0.5, 0.13));
   }
 
   /** A single drop from the shower head: a short, high "plip". */
