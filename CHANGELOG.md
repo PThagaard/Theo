@@ -3,6 +3,24 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Hajfamilien svømmer gennem Badekarret, og ildfluerne tryller
+
+- **Ildfluerne har fået en trylle-lyd** (forældrene: "ildfluerne skal have en anden lyd, måske en magisk
+  trylle-lyd"): rør en ildflue i Lys, og den tryller med en hurtig trille af lyse klokker op ad skalaen og et
+  skær af glimmer ovenpå, i stedet for fuglens pip.
+- **Hajfamilien** (forældrenes ønske fra 21.9.): Theo-haj forrest, mor-haj og far-haj bagved, svømmer gennem
+  badet i en række med finnerne over vandet. Er der familiebilleder, bærer de tre hajer de første tre ansigter
+  (i den rækkefølge, billederne er lagt ind), ellers deres egne smilende ansigter, ingen tænder. Rør en haj, og
+  den springer op af vandet med et plask og siger nam-nam, lyst for den lille og dybt for far. Nu og da springer
+  en af dem af sig selv (sjældnere for de mindste). Sangen er ikke med: vil I have Baby Shark til, så læg jeres
+  egen udgave ind under *Musik → Jeres musik*, så spiller den, mens hajerne kommer forbi. En rigtig optagelse kan
+  lægges i `src/lyde/haj.mp3`.
+
+**Test på telefonen:** (1) Lys: rør en ildflue: trylle-lyd. (2) Badekar: vent på hajfamilien (eller ryst, når
+badet er tomt, så kommer en gæst): tre hajer i en række med jeres ansigter. (3) Rør hver haj: den springer og
+siger nam-nam i sin egen tonehøjde. (4) Sig, om ansigterne skal sidde anderledes (større, mindre), om hajerne er
+sjove nok uden sangen, og om trylle-lyden er den rigtige.
+
 ## 2026-09-22 – Fire nye besøg i ballonverdenen: kat, kanin, frø og bi
 
 - **Katten** trisser ind fra siden, sætter sig midt på græsset og mjaver, strækker sig og giver et lille hop, når

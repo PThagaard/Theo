@@ -120,7 +120,9 @@ titte-bøh, jeres ansigter og jeres ord.
   sig, så kun ryggen og hullet stikker op (tryk, og den lader vandet ud og kommer glad op), koen i speedbåden (muh
   og dyt), pingvinen på vandscooteren, guldfisken, der springer (hvert tredje spring ender i en boble, der bærer den
   væk, medmindre I popper boblen), bruseren, der drypper, til man rører den, og så sprøjter, laver bobler og kan
-  trækkes rundt med fingeren, og isbjørnen, der driver forbi på sin isflage og vinker hej hej. Ryst telefonen, når
+  trækkes rundt med fingeren, isbjørnen, der driver forbi på sin isflage og vinker hej hej, og hajfamilien
+  (Theo-haj, mor-haj og far-haj med jeres ansigter, når der er billeder), der svømmer forbi i en række og springer
+  med et nam-nam, når en haj røres. Ryst telefonen, når
   badet er tomt, og en gæst kommer. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og
   *Alder* gælder her også (for de mindste én gæst ad gangen og sjældent).
 - **Theos Trommer** (spil nr. 4): hele skærmen er store farveflader (tre for de mindste, op til fem for de
@@ -137,8 +139,8 @@ titte-bøh, jeres ansigter og jeres ord.
   klokke (stjerner tæt på hinanden får en streg imellem); træk fingeren, og der kommer stjernestøv; hold fingeren
   stille, og en papirlygte vokser i hånden og svæver op, når I slipper (hver tredje med et familieansigt); lamperne
   og huset er kontakter (tryk tænder, tryk slukker); månen vågner ved et tryk; ryst giver et stjerneskud. Ildfluer
-  flyver rundt og siger pip, når de røres (to for de mindste, fire for de største), og et stjerneskud kommer af sig
-  selv nu og da (sjældent for de mindste).
+  flyver rundt og tryller med en lille klokke-trille, når de røres (to for de mindste, fire for de største), og et
+  stjerneskud kommer af sig selv nu og da (sjældent for de mindste).
 - **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
 - **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
   op, regnbuen kommer, og en almindelig sky driver videre.

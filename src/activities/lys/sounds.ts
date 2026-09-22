@@ -65,7 +65,8 @@ export function handleLysEvent(event: LysEvent, ctx: ActivityContext): void {
       ctx.stats.bump('shootingStars');
       break;
     case 'firefly':
-      audio?.chirp();
+      // The parents' wish: not a bird's tweet but a little magic.
+      audio?.magic();
       ctx.haptic(ImpactStyle.Light);
       ctx.stats.bump('firefliesTouched');
       break;

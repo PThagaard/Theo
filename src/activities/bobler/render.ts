@@ -38,6 +38,12 @@ const COW_WHITE = '#f7f4ee';
 const COW_BLACK = '#3a3a3a';
 const PENGUIN = '#2b2b3a';
 const BEAK = '#ff8c42';
+/** Baby, mama and papa shark: our own colours, bright and different, so each is easy to tell apart. */
+const SHARK_COLORS: Array<{ body: string; belly: string; fin: string }> = [
+  { body: '#8fd3f4', belly: '#e8f8ff', fin: '#5fb7e6' },
+  { body: '#ff9fc3', belly: '#ffe6f0', fin: '#ef6f9e' },
+  { body: '#5b8def', belly: '#dce9ff', fin: '#3b6bd1' },
+];
 const EYE = '#3b2a4a';
 
 export class BoblerRenderer {
@@ -169,7 +175,101 @@ export class BoblerRenderer {
       case 'shower':
         this.drawShower(g);
         break;
+      case 'sharks':
+        // Papa at the back is drawn first, the baby in front last.
+        for (let i = g.members.length - 1; i >= 0; i--) this.drawShark(game, g, i);
+        break;
     }
+  }
+
+  /**
+   * One shark of the family: a round, smiling toy shark (no teeth), its fin above the water and its body faint
+   * below, wearing a family face when there is a photo for it. A leap lifts it clear of the water, nose up.
+   */
+  private drawShark(game: BoblerGame, g: Guest, i: number): void {
+    const { ctx } = this.base;
+    const m = game.memberPosition(g, i);
+    const s = m.size;
+    const style = SHARK_COLORS[Math.min(i, SHARK_COLORS.length - 1)];
+    const leap = g.members[i] ?? 0;
+    const image = this.base.photo(g.faces[i]);
+    const body = () => {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+      ctx.scale(g.dir, 1);
+      if (leap > 0) ctx.rotate(-(leap - 0.5) * 1.2);
+      // Tail fin, wagging (faster in a leap).
+      ctx.save();
+      ctx.translate(-s * 1.15, 0);
+      ctx.rotate(Math.sin(g.phase * 1.6 + i * 1.3) * (leap > 0 ? 0.45 : 0.28));
+      ctx.fillStyle = style.fin;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-s * 0.7, -s * 0.75);
+      ctx.lineTo(-s * 0.5, 0);
+      ctx.lineTo(-s * 0.7, s * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      // Body, belly, dorsal fin, pectoral fin and gills.
+      ctx.fillStyle = style.body;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s * 1.3, s * 0.62, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = style.belly;
+      ctx.beginPath();
+      ctx.ellipse(s * 0.1, s * 0.22, s * 1.0, s * 0.35, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = style.fin;
+      ctx.beginPath();
+      ctx.moveTo(s * 0.15, -s * 0.5);
+      ctx.lineTo(-s * 0.2, -s * 1.2);
+      ctx.lineTo(-s * 0.6, -s * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(s * 0.2, s * 0.3);
+      ctx.lineTo(-s * 0.1, s * 0.85);
+      ctx.lineTo(s * 0.55, s * 0.45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = style.fin;
+      ctx.lineWidth = s * 0.05;
+      ctx.lineCap = 'round';
+      for (const dx of [-0.05, 0.1]) {
+        ctx.beginPath();
+        ctx.arc(dx * s, -s * 0.1, s * 0.22, Math.PI * 0.7, Math.PI * 1.3);
+        ctx.stroke();
+      }
+      if (image) {
+        // The family face sits high on the head, above the water line, with a pale rim so it reads as a photo.
+        const r = s * 0.52;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(s * 0.6, -s * 0.18, r + s * 0.06, 0, TAU);
+        ctx.fill();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s * 0.6, -s * 0.18, r, 0, TAU);
+        ctx.clip();
+        ctx.drawImage(image, s * 0.6 - r, -s * 0.18 - r, r * 2, r * 2);
+        ctx.restore();
+      } else {
+        this.eye(s * 0.7, -s * 0.2, s * 0.12);
+        ctx.fillStyle = 'rgba(255, 140, 150, 0.45)';
+        ctx.beginPath();
+        ctx.arc(s * 0.55, s * 0.05, s * 0.1, 0, TAU);
+        ctx.fill();
+        // A wide, friendly smile.
+        ctx.strokeStyle = EYE;
+        ctx.lineWidth = s * 0.06;
+        ctx.beginPath();
+        ctx.arc(s * 0.85, s * 0.12, s * 0.3, 0.15 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+    this.inWater(game, m.x, s * 2.2, 0.45, body);
   }
 
   /**

@@ -90,9 +90,9 @@ efter lyde.
   Ænderne skifter farve ved tryk og suser i regnbuefarver ved hold. Familien i boblerne, stjernebobler som godbid.
   Samme kontingens som Balloner i en ny verden ("mere af det, der virker", `docs/FORSKNING.md`). Træner: hånd-øje,
   tryk og slip, at følge noget med øjnene, årsag-virkning, forventning (hvem kommer nu?).
-  **Næste (forældrenes ønsker 21.9.2026):** hajfamilien (Theo-haj, Ma-Ma-haj, Da-Da-haj), når Baby Shark-løsningen
-  er aftalt (spilledåse-notationen var for dårlig); rigtige optagelser af hval, pingvin og isbjørn (forældrene
-  lægger dem i `src/lyde/`).
+  **Hajfamilien** (forældrenes ønske 21.9.2026) kom 22.9.2026 som gæst med familiens ansigter på baby-, mor- og
+  far-hajen, uden sangen (Baby Shark kan spilles via *Jeres musik*). **Næste:** rigtige optagelser af hval,
+  pingvin, isbjørn og haj (forældrene lægger dem i `src/lyde/`).
 - ✅ **Musik-fane i forældremenuen** – hver sang til/fra, afspilningshastighed, næste sang. Baby Shark som
   spilledåse-notation blev prøvet og taget ud igen (forældrene: "virkelig dårlig").
 - ✅ **Jeres musik** – forældrene vælger egne lydfiler på telefonen (bliver på telefonen som familiebillederne, så

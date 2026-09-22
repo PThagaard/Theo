@@ -196,6 +196,7 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['guest:fish', '… fisken'],
   ['guest:shower', '… bruseren'],
   ['guest:bear', '… isbjørnen'],
+  ['guest:sharks', '… hajfamilien'],
   ['fishRides', 'Fisken fløj væk i en boble'],
   ['fishFreed', '… og blev poppet fri igen'],
   ['drumHits', 'Trommeslag'],

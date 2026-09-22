@@ -541,6 +541,19 @@ await page.touchscreen.tap(bearHit.x, bearHit.y);
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/${tag}-37-bobler-bear.png` });
 check(await page.evaluate(() => { const b = window.__theo.game.guests.find((x) => x.kind === 'bear'); return b && b.state === 'act' && b.pokes === 1; }), 'touching the bear should make it wave');
+// The shark family swims by in a line (baby in front); a touched shark leaps with a "nam-nam".
+await page.evaluate(() => {
+  const g = window.__theo.game; g.guests = [];
+  g.bubbles = []; Object.assign(g.spawnBubble({ x: 40, y: 80, r: 18, kind: 'plain' }), { vx: 0, vy: 0 }); g.spawnTimer = 30;
+  const sharks = g.spawnGuest('sharks'); sharks.dir = 1; sharks.vx = Math.abs(sharks.vx); sharks.x = g.width * 0.62;
+});
+await page.waitForTimeout(400);
+const babyShark = await page.evaluate(() => { const g = window.__theo.game; const s = g.guests.find((x) => x.kind === 'sharks'); if (!s) return null; const m = g.memberPosition(s, 0); return { x: m.x, y: m.y - m.size * 0.2, members: s.members.length }; });
+check(babyShark && babyShark.members === 3, 'the shark family should be three sharks');
+await page.touchscreen.tap(babyShark.x, babyShark.y);
+await page.waitForTimeout(250);
+await page.screenshot({ path: `${OUT}/${tag}-38-bobler-sharks.png` });
+check(await page.evaluate(() => { const s = window.__theo.game.guests.find((x) => x.kind === 'sharks'); return s && s.pokes === 1 && s.members[0] > 0; }), 'touching the baby shark should make it leap');
 const guestStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { seen: s.bathGuests ?? 0, poked: s.bathGuestsPoked ?? 0, whale: s['guest:whale'] ?? 0, bear: s['guest:bear'] ?? 0, rides: s.fishRides ?? 0, freed: s.fishFreed ?? 0 }; });
 console.log('guests:', JSON.stringify(guestStats));
 check(guestStats.seen >= 6 && guestStats.whale >= 1 && guestStats.bear >= 1 && guestStats.rides >= 1, 'the bath guests did not appear or answer');
@@ -1031,7 +1044,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 41, sr);
+  const ctx = new OfflineAudioContext(1, sr * 43, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -1080,6 +1093,8 @@ const audio = await page.evaluate(async () => {
     ['thump', 38.0, () => engine.thump(38.0)],
     ['croak', 38.7, () => engine.croak(38.7)],
     ['buzz', 39.5, () => engine.buzz(39.5)],
+    ['chomp', 40.2, () => { engine.chomp(1.5, 40.2); engine.chomp(0.7, 40.7); }],
+    ['magic', 41.3, () => engine.magic(41.3)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -1095,7 +1110,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 41;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 43;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -1107,7 +1122,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 41);
+  out.total = stats(0, 43);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

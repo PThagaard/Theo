@@ -902,6 +902,30 @@ export class AudioEngine {
     }
   }
 
+  /** A firefly touched: a little magic, a quick run of bright bells up the scale with a shimmer on top. */
+  magic(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    [79, 84, 88, 91, 96, 100].forEach((midi, i) => {
+      this.synth.musicBox(out, midi, when + i * 0.045, 0.5, 0.2 - i * 0.015);
+    });
+    // The shimmer: a breath of high, airy noise and a rising glass tone.
+    this.synth.noiseBurst(out, when, 0.07, 0.35, 'highpass', 6000, 0.5);
+    this.synth.tone(out, 'sine', 1400, when + 0.05, 0.08, 0.05, 0.45, { to: 2800, glide: 0.35 });
+  }
+
+  /** The sharks' friendly "nam-nam": two soft, round bites, high for the baby and low for papa (a recording if there is one). */
+  chomp(pitch = 1, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    if (this.sample('haj', when, { rate: pitch }, out)) return;
+    const f = 260 * pitch;
+    for (const offset of [0, 0.17]) {
+      this.synth.tone(out, 'triangle', f * 1.4, when + offset, 0.26, 0.005, 0.11, { to: f, glide: 0.08, filter: 2200 });
+      this.synth.noiseBurst(out, when + offset, 0.12, 0.03, 'bandpass', 1400 * pitch, 1.5);
+    }
+  }
+
   /** The rabbit: two soft thumps of its hind feet and a tiny hop-squeak on top (a recording if there is one). */
   thump(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;

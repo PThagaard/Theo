@@ -77,7 +77,7 @@ export interface Ripple {
   power: number;
 }
 
-export type GuestKind = 'whale' | 'boat' | 'jetski' | 'fish' | 'shower' | 'bear';
+export type GuestKind = 'whale' | 'boat' | 'jetski' | 'fish' | 'shower' | 'bear' | 'sharks';
 /** `ride` and `fall` belong to the fish: carried up inside a bubble, and dropping back when it pops. */
 export type GuestState = 'enter' | 'stay' | 'act' | 'ride' | 'fall' | 'leave';
 
@@ -112,6 +112,10 @@ export interface Guest {
   targetY: number;
   /** The y it left from (to animate the leave). */
   fromY: number;
+  /** The shark family: one leap per member (1..0, seconds left over the leap time), empty for other guests. */
+  members: number[];
+  /** The shark family: the family photo each member wears (baby, mama, papa), undefined where there is none. */
+  faces: Array<string | undefined>;
 }
 
 /**
@@ -132,7 +136,7 @@ export type BoblerEvent =
   | { type: 'shake' }
   | { type: 'celebration' }
   | { type: 'swipe' }
-  | { type: 'guest'; kind: GuestKind; what: GuestEventWhat; x: number; y: number; pokes?: number }
+  | { type: 'guest'; kind: GuestKind; what: GuestEventWhat; x: number; y: number; pokes?: number; member?: number }
   | { type: 'sparkle'; x: number; y: number };
 
 export interface BoblerConfig {
@@ -181,12 +185,21 @@ const MAX_TILT = 0.45;
 /** Seconds between guests (times the age profile's visit interval), and how long the first one waits. */
 const GUEST_INTERVAL = 32;
 const FIRST_GUEST = 18;
-const GUEST_KINDS: ReadonlyArray<GuestKind> = ['whale', 'boat', 'fish', 'jetski', 'shower', 'bear'];
+const GUEST_KINDS: ReadonlyArray<GuestKind> = ['whale', 'boat', 'fish', 'jetski', 'shower', 'bear', 'sharks'];
 /** How long a guest stays by itself (crossing guests leave when they have crossed; the whale and the shower have their own rules). */
-const GUEST_STAY: Record<GuestKind, number> = { whale: 16, boat: Infinity, jetski: Infinity, fish: 16, shower: 60, bear: Infinity };
+const GUEST_STAY: Record<GuestKind, number> = { whale: 16, boat: Infinity, jetski: Infinity, fish: 16, shower: 60, bear: Infinity, sharks: Infinity };
 /** Crossing speed (times unit and the age profile's speed). */
-const GUEST_SPEED: Record<GuestKind, number> = { whale: 0, boat: 85, jetski: 135, fish: 22, shower: 0, bear: 20 };
-const GUEST_ENTER_TIME: Record<GuestKind, number> = { whale: 1.2, boat: 0, jetski: 0, fish: 1.0, shower: 0.9, bear: 0 };
+const GUEST_SPEED: Record<GuestKind, number> = { whale: 0, boat: 85, jetski: 135, fish: 22, shower: 0, bear: 20, sharks: 26 };
+const GUEST_ENTER_TIME: Record<GuestKind, number> = { whale: 1.2, boat: 0, jetski: 0, fish: 1.0, shower: 0.9, bear: 0, sharks: 0 };
+/**
+ * The shark family the parents asked for: baby in front, mama and papa behind, swimming across in a line and
+ * wearing the family's faces when there are photos. A touched shark leaps with a "nam-nam"; one of them leaps by
+ * itself now and then (seldom for the youngest).
+ */
+export const SHARK_SCALE = [0.8, 1.05, 1.3];
+const SHARK_SPACING = 3.3;
+export const SHARK_HOP_TIME = 0.9;
+const SHARK_ACT_EVERY: Record<Age, number> = { '8-12': 14, '1-2': 10, '2+': 8 };
 const GUEST_LEAVE_TIME = 1.1;
 /** Crossing guests that have to leave (the bath falls asleep) hurry off at this speed. */
 const HURRY_OFF_SPEED = 130;
@@ -508,6 +521,10 @@ export class BoblerGame {
     for (const g of this.guests) {
       // A fish inside a bubble is reached through the bubble (popping it lets the fish out).
       if (g.state === 'leave' || g.state === 'ride' || g.state === 'fall') continue;
+      if (g.kind === 'sharks') {
+        if (this.memberAt(g, x, y) !== null) return g;
+        continue;
+      }
       const wide = g.kind === 'boat' || g.kind === 'jetski' || g.kind === 'bear' ? 2.2 : 1.8;
       // The bear sits up tall on its floe; the others are centred a little above their water line.
       const centerY = g.kind === 'bear' ? g.y - g.size * 1.0 : g.y - g.size * 0.3;
@@ -518,6 +535,25 @@ export class BoblerGame {
   }
 
   // ---- Guests ---------------------------------------------------------------------
+
+  /** Where one shark of the family is (0 = baby in front, 1 = mama, 2 = papa), and how big; leaping lifts it. */
+  memberPosition(g: Guest, i: number): { x: number; y: number; size: number } {
+    const size = g.size * (SHARK_SCALE[i] ?? 1);
+    const x = g.x - g.dir * g.size * SHARK_SPACING * i;
+    const leap = g.members[i] ?? 0;
+    const lift = leap > 0 ? Math.sin((1 - leap) * Math.PI) * size * 1.3 : 0;
+    // Riding a little high in the water, so the face on the head stays above the surface.
+    return { x, y: this.surfaceY(x) - size * 0.12 - lift, size };
+  }
+
+  /** Which shark of the family a touch lands on (generous, a whole hand), or null. */
+  private memberAt(g: Guest, x: number, y: number): number | null {
+    for (let i = 0; i < g.members.length; i++) {
+      const m = this.memberPosition(g, i);
+      if (Math.abs(x - m.x) <= m.size * 1.6 && Math.abs(y - (m.y - m.size * 0.3)) <= m.size * 1.6) return i;
+    }
+    return null;
+  }
 
   /** The next kind of guest: every kind once before any repeats. */
   private nextGuestKind(): GuestKind {
@@ -539,10 +575,10 @@ export class BoblerGame {
   /** A guest arrives (also used by the smoke test with a chosen kind). */
   spawnGuest(kind = this.nextGuestKind()): Guest {
     const u = this.unit;
-    const size = this.guestSize * (kind === 'boat' ? 1.15 : kind === 'whale' ? 1.25 : kind === 'bear' ? 1.05 : kind === 'shower' ? 0.9 : 1);
+    const size = this.guestSize * (kind === 'boat' ? 1.15 : kind === 'whale' ? 1.25 : kind === 'bear' ? 1.05 : kind === 'shower' ? 0.9 : kind === 'sharks' ? 1.0 : 1);
     const dir: 1 | -1 = this.rng.chance(0.5) ? 1 : -1;
     const speed = GUEST_SPEED[kind] * u * this.profile.speed;
-    const crossing = kind === 'boat' || kind === 'jetski' || kind === 'bear';
+    const crossing = kind === 'boat' || kind === 'jetski' || kind === 'bear' || kind === 'sharks';
     let x = this.rng.range(0.3, 0.7) * this.width;
     let y = this.surfaceY(x) + size * 2.2;
     let targetY = this.surfaceY(x) - size * 0.6;
@@ -561,6 +597,7 @@ export class BoblerGame {
       targetY = y;
       state = 'stay';
       if (kind === 'bear') nextAct = FIRST_WAVE;
+      if (kind === 'sharks') nextAct = SHARK_ACT_EVERY[this.age];
     } else if (kind === 'shower') {
       y = -size * 2;
       targetY = this.height * 0.14;
@@ -592,6 +629,9 @@ export class BoblerGame {
       nextAct,
       targetY,
       fromY: y,
+      members: kind === 'sharks' ? [0, 0, 0] : [],
+      // Baby, mama, papa wear the first three family photos, in the order the parents added them.
+      faces: kind === 'sharks' ? [0, 1, 2].map((i) => this.photoIds[i]) : [],
     };
     this.guests.push(guest);
     // The fish arrives with a splash; the whale's arrival is only a small stir, so the secret stays a secret.
@@ -611,7 +651,15 @@ export class BoblerGame {
     g.pokes++;
     this.guestsPoked++;
     const u = this.unit;
+    let member: number | undefined;
     switch (g.kind) {
+      case 'sharks': {
+        // The touched shark leaps out of the water with a splash and a "nam-nam".
+        member = this.memberAt(g, x, y) ?? 0;
+        g.members[member] = 1;
+        this.waterSplash(this.memberPosition(g, member).x, false);
+        break;
+      }
       case 'whale':
         if (g.pokes === 1) {
           // Helped: up it comes, glad, with a splash, and it stays a while.
@@ -643,7 +691,7 @@ export class BoblerGame {
         this.addRipple(g.x, 0.6);
         break;
     }
-    this.emit({ type: 'guest', kind: g.kind, what: 'poke', x, y, pokes: g.pokes });
+    this.emit({ type: 'guest', kind: g.kind, what: 'poke', x, y, pokes: g.pokes, ...(member === undefined ? {} : { member }) });
   }
 
   private fishJump(g: Guest): void {
@@ -861,6 +909,41 @@ export class BoblerGame {
             const t = Math.min(1, g.stateAge / GUEST_LEAVE_TIME);
             g.y = g.fromY + g.size * 2.4 * t * t;
             if (t >= 1) this.guests.splice(i, 1);
+          }
+          break;
+        }
+        case 'sharks': {
+          // The family swims across in a line; each leap runs its course, and now and then one leaps by itself.
+          const cruise = (g.state === 'leave' ? HURRY_OFF_SPEED : GUEST_SPEED.sharks) * u * this.profile.speed;
+          if (Math.abs(g.vx) > cruise) g.vx -= Math.sign(g.vx) * cruise * 0.8 * dt;
+          else if (g.state === 'leave') g.vx = g.dir * cruise;
+          g.x += g.vx * dt;
+          g.y = this.surfaceY(g.x);
+          for (let m = 0; m < g.members.length; m++) g.members[m] = Math.max(0, g.members[m] - dt / SHARK_HOP_TIME);
+          g.nextAct -= dt;
+          if (g.nextAct <= 0) {
+            g.nextAct = SHARK_ACT_EVERY[this.age];
+            const m = this.rng.int(0, g.members.length - 1);
+            const pos = this.memberPosition(g, m);
+            if (g.state === 'stay' && g.members[m] <= 0 && pos.x > g.size && pos.x < this.width - g.size) {
+              g.members[m] = 1;
+              g.acts++;
+              this.waterSplash(pos.x, false);
+              this.emit({ type: 'guest', kind: 'sharks', what: 'act', x: pos.x, y: pos.y, member: m });
+            }
+          }
+          if (Math.floor(g.age * 1.5) !== Math.floor((g.age - dt) * 1.5)) this.addRipple(g.x, 0.3);
+          // The ducks rock a little as the family passes.
+          for (const duck of this.ducks) {
+            if (Math.abs(duck.x - g.x) < 120 * u) {
+              duck.vx += g.dir * 8 * u * dt * 10;
+              duck.bobV -= 12 * u * dt * 10;
+            }
+          }
+          const papaX = g.x - g.dir * g.size * SHARK_SPACING * (g.members.length - 1);
+          if ((g.dir > 0 && papaX > this.width + g.size * 2.5) || (g.dir < 0 && papaX < -g.size * 2.5)) {
+            this.guests.splice(i, 1);
+            if (g.state !== 'leave') this.emit({ type: 'guest', kind: g.kind, what: 'leave', x: g.x, y: g.y });
           }
           break;
         }

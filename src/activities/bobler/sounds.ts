@@ -5,7 +5,10 @@ import type { GuestEventWhat, GuestKind } from './logic';
 import type { BoblerEvent } from './logic';
 
 /** What the guests sound like as they come, are touched, act and leave. */
-function guestSound(audio: AudioEngine | null, kind: GuestKind, what: GuestEventWhat, pokes: number): void {
+/** Baby shark high, mama in the middle, papa low. */
+const SHARK_PITCH = [1.5, 1, 0.7];
+
+function guestSound(audio: AudioEngine | null, kind: GuestKind, what: GuestEventWhat, pokes: number, member = 0): void {
   if (!audio) return;
   const now = audio.ctx.currentTime;
   switch (kind) {
@@ -62,6 +65,14 @@ function guestSound(audio: AudioEngine | null, kind: GuestKind, what: GuestEvent
         audio.bearHello();
         audio.splash(false, now + 0.1);
       }
+      break;
+    case 'sharks':
+      // A touched shark says "nam-nam" in its own voice and leaps with a splash; a leap by itself is just the splash.
+      if (what === 'appear') audio.splash(false);
+      else if (what === 'poke') {
+        audio.chomp(SHARK_PITCH[member] ?? 1);
+        audio.splash(false, now + 0.12);
+      } else if (what === 'act') audio.splash(true);
       break;
   }
 }
@@ -129,7 +140,7 @@ export function handleBoblerEvent(event: BoblerEvent, ctx: ActivityContext): voi
       ctx.stats.bump('bubbleSwipes');
       break;
     case 'guest':
-      guestSound(audio, event.kind, event.what, event.pokes ?? 0);
+      guestSound(audio, event.kind, event.what, event.pokes ?? 0, event.member ?? 0);
       if (event.what === 'poke') {
         ctx.haptic(ImpactStyle.Light);
         ctx.stats.bump('bathGuestsPoked');

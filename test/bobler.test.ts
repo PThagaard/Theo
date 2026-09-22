@@ -179,8 +179,46 @@ describe('Bobler: the bath', () => {
     expect(game.guests.length).toBeLessThanOrEqual(1);
     const { game: older } = makeBath('2+');
     const kinds = new Set<string>();
-    for (let i = 0; i < 6; i++) kinds.add(older.spawnGuest().kind);
-    expect(kinds.size).toBe(6);
+    for (let i = 0; i < 7; i++) kinds.add(older.spawnGuest().kind);
+    expect(kinds.size).toBe(7);
+  });
+
+  it('the shark family swims across in a line wearing the family faces; a touched shark leaps, one leaps by itself now and then, and they leave at the far side', () => {
+    const { game, events } = makeBath('2+');
+    game.bubbles = [];
+    game.setPhotos(['theo', 'mor', 'far', 'extra']);
+    const sharks = game.spawnGuest('sharks');
+    expect(sharks.members).toHaveLength(3);
+    expect(sharks.faces).toEqual(['theo', 'mor', 'far']);
+    sharks.dir = 1;
+    sharks.vx = Math.abs(sharks.vx);
+    sharks.x = W / 2;
+    advance(game, 0.5);
+    // Baby in front, mama and papa behind (bigger), all on the water line.
+    const baby = game.memberPosition(sharks, 0);
+    const papa = game.memberPosition(sharks, 2);
+    expect(baby.x - papa.x).toBeGreaterThan(sharks.size * 4);
+    expect(papa.size).toBeGreaterThan(baby.size);
+    expect(Math.abs(baby.y - game.surfaceY(baby.x))).toBeLessThan(baby.size);
+    game.bubbles = [];
+    const mama = game.memberPosition(sharks, 1);
+    tap(game, mama.x, mama.y - mama.size * 0.2);
+    expect(sharks.pokes).toBe(1);
+    expect(sharks.members[1]).toBeGreaterThan(0.5);
+    expect(sharks.members[0]).toBe(0);
+    expect(events.find((e) => e.type === 'guest' && e.kind === 'sharks' && e.what === 'poke')).toMatchObject({ member: 1 });
+    advance(game, 0.4);
+    expect(game.memberPosition(sharks, 1).y).toBeLessThan(game.surfaceY(mama.x) - mama.size * 0.5);
+    // Placed at the near edge, the family is still in the bath when one of them leaps by itself.
+    sharks.x = 60;
+    advance(game, 9.5);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'sharks' && e.what === 'act')).toBe(true);
+    advance(game, 40);
+    expect(game.guests).not.toContain(sharks);
+    expect(events.some((e) => e.type === 'guest' && e.kind === 'sharks' && e.what === 'leave')).toBe(true);
+    // Without photos the sharks wear their own faces.
+    const { game: plain } = makeBath('2+');
+    expect(plain.spawnGuest('sharks').faces.every((face) => face === undefined)).toBe(true);
   });
 
   it('the whale hides with only its back showing; a touch lets the water out, and it rises up glad and stays a while', () => {
