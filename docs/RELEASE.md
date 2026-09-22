@@ -27,6 +27,8 @@ Kør workflowet manuelt fra fanen *Actions* → *Byg app* → *Run workflow*, hv
 - [ ] Tilbage-swipe lukker ikke appen. Skærmen slukker ikke i løbet af 5 minutters leg.
 - [ ] Forældremenu: åbner kun ved 2 sekunders tryk med én finger; en hel hånd åbner den ikke.
 - [ ] Forældremenu: fanerne til venstre, siderne i spalter; *Leg* står på én skærm, og klipperen står side om side.
+- [ ] Theos Spejl: telefonen spørger om kameraet første gang; spejlbilledet er spejlvendt og fylder skærmen; et nej
+      giver den bløde baggrund i stedet, og spillet virker stadig.
 - [ ] Lås: "Fastgør?"-dialogen kommer; låst app spærrer Hjem/Tilbage/notifikationer; oplåsning virker (hold knappen
       eller swipe op og hold).
 - [ ] Baggrund/forgrund: musikken stopper, når appen forlades, og starter igen, når den åbnes.

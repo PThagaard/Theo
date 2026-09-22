@@ -4,6 +4,7 @@ import { createBobler } from './bobler';
 import { createBolde } from './bolde';
 import { createLys } from './lys';
 import { createOrd } from './ord';
+import { createSpejl } from './spejl';
 import { createTrommer } from './trommer';
 
 export interface ActivityEntry {
@@ -29,6 +30,7 @@ export const ACTIVITIES: ReadonlyArray<ActivityEntry> = [
   { id: 'trommer', title: 'Theos Trommer', emoji: '🥁', blurb: 'Slå på de store farveflader: hver tone passer', hasTempo: false, hasVoices: false, familyWhere: 'på noderne', create: createTrommer },
   { id: 'bolde', title: 'Theos Bolde', emoji: '⚽', blurb: 'Bløde bolde, der hopper: tryk, grib og kast, ryst og drej', hasTempo: false, hasVoices: false, familyWhere: 'på boldene', create: createBolde },
   { id: 'lys', title: 'Theos Lys', emoji: '✨', blurb: 'Tænd stjerner og lygter i mørket: tryk, tegn, hold og ryst', hasTempo: false, hasVoices: false, familyWhere: 'i lygterne', create: createLys },
+  { id: 'spejl', title: 'Theos Spejl', emoji: '🪞', blurb: 'Se dig selv i kameraet: klistermærker, glimmer og stjerner, hvor du rører', hasTempo: false, hasVoices: false, familyWhere: 'i spejlet', create: createSpejl },
   { id: 'ord', title: 'Theos Titte-bøh og Ord', emoji: '🙈', blurb: '8–12 mdr: titte-bøh med familien. Fra 1 år: ord og "hvor er …?"', hasTempo: false, hasVoices: true, familyWhere: 'i Ord', create: createOrd },
 ];
 

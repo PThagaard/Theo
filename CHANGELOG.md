@@ -3,6 +3,27 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Theos Spejl: spil nr. 7, se dig selv i spejlet
+
+- **Theos Spejl** er nyt på forsiden: frontkameraet vises som et spejl over hele skærmen (spejlvendt, som et rigtigt
+  spejl), for babyer elsker spejle og ansigter mest af alt, og her er ansigtet deres eget, eller mors og fars.
+  **Tryk**, og et stort blødt klistermærke (stjerne, hjerte, blomst, ballon, på skift) lander, hvor fingeren rører,
+  svæver langsomt op og toner ud. **Træk fingeren**, og den efterlader glimmer med harpetoner. **Hold fingeren
+  stille**, og en gylden stjerne vokser under den; slip, og den sprænger i en byge af glimmer. **Ryst**: konfetti.
+  Er der familiebilleder, svæver der nu og da en boble op med et ansigt i; rør den, og den popper med en fanfare.
+- **Privatliv:** kamerabilledet tegnes kun på skærmen. Intet optages, gemmes eller sendes, og kameraet lukkes i
+  samme øjeblik, I skifter spil. Telefonen spørger om lov første gang spejlet åbnes; siger I nej (eller er der
+  intet kamera, fx på en computer), er legen den samme på en blød lyserød-blå baggrund.
+- **Alder:** *8–12 mdr* har få og store klistermærker (højst 8), *1–2 år* 14, *2+ år* 20; familie-boblerne kommer
+  sjældnere for de mindste. Hver tiende klistermærke fejres med konfetti.
+- Forsiden viser nu de syv spil i tre kolonner.
+
+**Test på telefonen:** (1) Forsiden: *Theos Spejl* er det syvende spil, og alle syv står på én skærm. (2) Åbn
+Spejl: telefonen spørger om kameraet; sig ja: I ser jer selv spejlvendt. (3) Tryk: klistermærker; træk: glimmer;
+hold stille: stjernen vokser, og slip: den sprænger; ryst: konfetti. (4) Med familiebilleder: en boble med et
+ansigt svæver op nu og da; rør den. (5) Skift spil og tilbage: kameraet spørger ikke igen, og lampen ved kameraet
+slukker, når I forlader spejlet. Sig, om Theo kigger efter sig selv, og om billedet er spejlvendt rigtigt.
+
 ## 2026-09-22 – Kanin, frø og bi i Titte-bøh og Ord
 
 - **Tre nye ord i Ord** fra *1–2 år*: kaninen (der spidser ører og hopper), frøen (der springer med tungen ude)

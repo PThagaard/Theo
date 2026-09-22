@@ -224,6 +224,12 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['lightShakes', 'Rystet (lys)'],
   ['lightCelebrations', 'Lys-fester'],
   ['lightPhotos', 'Familien i lygterne'],
+  ['mirrorStickers', 'Klistermærker i spejlet'],
+  ['mirrorTrails', 'Glimmer tegnet i spejlet (swipe)'],
+  ['mirrorBursts', 'Stjerner sprængt i spejlet (holdt)'],
+  ['mirrorShakes', 'Rystet (spejl)'],
+  ['mirrorCelebrations', 'Spejl-fester'],
+  ['mirrorPhotos', 'Familien poppet i spejlet'],
 ];
 
 export function formatMinutes(seconds: number): string {

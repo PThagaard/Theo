@@ -56,6 +56,10 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 - ✅ **Rasle** – foldet ind i *Bolde* (ryst giver rangle og hoppende bolde, tilt ruller dem).
 - ✅ **Tromme og klaver** – bygget som *Theos Trommer* (se 9–12 måneder): store farveflader i samme skala, så det
   altid lyder godt; swipe spiller glissando. Træner: rytme, lyd/handling, tap-præcision.
+- ✅ **Spejl** (Theos Spejl, spil nr. 7) – frontkameraet som spejl: klistermærker ved tryk, glimmer ved træk, en
+  stjerne der vokser ved hold og sprænger ved slip, konfetti ved ryst, familiebilleder i bobler. Babyer elsker
+  spejle og ansigter; her er ansigtet deres eget. Kun på skærmen, intet gemmes. Træner: opmærksomhed på eget
+  ansigt og mimik, årsag-virkning, fælles fokus ("der er Theo! der er mor!"). Udgivet 22.9.2026.
 - 💡 **Fisk i dammen** – rolige fisk følger fingeren, tryk laver bobler, fisk der rammes vender og siger "blub".
   Træner: visuel tracking, rolig leg (god til at falde ned før søvn).
 - ✅ **Lys og mørke** (Theos Lys, spil nr. 6) – en mørk nat: tryk tænder en stjerne med en klokke (stjerner tæt

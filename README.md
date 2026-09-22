@@ -141,6 +141,11 @@ titte-bøh, jeres ansigter og jeres ord.
   og huset er kontakter (tryk tænder, tryk slukker); månen vågner ved et tryk; ryst giver et stjerneskud. Ildfluer
   flyver rundt og tryller med en lille klokke-trille, når de røres (to for de mindste, fire for de største), og et
   stjerneskud kommer af sig selv nu og da (sjældent for de mindste).
+- **Theos Spejl** (spil nr. 7): frontkameraet som et spejl over hele skærmen. Tryk giver klistermærker (stjerne,
+  hjerte, blomst, ballon), der svæver op; træk giver glimmer med harpetoner; hold fingeren stille, og en stjerne
+  vokser, som sprænger, når I slipper; ryst giver konfetti; familiebillederne svæver forbi i bobler. Telefonen
+  spørger om kameraet første gang. Billedet tegnes kun på skærmen: intet optages, gemmes eller sendes, og kameraet
+  lukkes, når I skifter spil. Uden kamera (eller et nej) er legen den samme på en blød baggrund.
 - **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
 - **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
   op, regnbuen kommer, og en almindelig sky driver videre.

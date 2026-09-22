@@ -22,6 +22,8 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
    *Søg efter ny version*), som kun taler med projektets egne GitHub Releases (sender intet andet end en almindelig
    HTTP-forespørgsel og henter højst en APK i baggrunden, som forældrene selv installerer). Ingen
    tredjeparts-SDK'er ud over Capacitor og dets officielle plugins. Det gælder også, når appen bliver offentlig.
+   Kameraet (Theos Spejl) og mikrofonen (Jeres stemmer) bruges kun lokalt: spejlbilledet tegnes live på skærmen
+   og gemmes aldrig; optagelserne bliver på telefonen.
 2. **Alt, barnet rører ved, reagerer** – med bevægelse *og* lyd, inden for 100 ms. Ingen døde områder, ingen "forkert",
    ingen straf, ingen tidspres, ingen "game over". Alt kan gøres med én hel hånd, ikke kun en præcis finger.
 3. **Ingen tekst, knapper eller menuer til barnet.** Alt voksen-UI ligger bag "hold nede i 2 sekunder"-porten
@@ -143,6 +145,8 @@ src/
                           grib/kast; render.ts; sounds.ts; index.ts)
     lys/                  Theos Lys: en mørk nat, hvor hver berøring bliver lys (logic.ts uden DOM: stjerner, stjernestøv,
                           lygter, kontakter, månen, stjerneskud; render.ts med glød-sprites; sounds.ts; index.ts)
+    spejl/                Theos Spejl: frontkameraet som spejl (index.ts ejer kameraet og lukker det ved skift; logic.ts
+                          uden DOM: klistermærker, glimmer, stjerne ved hold, familie-bobler; render.ts; sounds.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →
