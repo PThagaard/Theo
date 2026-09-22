@@ -424,7 +424,7 @@ describe('Game', () => {
   });
 
   describe('age profiles and the pause', () => {
-    it('starts on the youngest profile: few balloons, one visitor, no storms by themselves, no screen flash', () => {
+    it('starts on the youngest profile: few balloons, one visitor, storms seldom and late, no screen flash', () => {
       const game = new Game({}, 5);
       game.resize(W, H);
       const events: GameEvent[] = [];
@@ -432,11 +432,17 @@ describe('Game', () => {
       expect(game.currentAge).toBe('8-12');
       expect(game.targetBalloons).toBe(3);
       let mostVisitors = 0;
+      const stormTimes: number[] = [];
       for (let t = 0; t < 600; t += 1 / 20) {
+        const before = events.length;
         game.update(1 / 20);
         mostVisitors = Math.max(mostVisitors, game.visitors.filter((v) => v.state !== 'gone').length);
+        if (events.slice(before).some((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'appear')) stormTimes.push(t);
       }
-      expect(events.filter((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'appear')).toHaveLength(0);
+      // The storm may come by itself for the youngest too (the parents' rule), but never in the first minute and a
+      // half, and at most twice in ten minutes.
+      expect(stormTimes.length).toBeLessThanOrEqual(2);
+      for (const t of stormTimes) expect(t).toBeGreaterThan(60 * 1.6);
       expect(mostVisitors).toBeLessThanOrEqual(1);
       expect(game.balloons.length).toBeLessThanOrEqual(4);
       // A storm a parent summons still strikes, but never lights up the whole screen.

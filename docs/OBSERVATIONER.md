@@ -159,6 +159,12 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   scrolle en evighed)" → behov: forældrene skal kunne overskue og ændre en indstilling hurtigt, mens Theo venter →
   menuen fylder skærmen: faner og *Tilbage* i en fast kolonne til venstre, hver side i spalter (to på telefonen,
   tre på tablet); *Leg* uden scroll, klipperen side om side.
+- 22.9.2026, forældrene: "Du har flere spil, hvor 1–2 år får flere funktioner, som fx ildfluerne. Det dur ikke.
+  Der skal også være ildfluer osv. funktioner til 8 md. Theo." → ny regel i CLAUDE.md: alle funktioner findes i
+  alle profiler; profilen bestemmer kun hvor mange, hvor hurtigt og hvor tit. Rettet i Lys (ildfluer, stjerneskud),
+  Balloner (uvejr af sig selv), Badekar (fiskehop, bruser-spray), Bolde (boldehop) og Ord (næste ting efter et
+  minut). Skærm-blinket ved lyn og "Hvor er …?"-runderne er bevidst stadig for de ældre (sikkerhed og
+  forskningsregel); forældrene kan bede om at få dem åbnet.
 - 22.9.2026, "Fortsæt udviklingen" → *Theos Lys* bygget som spil nr. 6 fra roadmappens "Lys og mørke" (kontrast-
   syn og årsag-virkning for 6–9 mdr; et tænd/sluk-legetøj, som ingen af de andre spil har). Forældrene: sig, om
   Theo kigger længere på lysene end på de lyse spil, om han finder ud af at holde stille for lygten, og om han

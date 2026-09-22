@@ -89,11 +89,13 @@ describe('Titte-bøh og Ord', () => {
     }
     expect(hiddenCount).toBe(6);
     expect(events.some((e) => e.type === 'ask')).toBe(false);
-    // Nothing happens by itself for the youngest.
+    // Left alone, the next thing comes by itself only after a whole minute for the youngest.
     advance(game, 1);
     const key = game.current.key;
-    advance(game, 120);
+    advance(game, 40);
     expect(game.current.key).toBe(key);
+    advance(game, 40);
+    expect(game.current.key).not.toBe(key);
   });
 
   it('opens the bush on the first touch for the youngest (titte-bøh), and not for a touch in the sky', () => {
@@ -204,7 +206,7 @@ describe('Titte-bøh og Ord', () => {
     expect(BASE_THINGS.map((t) => t.kind)).toEqual(expect.arrayContaining(['cow', 'cat', 'car']));
   });
 
-  it('moves on by itself for older children after a while, but not for the youngest', () => {
+  it('moves on by itself after a while: sooner for older children', () => {
     const { game } = makeOrd();
     game.setAge('2+');
     advance(game, 1);

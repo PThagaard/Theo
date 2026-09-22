@@ -59,9 +59,12 @@ Derfor gælder for **al kode**, nu og fremover:
 - **Appen er et legetøj, I bruger sammen, i korte stunder.** Ikke et læringsprogram. Dens værdi er, at Theos
   handling giver et svar, og at forældrene sætter ord på. README fortæller forældrene det.
 - **Aldersprofiler er loven.** `AGE_PROFILES` i `game.ts` (`8-12` mdr er standard, `1-2` år, `2+` år) styrer, hvor
-  meget der er på skærmen ad gangen, hvor hurtigt, hvor tit noget sker af sig selv, uvejr, blink og musikstyrke.
-  Hver ny funktion skal svare på: hvad gør den i den yngste profil? Som regel: mindre, langsommere eller slet ikke.
-  Ingen ny funktion må gøre den yngste profil travlere.
+  meget der er på skærmen ad gangen, hvor hurtigt, hvor tit noget sker af sig selv, blink og musikstyrke.
+  **Alle funktioner findes i alle profiler** (forældrenes beslutning 22.9.2026: Theo på 8 måneder skal også have
+  ildfluerne). Profilen bestemmer *hvor mange, hvor hurtigt og hvor tit*, aldrig *om*: for de mindste færre,
+  langsommere og sjældnere. Hver ny funktion skal svare på: hvad gør den i den yngste profil? Ingen ny funktion må
+  gøre den yngste profil travlere. Den eneste undtagelse er, hvad der ikke er en funktion, men en sikkerhed: det
+  hvide blink over hele skærmen ved lyn er slået fra for de mindste (lynet og lyden er der stadig).
 - **Kontingens frem for underholdning.** For de mindste sker det vigtige kun, når barnet rører noget. Ting, der
   starter af sig selv (besøg, uvejr, lyn), holdes få og rolige i den yngste profil.
 - **Én ting ad gangen, roligt.** Bløde bevægelser, ingen skærmblink for de mindste, moderat lyd, plads til

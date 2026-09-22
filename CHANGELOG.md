@@ -3,6 +3,25 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Alt findes også for de mindste
+
+- **Ny regel (forældrene):** "Der skal også være ildfluer osv. funktioner til 8 md. Theo." Ingen funktion er
+  længere forbeholdt de ældre profiler. Aldersprofilen bestemmer kun *hvor mange, hvor hurtigt og hvor tit*, aldrig
+  *om*. Reglen står nu i `CLAUDE.md`.
+- **Det, der er rettet:** Lys: to ildfluer for de mindste (tre for *1–2 år*, fire for *2+*), langsommere, og et
+  stjerneskud af sig selv nu og da (ca. hvert halvandet minut for de mindste). Balloner: uvejrsskyen kan komme af
+  sig selv i alle profiler, for de mindste først efter halvandet minut og sjældent (holdes på en sky kommer den
+  altid). Badekar: fisken springer af sig selv nu og da, og bruseren sprøjter af sig selv nu og da, også for de
+  mindste (sjældnere). Bolde: en bold hopper af sig selv nu og da (sjældent). Ord: er der ikke rørt noget i et helt
+  minut, kommer den næste ting af sig selv.
+- **Det, der bevidst ikke er ændret:** det hvide blink over hele skærmen ved lyn er stadig slået fra for de mindste
+  (lynet og tordenen er der); det er en sikkerhed mod blink, ikke en funktion. Ords "Hvor er …?"-runder hører
+  stadig til fra *1–2 år* (ingen spørgsmål før 12 måneder); sig til, hvis I vil have dem åbnet for de mindste også.
+
+**Test på telefonen:** (1) Lys i *8–12 mdr*: to ildfluer flyver langsomt rundt; rør en, og den siger pip og
+smutter. Vent halvandet minut: et stjerneskud kommer af sig selv. (2) Badekar: lad fisken være: den springer af sig
+selv efter et stykke tid. (3) Bolde: lad boldene ligge: en hopper af sig selv en gang imellem.
+
 ## 2026-09-22 – Theos Lys: spil nr. 6, tænd lys i mørket
 
 - **Theos Lys** er nyt på forsiden: en mørk nat, hvor alt, Theo rører, bliver til lys. Det er roadmappens "Lys og

@@ -253,12 +253,14 @@ describe('Bolde: the bouncing balls', () => {
     }
   });
 
-  it('only from 1 year does a ball hop by itself now and then; the youngest see nothing happen on its own', () => {
+  it('a ball hops by itself now and then: seldom for the youngest, more often from 1 year', () => {
     const { game: young, events: youngEvents } = makeRoom('8-12');
     settle(young);
     const before = youngEvents.length;
-    advance(young, 40);
+    advance(young, 10);
     expect(youngEvents.slice(before).filter((e) => e.type === 'jump')).toHaveLength(0);
+    advance(young, 20);
+    expect(youngEvents.slice(before).filter((e) => e.type === 'jump').length).toBeGreaterThanOrEqual(1);
     const { game: older, events: olderEvents } = makeRoom('1-2');
     settle(older);
     advance(older, 40);

@@ -9,8 +9,9 @@ import { Rng, TAU, clamp } from '../../engine/rng';
  * of the house are switches (on with a touch, off with the next, or by themselves after a while); the moon wakes
  * up and hums when touched; a shake sends a shooting star across, and every star twinkles in turn. Light on dark
  * is the contrast babies see best, every light answers at once and fades slowly, so the night never fills up and
- * nothing flashes. For the youngest nothing happens by itself; from one year fireflies wander, and from two a
- * shooting star comes by now and then. Pure logic: no DOM, no canvas, no audio.
+ * nothing flashes. Fireflies wander and a shooting star comes by now and then in every profile (the parents'
+ * rule: everything exists for the youngest too), only fewer, slower and more seldom for the little ones. Pure
+ * logic: no DOM, no canvas, no audio.
  */
 
 export interface Light {
@@ -147,10 +148,10 @@ export const MAX_LIGHTS: Record<Age, number> = { '8-12': 10, '1-2': 16, '2+': 24
 /** How long a star stays lit: longer for the youngest, who looks longer at each thing. */
 export const LIGHT_LIFE: Record<Age, number> = { '8-12': 12, '1-2': 10, '2+': 8 };
 export const MAX_LANTERNS: Record<Age, number> = { '8-12': 3, '1-2': 5, '2+': 6 };
-/** Fireflies wander by themselves: none for the youngest (nothing happens without a touch). */
-export const FIREFLIES: Record<Age, number> = { '8-12': 0, '1-2': 2, '2+': 4 };
-/** A shooting star by itself, about this often; never for the little ones. */
-export const SHOOT_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': Infinity, '2+': 45 };
+/** Fireflies wander by themselves: a couple for the youngest (and slower, by the profile's speed), more for older. */
+export const FIREFLIES: Record<Age, number> = { '8-12': 2, '1-2': 3, '2+': 4 };
+/** A shooting star by itself, about this often: seldom for the little ones. */
+export const SHOOT_EVERY: Record<Age, number> = { '8-12': 90, '1-2': 60, '2+': 45 };
 /** A finger still this long kindles a lantern; it reaches full size after HOLD_GROW seconds more. */
 export const HOLD_START = 0.35;
 export const HOLD_GROW = 1.4;
@@ -244,6 +245,7 @@ export class LysGame {
     this.house = { x: 0, baseY: 0, width: 1, height: 1, windowX: 0, windowY: 0, windowSize: 1, on: false, lit: 0, since: -Infinity, fadeRate: 6, puff: 0 };
     this.moon = { x: 0, y: 0, r: 1, awake: 0, bloom: 0, lastBloom: -Infinity, blooms: 0 };
     this.layout();
+    this.shootTimer = this.nextShoot();
   }
 
   onEvent(listener: (event: LysEvent) => void): void {
@@ -738,11 +740,11 @@ export class LysGame {
     const moon = this.moon;
     moon.awake = Math.max(0, moon.awake - dt);
     moon.bloom = Math.max(0, moon.bloom - dt / 0.6);
-    // Fireflies wander (older profiles only); a touched one zips off.
+    // Fireflies wander, slower for the youngest; a touched one zips off.
     for (const firefly of this.fireflies) {
       firefly.phase += dt * TAU * 0.7;
       firefly.angle += this.rng.range(-1.8, 1.8) * dt;
-      const speed = firefly.speed * (1 + firefly.zip * 5);
+      const speed = firefly.speed * this.profile.speed * (1 + firefly.zip * 5);
       firefly.zip = Math.max(0, firefly.zip - dt / 0.7);
       firefly.x += Math.cos(firefly.angle) * speed * dt;
       firefly.y += Math.sin(firefly.angle) * speed * dt;

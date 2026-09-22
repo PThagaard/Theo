@@ -253,17 +253,23 @@ describe('Bobler: the bath', () => {
     expect(events.some((e) => e.type === 'guest' && e.kind === 'boat' && e.what === 'leave')).toBe(true);
   });
 
-  it('the fish jumps when touched, and by itself only from 1 year', () => {
+  it('the fish jumps when touched, and by itself now and then (seldom for the youngest)', () => {
     const { game, events } = makeBath('8-12');
     game.bubbles = [];
     const fish = game.spawnGuest('fish');
     advance(game, 1.5);
     expect(fish.state).toBe('stay');
-    advance(game, 12);
+    advance(game, 7);
     expect(events.filter((e) => e.type === 'guest' && e.kind === 'fish' && e.what === 'act')).toHaveLength(0);
     game.bubbles = [];
     tap(game, fish.x, fish.y - fish.size * 0.3);
     expect(fish.state).toBe('act');
+    // Left alone, the youngest's fish still jumps by itself after a good while.
+    const { game: alone, events: aloneEvents } = makeBath('8-12');
+    alone.bubbles = [];
+    alone.spawnGuest('fish');
+    advance(alone, 16);
+    expect(aloneEvents.some((e) => e.type === 'guest' && e.kind === 'fish' && e.what === 'act')).toBe(true);
     const { game: older, events: olderEvents } = makeBath('2+');
     older.spawnGuest('fish');
     advance(older, 9);
@@ -358,12 +364,14 @@ describe('Bobler: the bath', () => {
     advance(game, 80);
     expect(game.guests).not.toContain(shower);
     expect(events.some((e) => e.type === 'guest' && e.kind === 'shower' && e.what === 'leave')).toBe(true);
-    // For the youngest it never sprays by itself: only a touch does that.
+    // For the youngest it sprays by itself only seldom: not in the first dozen seconds, but before half a minute.
     const { game: young, events: youngEvents } = makeBath('8-12');
     young.bubbles = [];
     young.spawnGuest('shower');
-    advance(young, 40);
+    advance(young, 12);
     expect(youngEvents.some((e) => e.type === 'guest' && e.kind === 'shower' && e.what === 'act')).toBe(false);
+    advance(young, 20);
+    expect(youngEvents.some((e) => e.type === 'guest' && e.kind === 'shower' && e.what === 'act')).toBe(true);
   });
 
   it('the polar bear drifts by on its floe, waves hello on screen, when touched and now and then, and leaves at the far side', () => {

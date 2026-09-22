@@ -232,13 +232,20 @@ describe('Lys: every touch makes light in the dark', () => {
     expect(game.shooting).toBeNull();
   });
 
-  it('lets nothing happen by itself for the youngest: no fireflies, no shooting star', () => {
+  it('keeps what happens by itself few, slow and seldom for the youngest, without leaving it out', () => {
     const { game, events } = makeNight('8-12');
     expect(game.fireflies).toHaveLength(FIREFLIES['8-12']);
-    expect(FIREFLIES['8-12']).toBe(0);
-    advance(game, 120, 1 / 20);
-    expect(game.shooting).toBeNull();
-    expect(events).toHaveLength(0);
+    expect(FIREFLIES['8-12']).toBeGreaterThan(0);
+    expect(FIREFLIES['8-12']).toBeLessThan(FIREFLIES['2+']);
+    // The fireflies are there and move, but slower than for older children.
+    const start = game.fireflies.map((f) => [f.x, f.y]);
+    advance(game, 2, 1 / 20);
+    expect(game.fireflies.some((f, i) => Math.hypot(f.x - start[i][0], f.y - start[i][1]) > 5)).toBe(true);
+    // A shooting star by itself comes, but not in the first minute.
+    advance(game, 58, 1 / 20);
+    expect(events.some((e) => e.type === 'shooting')).toBe(false);
+    advance(game, SHOOT_EVERY['8-12'] * 1.3 - 60, 1 / 20);
+    expect(events.some((e) => e.type === 'shooting' && e.by === 'self')).toBe(true);
     const { game: older, events: olderEvents } = makeNight('2+');
     expect(older.fireflies).toHaveLength(FIREFLIES['2+']);
     advance(older, SHOOT_EVERY['2+'] * 1.3, 1 / 20);

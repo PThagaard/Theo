@@ -203,20 +203,20 @@ const WHALE_HINT_EVERY = 3.5;
 const SPOUT_TIME = 0.9;
 const FIRST_SPOUT_TIME = 1.6;
 export const FISH_JUMP_TIME = 1.1;
-/** The fish jumps by itself every so often from 1 year; the youngest make it jump by touching it. */
-const FISH_JUMP_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': 7, '2+': 5 };
+/** The fish jumps by itself every so often: seldom for the youngest, who mostly make it jump by touching it. */
+const FISH_JUMP_EVERY: Record<Age, number> = { '8-12': 12, '1-2': 7, '2+': 5 };
 /** The second jump, and every third after it, ends inside a bubble that carries the fish away unless it is popped. */
 const FISH_BUBBLE_EVERY = 3;
 const FISH_BUBBLE_FIRST = 2;
 /**
  * The shower drips gently until it is touched; then it sprays hard for a while (drops per second), and foam
- * bubbles rise where the spray hits the water. From 1 year it also bursts by itself now and then. It stays long,
- * and every touch keeps it longer, up to a cap: the more it is played with, the longer it stays.
+ * bubbles rise where the spray hits the water. It also bursts by itself now and then (seldom for the youngest).
+ * It stays long, and every touch keeps it longer, up to a cap: the more it is played with, the longer it stays.
  */
 const SHOWER_DRIP: Record<Age, number> = { '8-12': 2.5, '1-2': 4, '2+': 5 };
 const SHOWER_SPRAY: Record<Age, number> = { '8-12': 28, '1-2': 40, '2+': 48 };
 export const SPRAY_TIME = 5;
-const SPRAY_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': 14, '2+': 10 };
+const SPRAY_EVERY: Record<Age, number> = { '8-12': 24, '1-2': 14, '2+': 10 };
 const SPRAY_BUBBLE_EVERY = 0.6;
 const SHOWER_STAY: Record<Age, number> = { '8-12': 45, '1-2': 60, '2+': 60 };
 const SHOWER_TOUCH_EXTRA = 12;

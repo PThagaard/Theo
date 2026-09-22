@@ -134,8 +134,9 @@ titte-bøh, jeres ansigter og jeres ord.
 - **Theos Lys** (spil nr. 6): en mørk nat, hvor alt, Theo rører, bliver til lys. Tryk tænder en stjerne med en
   klokke (stjerner tæt på hinanden får en streg imellem); træk fingeren, og der kommer stjernestøv; hold fingeren
   stille, og en papirlygte vokser i hånden og svæver op, når I slipper (hver tredje med et familieansigt); lamperne
-  og huset er kontakter (tryk tænder, tryk slukker); månen vågner ved et tryk; ryst giver et stjerneskud. For de
-  mindste sker intet af sig selv; fra 1 år flyver der ildfluer rundt.
+  og huset er kontakter (tryk tænder, tryk slukker); månen vågner ved et tryk; ryst giver et stjerneskud. Ildfluer
+  flyver rundt og siger pip, når de røres (to for de mindste, fire for de største), og et stjerneskud kommer af sig
+  selv nu og da (sjældent for de mindste).
 - **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
 - **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
   op, regnbuen kommer, og en almindelig sky driver videre.
@@ -160,7 +161,8 @@ titte-bøh, jeres ansigter og jeres ord.
   Plads til 10; fjern med ✕.
 - **Nedtælling til pausen**: er *Pause efter* slået til, står der en lille, mat tid nederst til højre i spillet.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
-  ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.
+  ét besøg ad gangen, uvejr sjældent, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op. Alt findes i
+  alle profiler; profilen bestemmer kun, hvor meget der sker ad gangen, hvor hurtigt og hvor tit.
   *Pause efter* 5/10/20 minutter lader verdenen falde stille i søvn: solen går ned, månen kommer frem, og kun et hold
   på hjørneknappen vækker den igen. Tiden tælles fra appen åbnes (eller vækkes), uanset om der røres ved skærmen;
   menuen viser, hvornår det sker. Kan slås fra.

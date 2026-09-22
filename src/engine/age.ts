@@ -14,7 +14,8 @@ export interface AgeProfile {
   visitors: number;
   /** Multiplies the time between visits. */
   visitInterval: number;
-  /** Whether the storm cloud may come by itself (a parent can always summon it by holding a cloud). */
+  /** Whether the storm cloud may come by itself (a parent can always summon it by holding a cloud); true for all
+   *  since the parents' rule that every feature exists for the youngest too, only later and more seldom. */
   storms: boolean;
   /** Whether lightning may light up the whole screen (the bolt and the sound always happen). */
   screenFlash: boolean;
@@ -22,7 +23,7 @@ export interface AgeProfile {
   music: number;
 }
 export const AGE_PROFILES: Record<Age, AgeProfile> = {
-  '8-12': { balloons: 0.5, spawn: 1.6, speed: 0.75, visitors: 1, visitInterval: 1.6, storms: false, screenFlash: false, music: 0.6 },
+  '8-12': { balloons: 0.5, spawn: 1.6, speed: 0.75, visitors: 1, visitInterval: 1.6, storms: true, screenFlash: false, music: 0.6 },
   '1-2': { balloons: 0.8, spawn: 1.2, speed: 0.9, visitors: 2, visitInterval: 1.2, storms: true, screenFlash: true, music: 0.8 },
   '2+': { balloons: 1, spawn: 1, speed: 1, visitors: 2, visitInterval: 1, storms: true, screenFlash: true, music: 1 },
 };

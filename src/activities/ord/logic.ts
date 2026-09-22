@@ -99,8 +99,8 @@ const ROUND_SIZE: Record<Age, number> = { '8-12': 0, '1-2': 2, '2+': 3 };
  */
 const BUSH_TOUCHES: Record<Age, number> = { '8-12': 1, '1-2': 2, '2+': 2 };
 const RUSTLE_TIME = 0.6;
-/** Seconds of no touching before the next thing comes by itself; 0 = never (the youngest decide themselves). */
-const AUTO_NEXT: Record<Age, number> = { '8-12': 0, '1-2': 40, '2+': 25 };
+/** Seconds of no touching before the next thing comes by itself: a whole minute for the youngest. */
+const AUTO_NEXT: Record<Age, number> = { '8-12': 60, '1-2': 40, '2+': 25 };
 /** Without an answer the question is asked again after this long, and the asked-for thing wiggles: a hint, never a correction. */
 export const REASK_AFTER = 7;
 const HINT_TIME = 1.2;

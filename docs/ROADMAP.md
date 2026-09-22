@@ -60,9 +60,9 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 - ✅ **Lys og mørke** (Theos Lys, spil nr. 6) – en mørk nat: tryk tænder en stjerne med en klokke (stjerner tæt
   på hinanden bliver et stjernebillede), træk giver stjernestøv, hold tænder en papirlygte, der svæver op (hver
   tredje med et familieansigt), lamperne og husets vindue er kontakter, månen vågner ved tryk, ryst giver et
-  stjerneskud. Alt klinger langsomt af, så natten aldrig fyldes op; intet blinker. For de mindste sker intet af
-  sig selv; fra 1 år ildfluer, fra 2 år stjerneskud af sig selv. Træner: årsag-virkning, kontrast-syn, at holde
-  stille (en tredje bevægelse), tænd/sluk. Udgivet 22.9.2026.
+  stjerneskud. Alt klinger langsomt af, så natten aldrig fyldes op; intet blinker. Ildfluer og stjerneskud af sig
+  selv i alle profiler: færre, langsommere og sjældnere for de mindste. Træner: årsag-virkning, kontrast-syn, at
+  holde stille (en tredje bevægelse), tænd/sluk. Udgivet 22.9.2026.
 
 ## 9–12 måneder: objektpermanens, pegen, imitation, første ord
 
@@ -106,8 +106,9 @@ efter lyde.
   (det store ved 8–12 mdr), rytme, hånd-øje. Udgivet 22.9.2026.
 - ✅ **Bolde** – store bløde bolde med ansigter i et legerum (tre, fem eller seks efter alder); tryk hopper, hold og
   flyt kaster, måtten er en trampolin, swipe skubber, ryst får alle til at hoppe, tilt ruller dem; de støder ind i
-  hinanden og forlader aldrig skærmen; familien på boldene. For de mindste sker intet af sig selv. Træner: at
-  gribe, slippe og kaste, at følge bevægelse, at forvente, hvor bolden lander. Udgivet 22.9.2026.
+  hinanden og forlader aldrig skærmen; familien på boldene. En bold hopper af sig selv nu og da (sjældent for de
+  mindste). Træner: at gribe, slippe og kaste, at følge bevægelse, at forvente, hvor bolden lander. Udgivet
+  22.9.2026.
 
 ## 12–18 måneder: matche, putte i, aflevere, simple ord og kropsdele
 

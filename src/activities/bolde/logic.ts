@@ -72,7 +72,7 @@ export type BoldeEvent =
 export const BALLS: Record<Age, number> = { '8-12': 3, '1-2': 5, '2+': 6 };
 const BALL_SIZE: Record<Age, number> = { '8-12': 0.11, '1-2': 0.085, '2+': 0.075 };
 /** Now and then a ball hops by itself, from 1 year; never for the youngest. */
-export const NUDGE_EVERY: Record<Age, number> = { '8-12': Infinity, '1-2': 12, '2+': 8 };
+export const NUDGE_EVERY: Record<Age, number> = { '8-12': 24, '1-2': 12, '2+': 8 };
 export const MAX_BALLS = 6;
 export const MAX_SPARKLES = 120;
 /** The floor mat takes this share of the screen height. */
@@ -487,7 +487,7 @@ export class BoldeGame {
     }
     for (const bump of this.bumps) bump.age += dt;
     this.bumps = this.bumps.filter((bump) => bump.age < 0.6);
-    // From 1 year a ball hops by itself now and then (something to look at); never for the youngest.
+    // A ball hops by itself now and then (something to look at): seldom for the youngest, more often for older.
     if (!this.asleep) {
       this.nudgeTimer -= dt;
       if (this.nudgeTimer <= 0) {

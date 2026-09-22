@@ -80,7 +80,8 @@ const TRACTOR_PAUSE = 3.5;
 /** Where the little farm stands (fraction of the width) and where its chimney top is (units from the anchor). */
 const FARM_X = 0.85;
 export const FARM_CHIMNEY = { dx: 22, dy: -58 };
-/** The storm cloud is a rare treat: never in the first minute, and at least this long between storms. */
+/** The storm cloud is a rare treat: never in the first minute, and at least this long between storms (both
+ *  stretched by the profile's visit interval, so the youngest see it later and more seldom, but do see it). */
 const STORM_MIN_INTERVAL = 240;
 const STORM_FIRST_DELAY = 60;
 const STORM_WEIGHT = 15;
@@ -974,7 +975,8 @@ export class Game {
   }
 
   private pickVisitorKind(): VisitorKind {
-    const stormAllowed = this.profile.storms && this.time > STORM_FIRST_DELAY && this.time - this.lastStorm > STORM_MIN_INTERVAL && !this.storm;
+    const stretch = this.profile.visitInterval;
+    const stormAllowed = this.profile.storms && this.time > STORM_FIRST_DELAY * stretch && this.time - this.lastStorm > STORM_MIN_INTERVAL * stretch && !this.storm;
     const weights = stormAllowed ? [...VISITOR_WEIGHTS, { kind: 'storm' as VisitorKind, weight: STORM_WEIGHT }] : VISITOR_WEIGHTS;
     const total = weights.reduce((sum, k) => sum + k.weight, 0);
     let roll = this.rng.range(0, total);
