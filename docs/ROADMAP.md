@@ -52,8 +52,7 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
   ("Mor!", "Far!", "Theo!") i forældremenuen; appen siger ordet med jeres stemme, når Theo rører tingen eller
   popper billedet. Kendt stemme + kontingens er den sprogstøtte, forskningen peger på. Træner: ordforråd,
   genkendelse af stemmer, sammenhæng mellem ord og ting.
-- 💡 **Rasle** – hele skærmen er en rangle: tryk giver klokker, ryst giver rasle-lyd og hoppende kugler, tilt får kuglerne
-  til at rulle (accelerometer). Træner: årsag-virkning, kropslig kontrol, lyd-opmærksomhed.
+- ✅ **Rasle** – foldet ind i *Bolde* (ryst giver rangle og hoppende bolde, tilt ruller dem).
 - 💡 **Tromme og klaver** – store farvede felter, hvert felt en tone eller trommelyd; swipe spiller glissando. Alle
   toner er i samme skala, så det altid lyder godt. Træner: rytme, lyd/handling, tap-præcision.
 - 💡 **Fisk i dammen** – rolige fisk følger fingeren, tryk laver bobler, fisk der rammes vender og siger "blub".
@@ -101,8 +100,10 @@ efter lyde.
   en bølge i fladen og noder, der flyver op; swipe giver et glissando; hold en hvirvel; ryst en hvirvel over alle;
   familien på hver sjette node. Ingen blink (højst tre opblusninger i sekundet pr. flade). Træner: at slå og banke
   (det store ved 8–12 mdr), rytme, hånd-øje. Udgivet 22.9.2026.
-- 💡 **Bolde** – store bløde bolde, der hopper; tryk sender dem op, swipe ruller dem, ryst får dem alle til at hoppe;
-  de forlader aldrig skærmen. Træner: at følge bevægelse, at forvente, hvor bolden lander.
+- ✅ **Bolde** – store bløde bolde med ansigter i et legerum (tre, fem eller seks efter alder); tryk hopper, hold og
+  flyt kaster, måtten er en trampolin, swipe skubber, ryst får alle til at hoppe, tilt ruller dem; de støder ind i
+  hinanden og forlader aldrig skærmen; familien på boldene. For de mindste sker intet af sig selv. Træner: at
+  gribe, slippe og kaste, at følge bevægelse, at forvente, hvor bolden lander. Udgivet 22.9.2026.
 
 ## 12–18 måneder: matche, putte i, aflevere, simple ord og kropsdele
 

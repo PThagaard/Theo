@@ -500,6 +500,8 @@ await page.waitForTimeout(1500);
 // The polar bear drifts by on its floe and waves hello when touched.
 await page.evaluate(() => {
   const g = window.__theo.game; g.guests = [];
+  // No bubble in the way of the tap on the bear.
+  g.bubbles = []; Object.assign(g.spawnBubble({ x: 40, y: 80, r: 18, kind: 'plain' }), { vx: 0, vy: 0 }); g.spawnTimer = 30;
   const bear = g.spawnGuest('bear'); bear.dir = 1; bear.vx = Math.abs(bear.vx); bear.x = g.width * 0.5;
 });
 await page.waitForTimeout(400);
@@ -548,6 +550,44 @@ await page.waitForTimeout(900);
 const drumStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { hits: s.drumHits ?? 0, sweeps: s.drumSweeps ?? 0, rolls: s.drumRolls ?? 0, shakes: s.drumShakes ?? 0 }; });
 console.log('trommer:', JSON.stringify(drumStats), 'shook', drumShook);
 check(drumStats.hits >= 4 && drumStats.sweeps >= 2 && drumStats.rolls >= 3 && drumShook >= 1 && drumStats.shakes >= 1, 'Trommer did not answer tap, slide, hold and shake');
+// Activity #5, "Bolde": soft balls with faces. Tap hops, hold and move throws, the mat is a trampoline, shake.
+await page.evaluate(() => { window.__theo.startActivity('bolde'); window.__theo.game.setAge('2+'); });
+check((await page.evaluate(() => window.__theo.activity.id)) === 'bolde', 'the Bolde activity did not start');
+// The balls drop in from above and bounce to rest in a few seconds.
+await page.waitForTimeout(6500);
+const room = await page.evaluate(() => { const g = window.__theo.game; return { balls: g.balls.length, resting: g.balls.filter((b) => b.resting).length, floorY: g.floorY, w: g.width }; });
+console.log('bolde:', JSON.stringify(room));
+check(room.balls === 6 && room.resting >= 4, 'the balls did not drop in and settle');
+await page.screenshot({ path: `${OUT}/${tag}-50-bolde.png` });
+const ballAt = (i) => page.evaluate((i) => { const b = window.__theo.game.balls[i]; return { x: b.x, y: b.y }; }, i);
+let ball = await ballAt(0);
+await page.touchscreen.tap(ball.x, ball.y);
+await page.waitForTimeout(250);
+check(await page.evaluate(() => window.__theo.game.balls[0].y < window.__theo.game.floorY - window.__theo.game.balls[0].r * 2), 'a tapped ball should hop');
+await page.screenshot({ path: `${OUT}/${tag}-51-bolde-hop.png` });
+// Hold a ball and throw it up to the left.
+ball = await ballAt(3);
+await page.mouse.move(ball.x, ball.y);
+await page.mouse.down();
+await page.waitForTimeout(150);
+await page.mouse.move(ball.x - 120, ball.y - 260, { steps: 10 });
+await page.mouse.up();
+await page.waitForTimeout(150);
+// The mat as a trampoline, then a shake.
+await page.touchscreen.tap(room.w * 0.5, room.floorY + 12);
+await page.waitForTimeout(150);
+const ballShook = await page.evaluate(() => {
+  const g = window.__theo.game; const before = g.shakes;
+  const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));
+  fire(0, 9.8, 0); fire(18, -12, 6);
+  return g.shakes - before;
+});
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${OUT}/${tag}-52-bolde-shake.png` });
+await page.waitForTimeout(2500);
+const ballStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; const g = window.__theo.game; return { taps: s.ballTaps ?? 0, throws: s.ballThrows ?? 0, bounces: s.ballBounces ?? 0, floor: s.ballFloorTaps ?? 0, shakes: s.ballShakes ?? 0, inside: g.balls.every((b) => b.x >= b.r - 1 && b.x <= g.width - b.r + 1 && b.y <= g.floorY - b.r + 1) }; });
+console.log('bolde stats:', JSON.stringify(ballStats), 'shook', ballShook);
+check(ballStats.taps >= 2 && ballStats.throws >= 1 && ballStats.bounces >= 1 && ballStats.floor >= 1 && ballShook >= 1 && ballStats.inside, 'Bolde did not answer tap, throw, the mat and shake, or a ball left the room');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -869,7 +909,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 33, sr);
+  const ctx = new OfflineAudioContext(1, sr * 34, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -909,6 +949,7 @@ const audio = await page.evaluate(async () => {
     // Six pops within a tenth of a second (a whole hand): the crowd guard keeps them from piling up.
     ['burst', 31.4, () => { for (let i = 0; i < 6; i++) engine.pop(1, 31.4 + i * 0.02); }],
     ['drum', 32.0, () => { engine.drum(60, 1, 32.0); engine.drum(67, 0.5, 32.3); engine.drum(72, 0.8, 32.55); }],
+    ['bop', 32.9, () => { engine.bop(1, 1, 32.9); engine.bop(0.7, 0.5, 33.15); engine.bop(1.4, 0.9, 33.4); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -924,7 +965,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 33;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 34;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -936,7 +977,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 33);
+  out.total = stats(0, 34);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

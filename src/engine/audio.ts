@@ -1402,6 +1402,17 @@ export class AudioEngine {
     this.synth.tone(out, 'triangle', f * 2, when, 0.06 * s, 0.003, 0.2, { filter: 2500 });
   }
 
+  /** A soft ball bouncing: a round rubbery "bop", deeper for a bigger ball, quieter for a softer bounce. */
+  bop(size = 1, strength = 1, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    const s = clamp(strength, 0.15, 1);
+    const f = 240 / Math.max(0.5, size);
+    this.synth.tone(out, 'sine', f, when, 0.5 * s, 0.003, 0.14 + 0.06 * s, { to: f * 0.55, glide: 0.12 });
+    this.synth.tone(out, 'triangle', f * 2, when, 0.12 * s, 0.003, 0.08, { to: f, glide: 0.06, filter: 1500 });
+    this.synth.noiseBurst(out, when, 0.12 * s, 0.025, 'lowpass', 900, 0.7);
+  }
+
   /** A single drop from the shower head: a short, high "plip". */
   drip(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;

@@ -135,6 +135,8 @@ src/
                           sounds.ts; index.ts). Samme kontingens-greb som Balloner
     trommer/              Theos Trommer: store farveflader med pentatoniske toner (logic.ts uden DOM: flader, bølger,
                           noder, hvirvel; render.ts; sounds.ts; index.ts)
+    bolde/                Theos Bolde: bløde bolde i et legerum (logic.ts uden DOM: fysik med gulv, vægge, stød, tilt,
+                          grib/kast; render.ts; sounds.ts; index.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

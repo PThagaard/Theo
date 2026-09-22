@@ -142,3 +142,5 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   svaret endnu på musik-løsningen; det står i testlisten.
 - 22.9.2026 → *Theos Trommer* bygget som spil nr. 4 fra roadmappen (at slå og banke er det store ved 8–12 mdr).
   Forældrene: sig, hvad Theo gør med fladerne, og om lydstyrken passer.
+- 22.9.2026 → *Theos Bolde* bygget som spil nr. 5 (at gribe, slippe og kaste; at følge bolden med øjnene). Rasle-
+  ideen foldet ind (ryst og tilt). Forældrene: sig, om Theo griber og kaster, eller mest trykker.

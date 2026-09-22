@@ -198,6 +198,13 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['drumRolls', 'Trommehvirvler (holdt)'],
   ['drumShakes', 'Rystet (trommer)'],
   ['drumPhotos', 'Familien på noderne'],
+  ['ballTaps', 'Bolde rørt'],
+  ['ballThrows', 'Bolde kastet'],
+  ['ballBounces', 'Bolde hoppet (hårdt nok til at lyde)'],
+  ['ballFloorTaps', 'Gulvet trampet (trampolin)'],
+  ['ballPushes', 'Bolde skubbet (swipe)'],
+  ['ballShakes', 'Rystet (bolde)'],
+  ['ballCelebrations', 'Bolde-fester'],
 ];
 
 export function formatMinutes(seconds: number): string {

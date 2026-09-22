@@ -3,6 +3,25 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Theos Bolde: spil nr. 5, bløde bolde at gribe, kaste og jagte
+
+- **Theos Bolde** er nyt på forsiden: et legerum med store, bløde bolde med ansigter (tre for *8–12 mdr*, fem for
+  *1–2 år*, seks for *2+ år*), som hopper og ruller og aldrig forlader skærmen. **Rør en bold**: den klemmes
+  sammen, bliver glad og hopper, når fingeren slipper hurtigt. **Hold fast og flyt hånden**: bolden følger med, og
+  når hånden slipper, flyver den den vej, hånden kastede. **Tryk på måtten**: den er en trampolin, og boldene
+  tæt på hånden hopper. **Swipe**: skubber de bolde, hånden passerer. **Ryst**: alle bolde hopper med en rangle.
+  **Drej telefonen**: boldene ruller ned mod den lave side. Boldene støder ind i hinanden, klemmes ved stød og
+  siger "bop", når de lander hårdt nok; kigger den vej, de flyver. Hvert tiende tryk hopper alle med fanfare.
+  Familien får ansigter på boldene (én pr. billede).
+- For de mindste sker intet af sig selv; fra 1 år hopper en bold selv nu og da. At gribe, slippe og kaste er
+  det, 8–12 måneder handler om (`docs/ROADMAP.md`); at følge bolden med øjnene og gætte, hvor den lander, kommer
+  lige efter. Tællere under *Theos leg*: bolde rørt, kastet, hoppet, gulvet trampet, skubbet, rystet, fester.
+
+**Test på telefonen:** (1) Forsiden → *Theos Bolde*. Rør en bold: den hopper. Hold fast, flyt hånden og slip:
+den flyver med. (2) Tryk på den grønne måtte: boldene ved hånden hopper. (3) Swipe gennem boldene. (4) Ryst.
+(5) Drej telefonen langsomt: boldene ruller ned mod den lave side. (6) Alder *8–12 mdr*: tre store bolde, intet
+sker af sig selv. Sig, om "bop"-lyden og hoppene passer i styrke, og hvad Theo gør.
+
 ## 2026-09-22 – Theos Trommer: spil nr. 4, det store slå-og-banke-legetøj
 
 - **Theos Trommer** er nyt på forsiden. Hele skærmen er store farveflader (tre for *8–12 mdr*, fire for *1–2 år*,

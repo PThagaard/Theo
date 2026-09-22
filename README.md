@@ -126,6 +126,10 @@ titte-bøh, jeres ansigter og jeres ord.
   der flyver op. Swipe over fladerne: de synger én ad gangen. Hold hånden stille: trommehvirvel. Ryst: hvirvel over
   alle. Hvert sjette slag sender et familieansigt op på en node. Ingen blink: en flade lyser højst op tre gange i
   sekundet.
+- **Theos Bolde** (spil nr. 5): et legerum med store, bløde bolde med ansigter (tre for de mindste, op til seks).
+  Rør en bold: den hopper. Hold fast og flyt hånden: den følger med og flyver den vej, hånden kaster. Tryk på
+  måtten: trampolin. Swipe skubber, ryst får alle til at hoppe, og drejer I telefonen, ruller boldene ned mod den
+  lave side. De forlader aldrig skærmen. Familien får ansigter på boldene.
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:
