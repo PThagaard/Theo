@@ -140,7 +140,7 @@ const RAIN_COLORS = ['#6fc3ff', '#a6d8ff', '#4d96ff'];
 const SUN_COLORS = ['#fff3a6', '#ffd93d', '#ffffff', '#ffb703'];
 
 /** What a finger held still is doing: darkening a cloud, growing a balloon or charging the sun. */
-type Hold = { kind: 'cloud'; cloud: Cloud } | { kind: 'balloon'; id: number } | { kind: 'sun' };
+type Hold = { kind: 'cloud'; cloud: Cloud } | { kind: 'storm'; storm: Visitor } | { kind: 'balloon'; id: number } | { kind: 'sun' };
 
 interface PointerState {
   id: number;
@@ -460,9 +460,10 @@ export class Game {
     if (visitor) {
       this.pokeVisitor(visitor, x, y);
       if (visitor.kind === 'storm') {
-        // The storm cloud can be grabbed and swiped around the sky.
+        // The storm cloud can be grabbed and swiped around the sky; held still, it brightens into a good cloud again.
         visitor.grabbedBy = id;
         pointer.grab = visitor;
+        pointer.hold = { kind: 'storm', storm: visitor };
       }
       return;
     }
@@ -539,6 +540,19 @@ export class Game {
         }
         return;
       }
+      case 'storm': {
+        const storm = hold.storm;
+        if (storm.state === 'gone' || !this.visitors.includes(storm)) {
+          pointer.hold = null;
+          return;
+        }
+        storm.clearing = Math.min(1, progress / CLOUD_DARKEN_TIME);
+        if (storm.clearing >= 1) {
+          pointer.hold = null;
+          this.clearStorm(storm, pointer.x, pointer.y);
+        }
+        return;
+      }
       case 'balloon': {
         const b = this.balloons.find((balloon) => balloon.id === hold.id);
         if (!b || b.heldBy !== pointer.id) {
@@ -574,6 +588,40 @@ export class Game {
       const b = this.balloons.find((balloon) => balloon.id === hold.id);
       if (b && b.heldBy === pointer.id) b.heldBy = undefined;
     }
+  }
+
+  /** Whether a finger is holding this storm cloud still (brightening it). */
+  private holdingStorm(storm: Visitor): boolean {
+    for (const pointer of this.pointers.values()) if (pointer.hold?.kind === 'storm' && pointer.hold.storm === storm) return true;
+    return false;
+  }
+
+  /**
+   * The storm cloud held until it is bright becomes a good cloud again, right where it is: the rain stops, the
+   * sky clears with a rainbow, and a white cloud drifts on from there. The child's own hand ends the weather.
+   */
+  private clearStorm(storm: Visitor, x: number, y: number): void {
+    storm.state = 'gone';
+    storm.grabbedBy = null;
+    storm.clearing = 0;
+    for (const pointer of this.pointers.values()) {
+      if (pointer.grab === storm) pointer.grab = null;
+      if (pointer.hold?.kind === 'storm' && pointer.hold.storm === storm) pointer.hold = null;
+    }
+    // The white cloud that went off to the side when the storm came (or any other) takes the storm's place.
+    const cloud = this.clouds.find((candidate) => candidate.x < 0) ?? this.clouds[0];
+    if (cloud) {
+      cloud.x = storm.x;
+      cloud.y = clamp(storm.y, this.height * 0.08, this.height * 0.4);
+      cloud.dark = 0;
+      cloud.holding = false;
+      cloud.wobble = 1;
+      cloud.vx = storm.vx * 0.3;
+    }
+    this.rainbowGlow = RAINBOW_GLOW_TIME;
+    this.sparkleBurst(storm.x, storm.y, 18, SUN_COLORS, storm.size);
+    this.emit({ type: 'visitor', kind: 'storm', x: storm.x, y: storm.y, what: 'leave' });
+    this.emit({ type: 'hold', what: 'clear', x, y });
   }
 
   /** A cloud held until it is dark becomes the storm cloud, right where it is. */
@@ -969,6 +1017,7 @@ export class Game {
       lastBolt: -Infinity,
       boltX: 0,
       nextLightning: this.rng.range(LIGHTNING_INTERVAL[0], LIGHTNING_INTERVAL[1]),
+      clearing: 0,
       wet: 0,
       carriedBy: null,
       helpTimer: 0,
@@ -1194,6 +1243,8 @@ export class Game {
   private updateStorm(storm: Visitor, dt: number): void {
     const u = this.unit;
     const edge = storm.size * 0.6;
+    // Let go early, and the brightening fades back to the dark cloud it was.
+    if (!this.holdingStorm(storm)) storm.clearing = Math.max(0, storm.clearing - dt * 1.5);
     if (storm.grabbedBy === null) {
       if (storm.state === 'enter') {
         storm.vx = storm.dir * STORM_ENTER_SPEED * u;

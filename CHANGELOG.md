@@ -3,6 +3,21 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Altid på tværs, og uvejrsskyen kan gøres god igen
+
+- **Appen kører altid i landscape** (forældrenes ønske): Android låser til landscape (begge veje), iOS ligeså, og
+  webappen beder browseren om det, når den er installeret. Forsiden viser spillene i to kolonner, og alle spil
+  tegner sig efter den brede skærm (trommerne som søjler, badet og legerummet lavere). Røgtesten kører nu på en
+  telefon på tværs.
+- **Uvejrsskyen bliver god igen ved et langt tryk** (forældrenes ønske): hold fingeren stille på uvejrsskyen lige
+  så længe, som det tog at fremkalde den, og den lyser op, grinet bliver bredere, regnen holder op, regnbuen
+  kommer, og en hvid sky driver videre fra samme sted. Flytter fingeren sig, eller slipper den for tidligt, bliver
+  den mørk igen. Tæller under *Theos leg*: "… gjort gode igen ved at holde på uvejrsskyen".
+
+**Test på telefonen:** (1) Vend telefonen på højkant: appen bliver på tværs. Forsiden viser fem spil i to
+kolonner. (2) Balloner: hold på en hvid sky, til uvejret kommer; hold så stille på uvejrsskyen, til den er hvid
+igen: regnen stopper, regnbuen kommer. (3) Kig alle fem spil igennem på tværs, og sig, hvis noget ser forkert ud.
+
 ## 2026-09-22 – Theos Bolde: spil nr. 5, bløde bolde at gribe, kaste og jagte
 
 - **Theos Bolde** er nyt på forsiden: et legerum med store, bløde bolde med ansigter (tre for *8–12 mdr*, fem for

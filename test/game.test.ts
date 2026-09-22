@@ -593,6 +593,40 @@ describe('Game', () => {
       game.release(1);
     });
 
+    it('holds the storm cloud until it is bright again: the rain stops, a white cloud takes its place, the rainbow comes', () => {
+      const { game, events } = makeGame();
+      clearSky(game);
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      storm.state = 'idle';
+      game.update(1 / 60);
+      game.press(1, storm.x, storm.y);
+      advance(game, 0.8);
+      expect(storm.clearing).toBeGreaterThan(0.2);
+      expect(game.storm).toBe(storm);
+      advance(game, 1);
+      expect(game.storm).toBeNull();
+      expect(events.some((e) => e.type === 'hold' && e.what === 'clear')).toBe(true);
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'storm' && e.what === 'leave')).toBe(true);
+      expect(game.rainbowGlow).toBeGreaterThan(0);
+      expect(game.clouds.some((c) => Math.abs(c.x - W / 2) < 40 && c.dark === 0)).toBe(true);
+      game.release(1);
+      // Letting go early only lets it fade back to the dark cloud it was.
+      const again = game.spawnVisitor('storm');
+      again.x = W / 2;
+      again.y = H * 0.25;
+      again.state = 'idle';
+      game.update(1 / 60);
+      game.press(2, again.x, again.y);
+      advance(game, 0.8);
+      expect(again.clearing).toBeGreaterThan(0.2);
+      game.release(2);
+      advance(game, 1);
+      expect(again.clearing).toBe(0);
+      expect(game.storm).toBe(again);
+    });
+
     it('lets a cloud turn white again when the finger moves away or lets go early', () => {
       const { game } = makeGame();
       clearSky(game);

@@ -30,7 +30,8 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
    den. Den anden undtagelse er en lille, mat nedtælling til pausen nederst til højre (kun tal, intet at trykke på),
    som forældrene bad om.
 4. **Barnet kan ikke forlade eller ødelægge noget.** Tilbage ignoreres, zoom/scroll/langt-tryk er blokeret, skærmen
-   slukker ikke, og appen kan låses fast på skærmen (KidLock). Indstillinger kan kun ændres fra forældremenuen.
+   slukker ikke, appen er altid på tværs (landscape, forældrenes valg), og appen kan låses fast på skærmen
+   (KidLock). Indstillinger kan kun ændres fra forældremenuen.
 5. **Roligt og trygt.** Moderat lydstyrke og et kompressor-sikret miks; ingen pludselige høje eller skræmmende lyde;
    ingen hurtige blink (aldrig mere end 3 blink i sekundet på store flader); bløde, glade figurer.
 6. **Sjov først, læring gennem leg.** Hver aktivitet har et udviklingsmål (`docs/ROADMAP.md`), men det må aldrig

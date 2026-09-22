@@ -122,6 +122,8 @@ export interface Visitor {
   boltX: number;
   /** Seconds until the storm flashes by itself again. */
   nextLightning: number;
+  /** 0..1: how far a finger holding the storm cloud has brightened it towards a good cloud again. */
+  clearing: number;
   /** Seconds left of dripping after being rained on. */
   wet: number;
   /** Id of the balloon carrying this creature on its string, while state is 'carried'. */
@@ -216,7 +218,7 @@ export type GameEvent =
   /** A balloon picked a creature up, the creature called for help, was let go, or landed again. */
   | { type: 'carry'; kind: VisitorKind; x: number; y: number; what: 'hooked' | 'help' | 'released' | 'landed' }
   /** A finger held still: a cloud became the storm, a held balloon burst, or the sun let off a sunburst. */
-  | { type: 'hold'; what: 'storm' | 'burst' | 'sunburst'; x: number; y: number }
+  | { type: 'hold'; what: 'storm' | 'clear' | 'burst' | 'sunburst'; x: number; y: number }
   /** A balloon was blown away by a swipe (once per balloon per swipe). */
   | { type: 'blow' }
   /** A finger lifted after a real swipe of at least `length` px. */

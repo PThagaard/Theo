@@ -44,7 +44,8 @@ export async function serveDist() {
 }
 
 export const VIEWPORTS = {
-  phone: { width: 390, height: 844 },
+  // The app is landscape only (the parents' wish): a phone held sideways, and a tablet.
+  phone: { width: 844, height: 390 },
   tablet: { width: 1024, height: 768 },
 };
 

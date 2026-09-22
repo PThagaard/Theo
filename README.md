@@ -130,6 +130,9 @@ titte-bøh, jeres ansigter og jeres ord.
   Rør en bold: den hopper. Hold fast og flyt hånden: den følger med og flyver den vej, hånden kaster. Tryk på
   måtten: trampolin. Swipe skubber, ryst får alle til at hoppe, og drejer I telefonen, ruller boldene ned mod den
   lave side. De forlader aldrig skærmen. Familien får ansigter på boldene.
+- **Altid på tværs**: appen kører kun i landscape (begge veje), også når telefonen vendes.
+- **Uvejret slutter med et langt tryk**: hold fingeren stille på uvejrsskyen, til den er hvid igen; så holder regnen
+  op, regnbuen kommer, og en almindelig sky driver videre.
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:

@@ -102,6 +102,10 @@ export function handleBallonerEvent(event: GameEvent, ctx: ActivityContext): voi
       if (event.what === 'storm') {
         audio?.thunder();
         ctx.stats.bump('stormsSummoned');
+      } else if (event.what === 'clear') {
+        // The storm cloud held until it is bright again: a little chime on top of the clearing sky.
+        audio?.chime();
+        ctx.stats.bump('stormsCleared');
       } else if (event.what === 'burst') {
         audio?.burst();
         ctx.stats.bump('bursts');

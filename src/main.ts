@@ -78,6 +78,15 @@ async function loadTracksIntoAudio(playId?: string): Promise<void> {
 for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
   window.addEventListener(type, ensureAudio, { passive: true });
 }
+
+// The app is landscape only (the parents' wish): the native apps lock it in their manifests; the web app asks the
+// browser too, which works once it runs full screen (installed). A refusal is fine: the games draw in any shape.
+function lockLandscape(): void {
+  const orientation = screen.orientation as ScreenOrientation & { lock?: (kind: string) => Promise<void> };
+  if (typeof orientation?.lock !== 'function') return;
+  orientation.lock('landscape').catch(() => undefined);
+}
+window.addEventListener('pointerdown', lockLandscape, { passive: true, once: true });
 // In the native app there is no such restriction, so the music can start right away.
 if (Capacitor.isNativePlatform()) ensureAudio();
 

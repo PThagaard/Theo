@@ -144,3 +144,7 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   Forældrene: sig, hvad Theo gør med fladerne, og om lydstyrken passer.
 - 22.9.2026 → *Theos Bolde* bygget som spil nr. 5 (at gribe, slippe og kaste; at følge bolden med øjnene). Rasle-
   ideen foldet ind (ryst og tilt). Forældrene: sig, om Theo griber og kaster, eller mest trykker.
+- "Appen skal altid være i landscape mode og ikke i andet" → låst i Android, iOS og web-manifestet; forsiden i to
+  kolonner; røgtesten kører på tværs. "Skyen i ballonspillet: hvis man long-presser, skal den blive god igen" →
+  behov: Theo (og forældrene) skal selv kunne slutte uvejret, ikke bare starte det → hold på uvejrsskyen, til den
+  er hvid igen; regnen stopper, regnbuen kommer.

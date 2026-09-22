@@ -764,7 +764,10 @@ export class Renderer {
     this.eye(s * 0.6, -s * 0.3, s * 0.16);
   }
 
-  /** The dark storm cloud: bigger and darker than the others, lit up from inside when it flashes. */
+  /**
+   * The dark storm cloud: bigger and darker than the others, lit up from inside when it flashes, and brightening
+   * towards white while a finger holds it still (it is about to become a good cloud again).
+   */
   private drawStorm(v: Visitor): void {
     const ctx = this.ctx;
     const scale = (v.size / 60) * 1.7;
@@ -773,8 +776,8 @@ export class Renderer {
     ctx.translate(v.x, v.y);
     ctx.scale(scale, scale);
     const body = ctx.createLinearGradient(0, -34, 0, 30);
-    body.addColorStop(0, lit ? '#c9d3e0' : '#8b96a6');
-    body.addColorStop(1, lit ? '#8a97ab' : '#4e5866');
+    body.addColorStop(0, lit ? '#c9d3e0' : mixHex('#8b96a6', '#ffffff', v.clearing));
+    body.addColorStop(1, lit ? '#8a97ab' : mixHex('#4e5866', '#e9eff6', v.clearing));
     ctx.fillStyle = body;
     ctx.beginPath();
     for (const [dx, dy, r] of CLOUD_SHAPES[2]) {
@@ -804,7 +807,8 @@ export class Renderer {
     ctx.lineCap = 'round';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(0, 7, lit ? 12 : 9, 0.15 * Math.PI, 0.85 * Math.PI);
+    // The grin widens as it brightens: being helped is nice.
+    ctx.arc(0, 7, lit ? 12 : 9 + 4 * v.clearing, 0.15 * Math.PI, 0.85 * Math.PI);
     if (lit) {
       ctx.closePath();
       ctx.fillStyle = '#2f3641';
@@ -1558,4 +1562,12 @@ export class Renderer {
     ctx.bezierCurveTo(x + s * 0.4, y - s * 0.75, x + s * 0.9, y - s * 0.2, x, y + s * 0.45);
     ctx.closePath();
   }
+}
+
+/** Blends two hex colours: `t` 0 gives `a`, 1 gives `b`. */
+function mixHex(a: string, b: string, t: number): string {
+  const k = Math.max(0, Math.min(1, t));
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const mixed = [0, 1, 2].map((i) => Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * k));
+  return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
 }

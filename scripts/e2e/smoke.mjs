@@ -34,7 +34,7 @@ let s = await state();
 console.log('start:', s.balloons.length, 'balloons, unit', s.unit.toFixed(2), 'size', s.size);
 
 // Tap a balloon (only ones fully on screen).
-const target = s.balloons.find((b) => b.y > 100 && b.y < viewport.height - 100 && b.scale > 0.9);
+const target = s.balloons.find((b) => b.y > 60 && b.y < viewport.height - 60 && b.scale > 0.9);
 check(target, 'no balloon on screen to tap');
 await page.touchscreen.tap(target.x, target.y);
 await page.waitForTimeout(140);
@@ -72,7 +72,7 @@ await page.screenshot({ path: `${OUT}/${tag}-03-inflate.png` });
 await page.waitForTimeout(600);
 s = await state();
 const popsBefore = s.pops;
-const swipeTarget = s.balloons.find((b) => b.y > 100 && b.y < viewport.height - 100 && b.scale > 0.9) ?? { y: viewport.height / 2 };
+const swipeTarget = s.balloons.find((b) => b.y > 60 && b.y < viewport.height - 60 && b.scale > 0.9) ?? { y: viewport.height / 2 };
 await page.mouse.move(10, swipeTarget.y);
 await page.mouse.down();
 await page.mouse.move(viewport.width - 10, swipeTarget.y, { steps: 40 });
@@ -102,7 +102,7 @@ const sun = await page.evaluate(() => {
   const g = window.__theo.game;
   // Balloons and clouds in front of the sun would (correctly) be hit first; move them out of the way.
   for (const b of g.balloons) if (Math.hypot(b.x - g.sun.x, b.y - g.sun.y) < g.sun.r * 2 + b.r * 2) { b.baseX = g.width / 2; b.y += 320; }
-  for (const c of g.clouds) if (Math.abs(c.y - g.sun.y) < 200) c.y = g.sun.y + 260;
+  for (const c of g.clouds) if (Math.hypot(c.x - g.sun.x, c.y - g.sun.y) < 220) c.x = g.width * 0.3;
   g.update(1 / 60);
   return g.sun;
 });
@@ -118,8 +118,11 @@ const cloud = await page.evaluate(() => {
   // and keep away from the corner button, which would swallow the tap.
   g.visitors = [];
   g.visitorTimer = 30;
-  const c = g.clouds.find((c) => c.x > 150 && c.x < g.width - 60 && c.y > 60 && !g.findBalloonAt(c.x, c.y, 1.6));
-  return c ? [c.x, c.y] : null;
+  const c = g.clouds[0];
+  c.x = g.width * 0.4; c.y = g.height * 0.3; c.vx = 0;
+  for (const b of g.balloons) if (Math.hypot(b.x - c.x, b.y - c.y) < b.r * 2 + 80) { b.baseX = g.width * 0.8; b.y = g.height + 100; }
+  g.update(1 / 60);
+  return [c.x, c.y];
 });
 if (cloud) {
   await page.touchscreen.tap(cloud[0], cloud[1]);
@@ -259,6 +262,19 @@ await page.mouse.up();
 const summoned = await page.evaluate(() => !!window.__theo.game.storm);
 console.log('held cloud: dark', darkening.toFixed(2), 'storm summoned', summoned);
 check(darkening > 0.3 && summoned, 'holding a cloud did not make the storm cloud');
+// Holding a finger still on the storm cloud brightens it back into a good cloud: the rain stops, the rainbow comes.
+const stormSpot = await page.evaluate(() => { const s = window.__theo.game.storm; return s ? [s.x, s.y] : null; });
+check(stormSpot, 'no storm cloud to hold');
+await page.mouse.move(stormSpot[0], stormSpot[1]);
+await page.mouse.down();
+await page.waitForTimeout(900);
+const brightening = await page.evaluate(() => window.__theo.game.storm?.clearing ?? 1);
+await page.screenshot({ path: `${OUT}/${tag}-18b-clearing.png` });
+await page.waitForFunction(() => !window.__theo.game.storm, null, { timeout: 4000 }).catch(() => undefined);
+await page.mouse.up();
+const cleared = await page.evaluate(() => !window.__theo.game.storm && window.__theo.game.rainbowGlow > 0);
+console.log('held storm: brightening', brightening.toFixed(2), 'cleared', cleared);
+check(brightening > 0.3 && cleared, 'holding the storm cloud did not make it a good cloud again');
 await page.evaluate(() => { window.__theo.game.visitors = []; });
 
 // Holding on empty sky keeps the new balloon growing until it bursts.
@@ -826,6 +842,8 @@ check(await page.evaluate(() => !document.getElementById('voice-section').hidden
 // Hold the "Hund" button, say the word (a fake microphone here), release; then the dog in Ord says it.
 const voiceRows = await page.evaluate(() => document.querySelectorAll('#voice-list .voice-row').length);
 check(voiceRows >= 13, `expected a voice row per word and per photo, got ${voiceRows}`);
+// On a phone held sideways the menu scrolls; the row must be on screen for the mouse to reach it.
+await page.locator('#voice-list .voice-record[data-key="hund"]').scrollIntoViewIfNeeded();
 const recordButton = await page.locator('#voice-list .voice-record[data-key="hund"]').boundingBox();
 await page.mouse.move(recordButton.x + recordButton.width / 2, recordButton.y + recordButton.height / 2);
 await page.mouse.down();

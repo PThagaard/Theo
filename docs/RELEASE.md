@@ -29,7 +29,7 @@ Kør workflowet manuelt fra fanen *Actions* → *Byg app* → *Run workflow*, hv
 - [ ] Lås: "Fastgør?"-dialogen kommer; låst app spærrer Hjem/Tilbage/notifikationer; oplåsning virker (hold knappen
       eller swipe op og hold).
 - [ ] Baggrund/forgrund: musikken stopper, når appen forlades, og starter igen, når den åbnes.
-- [ ] Rotation (hvis tilladt) tegner korrekt i begge retninger.
+- [ ] Appen bliver i landscape (begge veje), også når telefonen vendes på højkant.
 - [ ] Batteri: ikke mærkbart varm efter 10 minutter.
 
 Skriv resultatet (og hvad Theo gjorde) i `docs/OBSERVATIONER.md`.

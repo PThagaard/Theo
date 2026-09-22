@@ -161,6 +161,7 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['creaturesLifted', 'Dyr løftet af en ballon'],
   ['storms', 'Uvejr'],
   ['stormsSummoned', '… heraf fremkaldt ved at holde på en sky'],
+  ['stormsCleared', '… heraf gjort gode igen ved at holde på uvejrsskyen'],
   ['lightning', 'Lyn'],
   ['bursts', 'Balloner sprængt (holdt til de revnede)'],
   ['sunbursts', 'Solskinsbrag'],
