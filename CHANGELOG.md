@@ -3,6 +3,16 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Kanin, frø og bi i Titte-bøh og Ord
+
+- **Tre nye ord i Ord** fra *1–2 år*: kaninen (der spidser ører og hopper), frøen (der springer med tungen ude)
+  og bien (der summer i luften), tegnet som i Balloner, med deres lyde. De mindste (*8–12 mdr*) møder stadig kun
+  hund, elefant, ko og kat bag busken, som aftalt i aldersreglerne. Forældrene kan indtale **kanin**, **frø** og
+  **bi** under *Familie → Jeres stemmer*, så Ord siger dem med jeres stemme.
+
+**Test på telefonen:** (1) Sæt alderen til *1–2 år*, åbn Ord, og swipe, til kaninen, frøen og bien kommer: rør
+dem: lyd og reaktion. (2) Indtal "kanin", "frø" og "bi" i forældremenuen, og hør dem i Ord.
+
 ## 2026-09-22 – Hajfamilien svømmer gennem Badekarret, og ildfluerne tryller
 
 - **Ildfluerne har fået en trylle-lyd** (forældrene: "ildfluerne skal have en anden lyd, måske en magisk

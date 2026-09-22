@@ -152,7 +152,10 @@ export class OrdRenderer {
       return;
     }
     if (thing.kind === 'creature' && thing.creature) {
-      const flying = thing.creature === 'bird' || thing.creature === 'butterfly';
+      const flying = thing.creature === 'bird' || thing.creature === 'butterfly' || thing.creature === 'bee';
+      // The frog's tongue and the rabbit's alert ears come with the 'react' state; the older creatures answer
+      // through `lift` and `pokes` as they always have.
+      const reacts = bounce > 0 && (thing.creature === 'frog' || thing.creature === 'rabbit');
       const visitor: Visitor = {
         id: 1,
         kind: thing.creature,
@@ -162,7 +165,7 @@ export class OrdRenderer {
         vy: 0,
         dir: moving ? -1 : 1,
         age: base.time,
-        state: 'idle',
+        state: reacts ? 'react' : 'idle',
         stateAge: Number.isFinite(view.reactAge) ? view.reactAge : 0,
         size,
         pokes: bounce > 0 ? 1 : 0,

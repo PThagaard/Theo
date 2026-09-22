@@ -73,7 +73,8 @@ efter lyde.
 - ✅ **Titte-bøh og Ord (spil nr. 2)** – i profilen *8–12 mdr* er det titte-bøh: familiens ansigter og fire dyr
   (hund, elefant, ko, kat) gemmer sig bag busken tre ud af fire gange; rør busken, og tingen kommer frem med sin lyd
   og navnet i jeres stemme; swipe giver den næste; intet sker af sig selv. Fra *1–2 år* er det hele kortbunken
-  (fugl, sommerfugl, snegl, traktor, bil, ballon, sol, sky, blomst med), én ting ad gangen, og "Hvor er …?"-runder
+  (fugl, sommerfugl, snegl, kanin, frø, bi, traktor, bil, ballon, sol, sky, blomst med), én ting ad gangen, og
+  "Hvor er …?"-runder
   (se 12–18 måneder). Træner: objektpermanens, forventning, kendte ansigter og navne. Grundlag: `docs/FORSKNING.md`.
 - 💡 **Hvor er lyden?** – en lyd kommer fra en side af skærmen, og et dyr dukker op der, når man trykker. Træner:
   lyd-lokalisering, opmærksomhed.

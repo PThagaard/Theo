@@ -25,6 +25,15 @@ function thingSound(audio: AudioEngine, thing: Thing, at = 0): void {
     case 'tractor':
       audio.honk(when);
       return;
+    case 'rabbit':
+      audio.thump(when);
+      return;
+    case 'frog':
+      audio.croak(when);
+      return;
+    case 'bee':
+      audio.buzz(when);
+      return;
     default:
       break;
   }

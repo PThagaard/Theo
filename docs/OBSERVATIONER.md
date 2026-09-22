@@ -165,6 +165,8 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   Balloner (uvejr af sig selv), Badekar (fiskehop, bruser-spray), Bolde (boldehop) og Ord (næste ting efter et
   minut). Skærm-blinket ved lyn og "Hvor er …?"-runderne er bevidst stadig for de ældre (sikkerhed og
   forskningsregel); forældrene kan bede om at få dem åbnet.
+- 22.9.2026, "Fortsæt udviklingen" → kanin, frø og bi som ord i Titte-bøh og Ord fra 1 år (tegningerne og lydene fra
+  Balloner genbrugt), så de nye dyr også kan få forældrenes stemme på. De mindste møder stadig kun de fire dyr.
 - 22.9.2026, forældrene: "Ildfluerne skal have en anden lyd, måske en magisk trylle-lyd" → fuglens pip byttet ud
   med en trille af lyse klokker op ad skalaen med glimmer ovenpå (audio.ts `magic`).
 - 22.9.2026, "Fortsæt udviklingen" → hajfamilien i Badekarret (forældrenes ønske fra 21.9.) bygget uden sangen:

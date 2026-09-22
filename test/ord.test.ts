@@ -199,6 +199,15 @@ describe('Titte-bøh og Ord', () => {
     expect(events.filter((e) => e.type === 'ask')).toHaveLength(1);
   });
 
+  it('meets the rabbit, the frog and the bee from 1 year, but not in the youngest profile', () => {
+    const { game } = makeOrd();
+    expect(game.deckThings.map((t) => t.key)).not.toContain('kanin');
+    game.setAge('1-2');
+    const keys = game.deckThings.map((t) => t.key);
+    expect(keys).toEqual(expect.arrayContaining(['kanin', 'froe', 'bi']));
+    expect(BASE_THINGS.filter((t) => ['kanin', 'froe', 'bi'].includes(t.key)).map((t) => t.creature)).toEqual(['rabbit', 'frog', 'bee']);
+  });
+
   it('has a word the parents can record for every thing, and for the question', () => {
     const keys = VOICE_WORDS.map((w) => w.key);
     for (const thing of BASE_THINGS) expect(keys, `no voice word for ${thing.key}`).toContain(thing.key);

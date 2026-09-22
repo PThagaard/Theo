@@ -147,7 +147,8 @@ titte-bøh, jeres ansigter og jeres ord.
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:
-  hele flokken (fugl, sommerfugl, snegl, traktor, bil, ballon, sol, sky og blomst med), én ting ad gangen midt på
+  hele flokken (fugl, sommerfugl, snegl, kanin, frø, bi, traktor, bil, ballon, sol, sky og blomst med), én ting ad
+  gangen midt på
   græsset, busken rasler først og åbner ved andet tryk, og hver tredje gang en **"Hvor er …?"-runde**: to ting ved
   siden af hinanden (*2+ år*: tre), jeres indtalte stemme spørger efter én, alt han rører siger sit eget navn, og
   den rigtige fejrer med stjerner og hop. Ingen fejl, ingen tid, ingen point. Hvorfor sådan: `docs/FORSKNING.md`.
