@@ -91,11 +91,12 @@ efter lyde.
   lægger dem i `src/lyde/`).
 - ✅ **Musik-fane i forældremenuen** – hver sang til/fra, afspilningshastighed, næste sang. Baby Shark som
   spilledåse-notation blev prøvet og taget ud igen (forældrene: "virkelig dårlig").
-- 💡 **Jeres musik** – forældrene vælger egne lydfiler på telefonen (bliver på telefonen som familiebillederne, så
-  repoet forbliver rent, og princip 8 holder), som spiller i baggrunden, gerne som første sang; det er vejen til
-  Baby Shark. Aftales med forældrene.
-- 💡 **To hænder på skærmen** – ✅ håndfladen åbner ikke forældremenuen (store kontaktflader ignoreres af porten);
-  💡 mange samtidige tryk må ikke blive en lydmur (de ekstra tryk svarer med bevægelse, men dæmpet lyd).
+- ✅ **Jeres musik** – forældrene vælger egne lydfiler på telefonen (bliver på telefonen som familiebillederne, så
+  repoet forbliver rent, og princip 8 holder), som spiller i baggrunden som første sang, med egen kontakt og
+  hastighed, niveau-jævnet efter spilledåsen. Vejen til Baby Shark; forældrene svarer, om det er den rigtige.
+- ✅ **To hænder på skærmen** – håndfladen åbner ikke forældremenuen (store kontaktflader ignoreres af porten), og
+  mange samtidige lyde bliver ikke en mur: de to første i samme øjeblik spiller fuldt, de næste svagere, aldrig
+  stille.
 - 💡 **Trommer** – hele skærmen er tre-fire store farveflader; hvert slag giver en tone og en bølge i fladen, og alle
   toner passer sammen (pentatonisk), så det aldrig lyder forkert; swipe giver et glissando; ryst en trommehvirvel.
   Træner: at slå og banke (det store ved 8–12 mdr), rytme, hånd-øje.

@@ -40,7 +40,8 @@ efterhånden som han udvikler sig. Første aktivitet er **Theos Balloner** (pop 
 8. **Al musik er public domain eller original.** Lyd syntetiseres i koden, undtagen dyrelyde og vejr, som må være
    rigtige optagelser fra `src/lyde/`, når licensen tillader fri brug (CC0, Pixabay Content License eller lignende)
    og kilden står i `src/lyde/README.md`. Synthen er altid reserve, hvis filen mangler. Grafik tegnes i kode eller er
-   vores egen.
+   vores egen. Forældrenes egne lydfiler (*Jeres musik*) vælges på telefonen og bliver der, ligesom
+   familiebillederne; de kommer aldrig i repoet eller i appen.
 
 ## Alderssvarende (forskningsgrundlag)
 
@@ -121,6 +122,8 @@ src/
     kidlock.ts, update.ts broer til android/.../KidLockPlugin.java og AppUpdatePlugin.java
     photos.ts, cropper.ts familiebilleder (IndexedDB, kun på telefonen) og ansigts-klipperen
     voices.ts             forældrenes indtalte ord og navne (MediaRecorder → IndexedDB, kun på telefonen)
+    tracks.ts             forældrenes egne sange (Jeres musik: lydfiler valgt på telefonen → IndexedDB, kun der);
+                          audio.ts spiller dem først i spillelisten, niveau-jævnet
     stats.ts              tællere for alt (i dag / i alt / legetid), gemt i localStorage
     rng.ts                seedbar tilfældighed og små matematikhjælpere
   activities/

@@ -6,6 +6,7 @@ import type { AppUpdate, UpdateCheck } from './update';
 import { DEFAULT_AGE, type Age } from './age';
 import { SONGS } from './music';
 import { MIN_VOICE_SECONDS, VOICE_WORDS, photoVoiceKey, type Recording, type StoredVoice } from './voices';
+import { trackSongId, type StoredTrack } from './tracks';
 
 /**
  * Parent menu: music and sound on/off, and (on Android) locking the app to the screen.
@@ -62,6 +63,16 @@ export interface VoiceHooks {
   onChange(): void;
 }
 
+/** The parents' own music: files picked on the phone, kept there (see tracks.ts). */
+export interface TrackHooks {
+  max: number;
+  list(): Promise<StoredTrack[]>;
+  add(file: File): Promise<StoredTrack>;
+  remove(id: string): Promise<void>;
+  /** Called with the full list whenever it changes; `added` is a track that was just added, to play it at once. */
+  onChange(tracks: StoredTrack[], added?: StoredTrack): void;
+}
+
 export interface StatsHooks {
   snapshot(): StatsSnapshot;
   reset(): void;
@@ -88,6 +99,7 @@ export interface ParentPanelHooks {
   update?: AppUpdate;
   stats?: StatsHooks;
   voices?: VoiceHooks;
+  tracks?: TrackHooks;
 }
 
 const STORAGE_KEY = 'theos-balloner.settings';
@@ -237,6 +249,10 @@ export class ParentPanel {
   private readonly voiceList = element<HTMLElement>('voice-list');
   private readonly voiceStatus = element<HTMLElement>('voice-status');
   private voices = new Map<string, StoredVoice>();
+  private readonly trackSection = element<HTMLElement>('track-section');
+  private readonly trackPick = element<HTMLInputElement>('track-pick');
+  private readonly trackStatus = element<HTMLElement>('track-status');
+  private tracks: StoredTrack[] = [];
   /** The recording in progress (or on its way: the permission prompt may still be open). */
   private recording: { key: string; button: HTMLButtonElement; started: Promise<Recording>; released: boolean } | null = null;
   private readonly updateSection = element<HTMLElement>('update-section');
@@ -295,6 +311,21 @@ export class ParentPanel {
         this.renderChoices();
         this.changed();
       });
+    }
+    this.trackSection.hidden = !hooks.tracks;
+    if (hooks.tracks) {
+      this.trackPick.addEventListener('change', () => {
+        const files = Array.from(this.trackPick.files ?? []);
+        this.trackPick.value = '';
+        void this.addTracks(files);
+      });
+      this.songList.addEventListener('click', (event) => {
+        const remove = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-remove-track]');
+        if (!remove?.dataset.removeTrack) return;
+        event.preventDefault();
+        void this.removeTrack(remove.dataset.removeTrack);
+      });
+      void this.loadTracks();
     }
     this.renderSongs();
     this.songList.addEventListener('change', (event) => {
@@ -489,28 +520,55 @@ export class ParentPanel {
     this.pauseStatus.textContent = this.hooks.pauseStatus?.() ?? '';
   }
 
-  /** One row per song, with a switch; the songs come from engine/music.ts. */
+  /** One row per song, with a switch: the parents' own tracks first (with a remove button), then engine/music.ts. */
   private renderSongs(): void {
     const off = new Set(this.settings.songsOff);
-    this.songList.replaceChildren(
-      ...SONGS.map((song) => {
-        const row = document.createElement('label');
-        row.className = 'row';
-        const label = document.createElement('span');
-        label.className = 'row-label';
-        label.textContent = `🎵 ${song.name}`;
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.dataset.song = song.id;
-        input.checked = !off.has(song.id);
-        const toggle = document.createElement('span');
-        toggle.className = 'switch';
-        toggle.setAttribute('aria-hidden', 'true');
-        row.append(label, input, toggle);
-        return row;
-      }),
-    );
+    const songRow = (id: string, name: string, emoji: string): { row: HTMLElement; label: HTMLLabelElement } => {
+      const label = document.createElement('label');
+      label.className = 'row';
+      const text = document.createElement('span');
+      text.className = 'row-label';
+      text.textContent = `${emoji} ${name}`;
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.song = id;
+      input.checked = !off.has(id);
+      const toggle = document.createElement('span');
+      toggle.className = 'switch';
+      toggle.setAttribute('aria-hidden', 'true');
+      label.append(text, input, toggle);
+      return { row: label, label };
+    };
+    const trackRows = this.tracks.map((track) => {
+      const { label } = songRow(trackSongId(track.id), track.name, '📱');
+      label.classList.replace('row', 'track-toggle');
+      const row = document.createElement('div');
+      row.className = 'row track-row';
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'track-remove';
+      remove.dataset.removeTrack = track.id;
+      remove.setAttribute('aria-label', `Fjern ${track.name}`);
+      remove.textContent = '✕';
+      row.append(label, remove);
+      return row;
+    });
+    this.songList.replaceChildren(...trackRows, ...SONGS.map((song) => songRow(song.id, song.name, '🎵').row));
+    this.renderTrackStatus();
     this.renderSongStatus();
+  }
+
+  private renderTrackStatus(): void {
+    const hooks = this.hooks.tracks;
+    if (!hooks) return;
+    const count = this.tracks.length;
+    const full = count >= hooks.max;
+    this.trackPick.parentElement!.hidden = full;
+    this.trackStatus.textContent = full
+      ? `Der er plads til ${hooks.max} sange. Fjern en for at tilføje en ny.`
+      : count === 0
+        ? 'Vælg en sang på telefonen (fx jeres Baby Shark). Filen bliver kun på denne telefon, og jeres sange spiller først.'
+        : `${count} af ${hooks.max} sange. Filerne bliver kun på denne telefon, og jeres sange spiller først.`;
   }
 
   private renderSongStatus(): void {
@@ -567,6 +625,58 @@ export class ParentPanel {
     this.photos = await this.hooks.photos.list();
     this.renderPhotos();
     this.hooks.photos.onChange([...this.photos]);
+  }
+
+  // ---- The parents' own music ("Jeres musik") ------------------------------------
+
+  private async loadTracks(): Promise<void> {
+    const hooks = this.hooks.tracks;
+    if (!hooks) return;
+    this.tracks = await hooks.list();
+    this.renderSongs();
+    hooks.onChange([...this.tracks]);
+  }
+
+  /** Files picked in the menu become songs: stored on the phone, first in the list, and playing at once. */
+  private async addTracks(files: File[]): Promise<void> {
+    const hooks = this.hooks.tracks;
+    if (!hooks || files.length === 0) return;
+    this.pauseAutoClose();
+    for (const file of files) {
+      if (this.tracks.length >= hooks.max) {
+        this.trackStatus.textContent = `Der er plads til ${hooks.max} sange. Fjern en for at tilføje en ny.`;
+        break;
+      }
+      this.trackStatus.textContent = `Gemmer "${file.name}" …`;
+      try {
+        const track = await hooks.add(file);
+        this.tracks.push(track);
+        this.renderSongs();
+        hooks.onChange([...this.tracks], track);
+        this.trackStatus.textContent = `"${track.name}" er lagt ind og spiller nu.`;
+        // The track starts once it is decoded; show it as "playing now" when it has.
+        window.setTimeout(() => this.renderSongStatus(), 1200);
+      } catch (error) {
+        console.warn('Sangen kunne ikke gemmes', error);
+        this.trackStatus.textContent = `"${file.name}" kunne ikke bruges. Prøv en anden fil (mp3, m4a eller wav under 40 MB).`;
+      }
+    }
+    this.armAutoClose();
+  }
+
+  private async removeTrack(id: string): Promise<void> {
+    const hooks = this.hooks.tracks;
+    if (!hooks) return;
+    await hooks.remove(id);
+    this.tracks = this.tracks.filter((track) => track.id !== id);
+    const songId = trackSongId(id);
+    if (this.settings.songsOff.includes(songId)) {
+      this.settings.songsOff = this.settings.songsOff.filter((candidate) => candidate !== songId);
+      this.changed();
+    }
+    this.renderSongs();
+    hooks.onChange([...this.tracks]);
+    this.armAutoClose();
   }
 
   // ---- The parents' voices -----------------------------------------------------

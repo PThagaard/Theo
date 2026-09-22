@@ -5,6 +5,17 @@ import { OUT, VIEWPORTS, check, openPhone, serveDist, waitForGame } from './lib.
 
 const server = await serveDist();
 const url = server.url;
+
+/** A short 16-bit mono WAV (a soft sine), standing in for a song the parents add from their phone. */
+function makeWav(seconds, freq, rate = 22050) {
+  const n = Math.floor(seconds * rate);
+  const buf = Buffer.alloc(44 + n * 2);
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVE', 8); buf.write('fmt ', 12);
+  buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22); buf.writeUInt32LE(rate, 24);
+  buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write('data', 36); buf.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(Math.sin((2 * Math.PI * freq * i) / rate) * 0.3 * 32767), 44 + i * 2);
+  return buf;
+}
 const tag = process.argv[2] === 'tablet' ? 'tablet' : 'phone';
 const viewport = VIEWPORTS[tag];
 const { browser, page, problems } = await openPhone(viewport);
@@ -342,8 +353,10 @@ check((await page.evaluate(() => window.__theo.activity.id)) === 'bobler', 'the 
 const bath = await page.evaluate(() => {
   const g = window.__theo.game;
   g.setAge('2+');
-  // No bubbles of the bath's own for a while, so none drifts in front of what the taps aim at.
+  // No bubbles or guests of the bath's own for a while, so none drifts in front of what the taps aim at
+  // (the tablet renders its screenshots slowly enough for the first guest to arrive otherwise).
   g.spawnTimer = 30;
+  g.guestTimer = 60;
   g.bubbles = [];
   const b = g.spawnBubble({ x: g.width * 0.5, y: g.height * 0.35, r: g.baseR, kind: 'plain' });
   g.spawnBubble({ x: g.width * 0.25, y: g.height * 0.5, r: g.baseR * 1.2, kind: 'star' });
@@ -380,7 +393,12 @@ for (let i = 0; i < 12; i++) {
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}/${tag}-32c-bobler-tilt.png` });
 check(await page.evaluate(() => { const g = window.__theo.game; return g.tilt > 0.05 && g.surfaceY(g.width * 0.9) < g.surfaceY(g.width * 0.1); }), 'tilting the phone should tilt the water');
-await page.evaluate(() => { window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.8, z: 0 } })); window.__theo.game.setTilt(0); });
+// Level again: enough level readings for the smoothing to follow, so the water is flat for the rest of the bath.
+for (let i = 0; i < 12; i++) {
+  await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.8, z: 0 } })));
+  await page.waitForTimeout(45);
+}
+await page.evaluate(() => window.__theo.game.setTilt(0));
 await page.waitForTimeout(800);
 // A swipe across the wall pops what it crosses and leaves a trail of tiny bubbles.
 await page.evaluate(() => { const g = window.__theo.game; for (const f of [0.3, 0.5, 0.7]) g.spawnBubble({ x: g.width * f, y: g.height * 0.3, r: g.baseR, kind: 'plain' }); });
@@ -390,8 +408,14 @@ await page.mouse.down();
 await page.mouse.move(bath.w * 0.9, bath.h * 0.3, { steps: 24 });
 await page.mouse.up();
 await page.waitForTimeout(200);
-// Hold still on the water (the ducks are moved aside): a bubble grows under the finger and floats off when let go.
-await page.evaluate(() => { const g = window.__theo.game; g.ducks.forEach((d, i) => { d.rainbow = 0; d.vx = 0; d.x = g.width * (i === 0 ? 0.12 : 0.88); }); });
+// Hold still on the water (the ducks are moved aside, no bubble or guest in the way): a bubble grows under the
+// finger and floats off when let go.
+await page.evaluate(() => {
+  const g = window.__theo.game;
+  g.ducks.forEach((d, i) => { d.rainbow = 0; d.vx = 0; d.x = g.width * (i === 0 ? 0.12 : 0.88); });
+  g.guests = []; g.guestTimer = 60; g.spawnTimer = 30;
+  g.bubbles = []; Object.assign(g.spawnBubble({ x: 40, y: 80, r: 18, kind: 'plain' }), { vx: 0, vy: 0 });
+});
 await page.mouse.move(bath.w * 0.5, bath.h * 0.82);
 await page.mouse.down();
 await page.waitForTimeout(1500);
@@ -628,7 +652,24 @@ const musicSettings = await page.evaluate(() => JSON.parse(localStorage.getItem(
 check(musicSettings.songsOff.includes('mary') && musicSettings.musicSpeed === 'hurtig', 'switching a song off or changing the speed was not saved');
 await page.click('#music-speed-options button[data-speed="normal"]');
 await page.click('#song-list label:has(input[data-song="mary"])');
+// "Jeres musik": a song file from the phone joins the playlist first, is kept on the phone, and plays at once
+// (the music is switched back on for this, and off again afterwards, as the rest of the test expects).
+await page.click('#tab-leg');
+await page.click('label:has(#opt-music)');
+await page.click('#tab-musik');
+await page.setInputFiles('#track-pick', { name: 'Baby Shark test.wav', mimeType: 'audio/wav', buffer: makeWav(1.5, 440) });
+await page.waitForFunction(() => document.querySelector('#song-list input[data-song^="track:"]'), null, { timeout: 10000 });
+const trackRows = await page.evaluate(() => ({ first: document.querySelector('#song-list input[data-song]').dataset.song, label: document.querySelector('#song-list .track-row .row-label').textContent, status: document.getElementById('track-status').textContent }));
+console.log('track:', JSON.stringify(trackRows));
+check(trackRows.first.startsWith('track:') && trackRows.label.includes('Baby Shark test'), "the parents' track should come first in the song list");
+await page.waitForTimeout(1500);
+const playingTrack = await page.evaluate(() => window.__theo.audio()?.currentSongName ?? null);
+console.log('playing after adding a track:', playingTrack);
+check(playingTrack === 'Baby Shark test', 'the added track should play at once');
 await page.screenshot({ path: `${OUT}/${tag}-06c-music.png` });
+await page.click('#tab-leg');
+await page.click('label:has(#opt-music)');
+await page.click('#tab-musik');
 await page.click('#tab-leg');
 const stored = await page.evaluate(() => localStorage.getItem('theos-balloner.settings'));
 console.log('stored settings:', stored);
@@ -780,6 +821,9 @@ await waitForGame(page);
 const storedPhotos = await page.evaluate(async () => (await new Promise((resolve) => { const r = indexedDB.open('theos-legeplads', 1); r.onsuccess = () => { const db = r.result; const q = db.transaction('photos').objectStore('photos').getAll(); q.onsuccess = () => resolve(q.result.length); }; })));
 console.log('photos in IndexedDB after reload:', storedPhotos);
 check(storedPhotos === 1, 'photo was not stored');
+const storedTracks = await page.evaluate(async () => (await new Promise((resolve) => { const r = indexedDB.open('theos-musik', 1); r.onsuccess = () => { const db = r.result; const q = db.transaction('tracks').objectStore('tracks').getAll(); q.onsuccess = () => resolve(q.result.map((t) => t.name)); }; })));
+console.log('tracks in IndexedDB after reload:', storedTracks);
+check(storedTracks.length === 1 && storedTracks[0] === 'Baby Shark test', "the parents' track was not stored");
 const popsAfterReload = await page.evaluate(() => window.__theo.stats.snapshot.total.pops);
 console.log('pops remembered after reload:', popsAfterReload);
 check(popsAfterReload >= 10, 'statistics were not saved');
@@ -827,8 +871,10 @@ const audio = await page.evaluate(async () => {
     ['whale', 26.9, () => { engine.whaleCall(26.9); engine.spout(28.0); }],
     ['squawk', 28.9, () => engine.squawk(28.9)],
     ['whine', 29.3, () => engine.whine(29.3)],
-    ['drip', 30.4, () => { engine.drip(30.4); engine.drip(30.6); }],
-    ['bear', 30.9, () => engine.bearHello(30.9)],
+    ['drip', 30.2, () => { engine.drip(30.2); engine.drip(30.4); }],
+    ['bear', 30.6, () => engine.bearHello(30.6)],
+    // Six pops within a tenth of a second (a whole hand): the crowd guard keeps them from piling up.
+    ['burst', 31.4, () => { for (let i = 0; i < 6; i++) engine.pop(1, 31.4 + i * 0.02); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -880,6 +926,27 @@ check(audio.trumpet.seconds >= 0.8, `the elephant trumpet is too short (${audio.
 check(audio.bark.seconds >= 0.35, `the bark is too short (${audio.bark.seconds} s)`);
 check(audio.moo.seconds >= 0.7, `the moo is too short (${audio.moo.seconds} s)`);
 check(audio.meow.seconds >= 0.3, `the meow is too short (${audio.meow.seconds} s)`);
+check(audio.burst.rms < audio['pop big'].rms * 2.0, `six pops at once should not pile up into a wall (burst rms ${audio.burst.rms} vs one pop ${audio['pop big'].rms})`);
+
+// The parents' own track plays through the music player (offline): first in the playlist, levelled, and named.
+const trackRender = await page.evaluate(async (wavBase64) => {
+  const { AudioEngine } = window.__theo;
+  const sr = 22050;
+  const ctx = new OfflineAudioContext(1, sr * 4, sr);
+  const engine = new AudioEngine(ctx);
+  await engine.ready;
+  const bytes = Uint8Array.from(atob(wavBase64), (c) => c.charCodeAt(0));
+  const ok = await engine.loadTrack('t1', 'Testsang', new Blob([bytes], { type: 'audio/wav' }));
+  engine.renderMusic(0.1, 3.5);
+  const name = engine.currentSongName;
+  const buffer = await ctx.startRendering();
+  const data = buffer.getChannelData(0);
+  let peak = 0, sum = 0, n = 0;
+  for (let i = Math.floor(0.3 * sr); i < Math.floor(1.5 * sr); i++) { peak = Math.max(peak, Math.abs(data[i])); sum += data[i] * data[i]; n++; }
+  return { ok, name, peak: +peak.toFixed(3), rms: +Math.sqrt(sum / n).toFixed(4) };
+}, makeWav(2, 330).toString('base64'));
+console.log('track render:', JSON.stringify(trackRender));
+check(trackRender.ok && trackRender.name === 'Testsang' && trackRender.rms > 0.005 && trackRender.peak <= 1, "the parents' track did not play through the music player");
 
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/${tag}-07-later.png` });

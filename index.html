@@ -117,6 +117,20 @@
               <button type="button" data-speed="hurtig">Hurtig</button>
             </div>
           </div>
+          <div class="row row-stacked" id="track-section" hidden>
+            <span class="row-label">📱 Jeres musik</span>
+            <p class="row-help">
+              Læg jeres egne sange ind fra telefonen (fx Baby Shark). Filen bliver kun på denne telefon, ligesom
+              billederne, og jeres sange spiller først. Lydstyrken jævnes ud efter appens egen musik.
+            </p>
+            <div class="photo-actions">
+              <label class="photo-button">
+                🎶 Vælg sang på telefonen
+                <input type="file" id="track-pick" accept="audio/*,.mp3,.m4a,.wav,.ogg" multiple hidden />
+              </label>
+            </div>
+            <p id="track-status" class="row-help"></p>
+          </div>
           <div id="song-list"></div>
         </section>
         <section class="tab-page" data-tab="familie" hidden>

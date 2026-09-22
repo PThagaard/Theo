@@ -134,8 +134,12 @@ titte-bøh, jeres ansigter og jeres ord.
   stemme. Balloner og Badekarret siger ingen ord; der er kun lyde. Telefonen beder om lov til mikrofonen første
   gang; optagelserne bliver på telefonen.
 - **Musik** (forældremenuen → *Musik*): hver sang kan slås til og fra, hastigheden kan sættes (langsom, normal,
-  hurtig), og *Næste sang* springer videre. Alle sange er gamle børnesange eller vores egne, spillet af appens egen
+  hurtig), og *Næste sang* springer videre. Appens egne sange er gamle børnesange eller vores egne, spillet af appens
   spilledåse; ingen optagelser. (Baby Shark som spilledåse-melodi blev prøvet og taget ud igen.)
+- **Jeres musik** (samme sted → *Vælg sang på telefonen*): læg jeres egne lydfiler ind (fx Baby Shark). De står
+  først i listen, spiller først, følger hastigheden og kan slås fra som de andre. Lydstyrken jævnes ud efter appens
+  egen musik. Filerne bliver kun på telefonen, ligesom billederne; der ligger ingen musikfiler i appen eller repoet.
+  Plads til 10; fjern med ✕.
 - **Nedtælling til pausen**: er *Pause efter* slået til, står der en lille, mat tid nederst til højre i spillet.
 - **Alder og pause** (forældremenuen → *Leg*): *8–12 mdr* er standard og holder verdenen rolig (tre balloner,
   ét besøg ad gangen, intet uvejr af sig selv, ingen skærmblink, lavere musik); *1–2 år* og *2+ år* skruer op.

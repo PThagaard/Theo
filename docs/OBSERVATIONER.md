@@ -137,3 +137,6 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   lære at vinke og sige hej hej" → behov: noget at efterligne (imitation er det store lige nu, `docs/ROADMAP.md`
   8–12 mdr) → isbjørnen vinker, når den kommer ind, når den røres og nu og da; stor pote, langsom bevægelse, så
   Theo kan nå at vinke med. Forældrene siger "hej hej", når den vinker.
+- 22.9.2026, "Fortsæt udviklingen" → *Jeres musik* bygget som forslaget til Baby Shark (egne lydfiler fra
+  telefonen, bliver der, spiller først), og lydmur-værnet (resten af "to hænder på skærmen"). Forældrene har ikke
+  svaret endnu på musik-løsningen; det står i testlisten.

@@ -13,6 +13,7 @@ import { SessionClock } from './engine/session';
 import { Stats } from './engine/stats';
 import { appUpdate } from './engine/update';
 import { listVoices, removeVoice, saveVoice, startRecording } from './engine/voices';
+import { MAX_TRACKS, addTrack, listTracks, removeTrack } from './engine/tracks';
 
 /**
  * The shell around every activity: canvas and loop, sound, the parents' menu, the lock, counters, the
@@ -41,6 +42,7 @@ function ensureAudio(): void {
       audio.setMusicSpeed(MUSIC_SPEEDS[settings.musicSpeed]);
       audio.setMusicEnabled(settings.music);
       void loadVoicesIntoAudio();
+      void loadTracksIntoAudio();
     } catch (error) {
       console.warn('Lyd kunne ikke startes', error);
       return;
@@ -58,6 +60,18 @@ async function loadVoicesIntoAudio(): Promise<void> {
   for (const key of loadedVoiceKeys) if (!voices.some((voice) => voice.key === key)) engine.forgetVoice(key);
   await Promise.all(voices.map((voice) => engine.loadVoice(voice.key, voice.blob)));
   loadedVoiceKeys = voices.map((voice) => voice.key);
+}
+
+/** The parents' own music ("Jeres musik"), decoded into the audio engine; a just-added track plays at once. */
+let loadedTrackIds: string[] = [];
+async function loadTracksIntoAudio(playId?: string): Promise<void> {
+  if (!audio) return;
+  const engine = audio;
+  const tracks = await listTracks();
+  for (const id of loadedTrackIds) if (!tracks.some((track) => track.id === id)) engine.forgetTrack(id);
+  const fresh = tracks.filter((track) => !loadedTrackIds.includes(track.id));
+  loadedTrackIds = tracks.map((track) => track.id);
+  await Promise.all(fresh.map((track) => engine.loadTrack(track.id, track.name, track.blob, track.id === playId)));
 }
 
 // Browsers only allow sound after a touch, so every kind of touch tries to unlock it.
@@ -183,6 +197,13 @@ const panel = new ParentPanel(settings, {
     record: startRecording,
     play: (key) => (audio?.say(key, 0, 0) ?? 0) > 0,
     onChange: () => void loadVoicesIntoAudio(),
+  },
+  tracks: {
+    max: MAX_TRACKS,
+    list: listTracks,
+    add: addTrack,
+    remove: removeTrack,
+    onChange: (_tracks, added) => void loadTracksIntoAudio(added?.id),
   },
   photos: {
     max: MAX_PHOTOS,

@@ -660,3 +660,36 @@ body {
 #pause-countdown[hidden] {
   display: none;
 }
+
+/* The parents' own music in the song list: a switch like the songs, plus a remove button. */
+.track-row {
+  gap: 10px;
+}
+
+.track-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.track-toggle .row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-remove {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: #ff4d6d;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}

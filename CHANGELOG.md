@@ -3,6 +3,23 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Jeres musik fra telefonen, og ingen lydmur ved mange fingre
+
+- **Jeres musik** (forældremenuen → *Musik* → *Vælg sang på telefonen*): vælg en lydfil på telefonen (fx jeres
+  Baby Shark), og den bliver en sang i appen: den står først i listen, spiller med det samme, har sin egen kontakt,
+  følger *Hastighed*, og spiller først, hver gang musikken starter. Lydstyrken jævnes ud efter appens egen musik,
+  så en høj popsang ikke overdøver legetøjet. Filen gemmes kun på telefonen, ligesom familiebillederne, og kommer
+  aldrig i repoet (princip 8 holder: appen selv har kun fri musik). Der er plads til 10 sange; fjern med ✕. Det er
+  vores forslag til løsningen på Baby Shark; sig til, hvis I vil have det anderledes.
+- **Ingen lydmur ved mange fingre** (forældrene: "Theo har tit begge hænder på skærmen"): når flere lyde starter
+  inden for samme øjeblik, spiller de to første med fuld styrke og de næste svagere, aldrig stille. Alt svarer
+  stadig med bevægelse og lyd; det bliver bare ikke en mur.
+
+**Test på telefonen:** (1) Menu → *Musik* → *Vælg sang på telefonen*: vælg jeres Baby Shark. Den skal stå øverst og
+spille straks. Luk menuen: spillet kører videre til sangen. Sæt *Hastighed* til *Hurtig*: sangen følger med. Slå den
+fra og til igen. Genstart appen: sangen er der stadig og spiller først. (2) Sig, om lydstyrken passer til resten.
+(3) Læg hele hånden på ballonerne eller boblerne nogle gange: det skal lyde som leg, ikke som en mur.
+
 ## 2026-09-21 – Hvalen gemmer sig, guldfisken i en boble, bruseren bliver, og isbjørnen vinker
 
 - **Hvalen er tegnet om** (forældrene: "ikke godkendt, grim"): nu en tegneserie-hval med stort rundt hoved, blå
