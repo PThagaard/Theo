@@ -174,8 +174,10 @@ titte-bøh, jeres ansigter og jeres ord.
 
 Hold den lille lås i øverste venstre hjørne nede i **2 sekunder** med én finger. Så åbner en menu, hvor musik og lyde
 kan slås fra og til, og hvor **tempoet** vælges: *Rolig* (få, langsomme balloner), *Normal* eller *Vild* (mange,
-hurtige). Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på låsen gør ingenting, og en hel
-hånd på skærmen åbner den heller ikke.
+hurtige). Menuen fylder hele den brede skærm: siderne (*Leg*, *Musik*, *Familie*, *Theos leg*, *Telefon*) og
+*Tilbage til spillet* står i kolonnen til venstre, og hver side lægger sine indstillinger i spalter ved siden af
+hinanden, så det meste kan ses uden at scrolle. Menuen lukker sig selv igen efter kort tid. Et almindeligt tryk på
+låsen gør ingenting, og en hel hånd på skærmen åbner den heller ikke.
 
 **Lås appen fast (Android):** tryk på **Lås appen fast på skærmen** i menuen. Telefonen spørger "Fastgør?" én gang;
 tryk OK. Derefter virker Hjem, Tilbage, Seneste apps og notifikationspanelet ikke, før appen låses op igen: hold

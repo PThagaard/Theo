@@ -3,6 +3,21 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Forældremenuen bruger den brede skærm
+
+- **Forældremenuen er tegnet om til den brede skærm** (forældrenes ønske: "settings skal redesignes, så det fylder
+  mere bredt; pt. skal man scrolle en evighed"). Menuen fylder nu hele skærmen: siderne (*Leg*, *Musik*, *Familie*,
+  *Theos leg*, *Telefon*) og *Tilbage til spillet* står i en fast kolonne til venstre, som altid er synlig, og hver
+  side lægger sine indstillinger i to spalter ved siden af hinanden (tre på en tablet), som en avis. *Leg*-siden
+  står på én skærm uden at scrolle; de lange lister (sange, tællere, stemmer) fylder halvt så meget som før.
+  Ansigts-klipperen viser billedet til venstre og zoom og knapper ved siden af, så den også står på én skærm.
+  Skriften er lidt mindre, knapperne stadig store.
+
+**Test på telefonen:** (1) Hold hjørneknappen: menuen fylder skærmen med fanerne til venstre og *Leg* i to
+spalter uden at scrolle. (2) Gå igennem *Musik*, *Familie* og *Theos leg*: alt kan nås, og intet er klippet af.
+(3) Familie → *Vælg billede*: klipperen viser billedet og knapperne side om side. (4) *Tilbage til spillet* er
+altid synlig nederst til venstre.
+
 ## 2026-09-22 – Boldene mærker telefonen, og en holdt bold er stille
 
 - **Boldene mærker nu alle telefonens bevægelser** (forældrene: "de bevæger sig ikke, når jeg bevæger eller ryster

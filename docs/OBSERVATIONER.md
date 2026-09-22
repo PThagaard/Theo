@@ -155,3 +155,7 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   musik/lyd stopper" → to fejl: sensoren blev læst i portræt-akser (nu drejet efter skærmens retning, og boldene
   bruger hele accelerationen som "ned", så ryk og ryst mærkes), og en holdt bold mod måtten gav 120 hop i sekundet
   med lyd og vibration (nu stille, og bunker af bolde lyder højst få gange i sekundet).
+- "Når du har låst visningen til wide-mode, skal settings redesignes, så det fylder mere bredt (pt. skal man
+  scrolle en evighed)" → behov: forældrene skal kunne overskue og ændre en indstilling hurtigt, mens Theo venter →
+  menuen fylder skærmen: faner og *Tilbage* i en fast kolonne til venstre, hver side i spalter (to på telefonen,
+  tre på tablet); *Leg* uden scroll, klipperen side om side.

@@ -728,7 +728,10 @@ export class ParentPanel {
         remove.textContent = '✕';
         remove.setAttribute('aria-label', `Fjern ${row.label}`);
         remove.hidden = !has;
-        item.append(label, record, play, remove);
+        const actions = document.createElement('span');
+        actions.className = 'voice-actions';
+        actions.append(record, play, remove);
+        item.append(label, actions);
         return item;
       }),
     );
@@ -804,12 +807,15 @@ export class ParentPanel {
     if (!hooks || !this.cropper) return;
     this.photoStatus.textContent = 'Gør billedet klar …';
     this.pauseAutoClose();
+    // The cropper takes the whole page while it is open, so the picture is big enough to frame on a short screen.
+    this.photoSection.classList.add('is-cropping');
     try {
       await this.cropper.open(file);
     } catch (error) {
       console.warn('Billede kunne ikke læses', error);
       this.photoStatus.textContent = 'Det billede kunne ikke bruges. Prøv et andet.';
     } finally {
+      this.photoSection.classList.remove('is-cropping');
       this.renderPhotos();
       this.armAutoClose();
     }

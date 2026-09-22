@@ -93,6 +93,9 @@ body {
   pointer-events: none;
 }
 
+/* The parent menu fills the sideways screen (the app is landscape only): the pages' names and the way back sit in
+   a rail on the left, always in view, and each page lays its rows out in newspaper columns on the right, so a
+   short, wide phone screen shows a whole page at a glance instead of one long list to scroll through. */
 #parent-panel {
   position: fixed;
   inset: 0;
@@ -100,7 +103,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
   background: rgba(40, 30, 80, 0.55);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -111,16 +114,29 @@ body {
 }
 
 .card {
-  width: min(100%, 360px);
-  max-height: calc(100vh - 32px);
-  max-height: calc(100dvh - 32px);
+  display: flex;
+  width: min(100%, 980px);
+  height: calc(100vh - 24px);
+  height: calc(100dvh - 24px);
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+
+.menu-rail {
+  flex: 0 0 172px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 14px 12px 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  padding: 28px 24px;
-  border-radius: 28px;
-  background: #fff;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: #f4f4fa;
+  border-right: 1px solid #ebebf2;
   text-align: center;
 }
 
@@ -130,14 +146,78 @@ body {
 }
 
 .card h1 {
-  margin: 8px 0 2px;
-  font-size: 26px;
+  margin: 0;
+  font-size: 20px;
 }
 
 .subtitle {
-  margin: 0 0 16px;
-  font-size: 15px;
+  margin: 0 0 8px;
+  font-size: 13px;
   opacity: 0.6;
+}
+
+.menu-pages {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 6px 18px 14px;
+}
+
+/* Each page flows into as many columns as the width allows (two on a phone held sideways, three on a tablet). */
+.tab-page {
+  column-width: 250px;
+  column-gap: 28px;
+  column-rule: 1px solid #f0f0f5;
+}
+
+/* A row, a list or a button never splits over two columns, and a title stays with what it names. */
+.row,
+.row-help,
+.voice-row,
+.photo-list,
+.photo-actions,
+.lock-status,
+.hint,
+.stats-table tr,
+#lock-button,
+#stats-reset,
+#update-notes {
+  break-inside: avoid;
+}
+
+.section-title {
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+/* The app is landscape only; in a portrait browser window the rail becomes a header instead of a sidebar. */
+@media (orientation: portrait) {
+  .card {
+    flex-direction: column;
+  }
+
+  .menu-rail {
+    flex: none;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid #ebebf2;
+  }
+
+  .tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .tabs button {
+    flex: 1 1 30%;
+    text-align: center;
+  }
+
+  #parent-close {
+    margin-top: 4px;
+  }
 }
 
 .row {
@@ -145,9 +225,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
+  gap: 10px;
+  padding: 10px 0;
   border-top: 1px solid #eee;
-  font-size: 21px;
+  font-size: 17px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -162,8 +243,13 @@ body {
 .row-stacked {
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   cursor: default;
+}
+
+.tab-page > .row:first-child,
+.tab-page > div > .row:first-child {
+  border-top: 0;
 }
 
 .segmented {
@@ -190,24 +276,32 @@ body {
   margin: 10px 0 8px;
 }
 
+/* In a narrow column the buttons drop under the word rather than squeezing it. */
 .voice-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   text-align: left;
 }
 
+.voice-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .voice-label {
-  flex: 1;
+  flex: 1 1 80px;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .voice-label img {
@@ -220,13 +314,13 @@ body {
 
 .voice-record {
   flex: none;
-  padding: 9px 10px;
+  padding: 8px 9px;
   border: 0;
   border-radius: 12px;
   background: #eef2ff;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   touch-action: none;
   -webkit-user-select: none;
@@ -242,12 +336,12 @@ body {
 .voice-play,
 .voice-remove {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 50%;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -268,13 +362,13 @@ body {
 
 .segmented button {
   flex: 1;
-  padding: 12px 4px;
+  padding: 10px 3px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #eef2ff;
   color: var(--ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -318,21 +412,19 @@ body {
 
 #parent-close {
   width: 100%;
-  margin-top: 18px;
-  padding: 16px;
+  margin-top: auto;
+  padding: 12px 8px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #4d96ff;
   color: #fff;
   font: inherit;
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
 
 #photo-section {
-  border-top: 1px solid #eee;
-  padding-top: 12px;
   text-align: left;
 }
 
@@ -386,8 +478,7 @@ body {
     margin-bottom: 6px;
   }
 
-  .start-card .card-balloon,
-  .card .card-balloon {
+  .start-card .card-balloon {
     display: none;
   }
 
@@ -459,22 +550,24 @@ body {
 /* The menu is split into pages, so settings, photos, counters and phone things never become one long list. */
 .tabs {
   display: flex;
+  flex-direction: column;
   gap: 6px;
-  margin: 0 0 14px;
+  margin: 0;
 }
 
 .tabs button {
-  flex: 1;
+  flex: none;
   min-width: 0;
-  padding: 10px 2px;
+  padding: 9px 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #eef2ff;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.2;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -546,15 +639,13 @@ body {
 }
 
 #stats-section {
-  border-top: 1px solid #eee;
-  padding-top: 12px;
   text-align: left;
 }
 
 .stats-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .stats-table th {
@@ -562,6 +653,7 @@ body {
   font-weight: 800;
   padding: 4px 6px;
   opacity: 0.6;
+  white-space: nowrap;
 }
 
 .stats-table td {
@@ -589,8 +681,6 @@ body {
 }
 
 #update-section {
-  border-top: 1px solid #eee;
-  padding-top: 12px;
   text-align: left;
 }
 
@@ -619,31 +709,49 @@ body {
   opacity: 0.85;
 }
 
+/* Framing a face takes the whole page: the picture on the left, the zoom and the buttons beside it. */
 .crop-dialog {
-  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  column-span: all;
+  padding: 4px 0;
   text-align: center;
 }
 
+.crop-dialog[hidden] {
+  display: none;
+}
+
+#photo-section.is-cropping > :not(.crop-dialog) {
+  display: none;
+}
+
 .crop-canvas {
-  width: 260px;
-  height: 260px;
-  max-width: 100%;
+  flex: none;
+  width: 240px;
+  height: 240px;
+  max-width: 45%;
   border-radius: 50%;
   background: #eef2ff;
   touch-action: none;
   display: block;
-  margin: 0 auto;
+}
+
+.crop-controls {
+  flex: 1;
+  min-width: 0;
 }
 
 #crop-zoom {
   width: 100%;
-  margin: 12px 0 4px;
+  margin: 4px 0;
   accent-color: #4d96ff;
 }
 
 #lock-section {
-  border-top: 1px solid #eee;
-  padding-top: 16px;
+  break-inside: avoid;
+  padding-top: 4px;
 }
 
 #lock-button {

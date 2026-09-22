@@ -43,18 +43,24 @@
     <!-- A small, faint countdown to the pause (parents glance at it; nothing for the child to press). -->
     <div id="pause-countdown" hidden aria-hidden="true"></div>
 
+    <!-- The parent menu fills the sideways screen: the pages' names and the way back sit in a rail on the left
+         (always in view), and each page lays its rows out in columns on the right, so nothing needs endless
+         scrolling on a short, wide screen. -->
     <div id="parent-panel" hidden>
       <div class="card" role="dialog" aria-labelledby="parent-title">
-        <div class="card-balloon" aria-hidden="true">🎈</div>
-        <h1 id="parent-title">Theos spil</h1>
-        <p class="subtitle">Forældremenu</p>
-        <div id="parent-tabs" class="tabs" role="tablist" aria-label="Forældremenu">
-          <button id="tab-leg" type="button" role="tab" data-tab="leg">🎈 Leg</button>
-          <button id="tab-musik" type="button" role="tab" data-tab="musik">🎵 Musik</button>
-          <button id="tab-familie" type="button" role="tab" data-tab="familie">📷 Familie</button>
-          <button id="tab-theo" type="button" role="tab" data-tab="theo">📊 Theos leg</button>
-          <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
+        <div class="menu-rail">
+          <h1 id="parent-title">Theos spil</h1>
+          <p class="subtitle">Forældremenu</p>
+          <div id="parent-tabs" class="tabs" role="tablist" aria-label="Forældremenu">
+            <button id="tab-leg" type="button" role="tab" data-tab="leg">🎈 Leg</button>
+            <button id="tab-musik" type="button" role="tab" data-tab="musik">🎵 Musik</button>
+            <button id="tab-familie" type="button" role="tab" data-tab="familie">📷 Familie</button>
+            <button id="tab-theo" type="button" role="tab" data-tab="theo">📊 Theos leg</button>
+            <button id="tab-telefon" type="button" role="tab" data-tab="telefon">📱 Telefon</button>
+          </div>
+          <button id="parent-close" type="button">Tilbage til spillet</button>
         </div>
+        <div class="menu-pages">
         <section class="tab-page" data-tab="leg">
         <div class="row row-stacked" id="activity-row">
           <span class="row-label" id="activity-name">🧩 Spil</span>
@@ -162,14 +168,17 @@
             <div id="voice-list" class="voice-list"></div>
             <p id="voice-status" class="lock-status"></p>
           </div>
+          <!-- Framing a face: the picture on the left, the zoom and the buttons beside it, so it fits a short screen. -->
           <div id="crop-dialog" class="crop-dialog" hidden>
             <canvas id="crop-canvas" class="crop-canvas" aria-label="Klip ansigt"></canvas>
-            <input id="crop-zoom" type="range" min="1" max="5" step="0.01" value="1" aria-label="Zoom" />
-            <p id="crop-status" class="lock-status"></p>
-            <div class="photo-actions">
-              <button id="crop-save" type="button" class="photo-button photo-button-primary">✓ Gem ansigtet</button>
-              <button id="crop-again" type="button" class="photo-button" hidden>↺ Nyt ansigt</button>
-              <button id="crop-cancel" type="button" class="photo-button">✕ Luk</button>
+            <div class="crop-controls">
+              <input id="crop-zoom" type="range" min="1" max="5" step="0.01" value="1" aria-label="Zoom" />
+              <p id="crop-status" class="lock-status"></p>
+              <div class="photo-actions">
+                <button id="crop-save" type="button" class="photo-button photo-button-primary">✓ Gem ansigtet</button>
+                <button id="crop-again" type="button" class="photo-button" hidden>↺ Nyt ansigt</button>
+                <button id="crop-cancel" type="button" class="photo-button">✕ Luk</button>
+              </div>
             </div>
           </div>
         </div>
@@ -216,7 +225,7 @@
           <b>Guidet adgang</b> i stedet.
         </p>
         </section>
-        <button id="parent-close" type="button">Tilbage til spillet</button>
+        </div>
       </div>
     </div>
 

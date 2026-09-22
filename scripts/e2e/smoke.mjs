@@ -743,6 +743,17 @@ console.log('parent panel open after hold:', open);
 if (!open) throw new Error('parent panel did not open');
 await page.screenshot({ path: `${OUT}/${tag}-06-parent.png` });
 await page.click('#tab-leg');
+// The menu uses the sideways screen (the parents asked for it): the pages' names sit in a rail on the left of the
+// page, and the Leg page spreads over at least two columns and fits without scrolling.
+const menuLayout = await page.evaluate(() => {
+  const rail = document.querySelector('.menu-rail').getBoundingClientRect();
+  const pages = document.querySelector('.menu-pages');
+  const rows = Array.from(document.querySelectorAll('.tab-page[data-tab="leg"] > .row')).filter((row) => !row.hidden);
+  const columns = new Set(rows.map((row) => Math.round(row.getBoundingClientRect().left))).size;
+  return { railRight: Math.round(rail.right), pagesLeft: Math.round(pages.getBoundingClientRect().left), columns, overflow: pages.scrollHeight - pages.clientHeight };
+});
+console.log('menu layout:', JSON.stringify(menuLayout));
+check(menuLayout.railRight <= menuLayout.pagesLeft && menuLayout.columns >= 2 && menuLayout.overflow <= 60, 'the menu should lay its pages out in columns beside the rail, without a long scroll');
 // The youngest profile is the default; parents can move up as the child grows.
 check(await page.evaluate(() => window.__theo.game.currentAge) === '8-12', 'the youngest age profile should be the default');
 await page.click('#age-options button[data-age="2+"]');
@@ -756,6 +767,7 @@ console.log('menu pages:', tabsShown.join(', '));
 check(tabsShown.join(',') === 'leg,musik,familie,theo', 'unexpected menu pages on the web');
 await page.click('#tab-theo');
 check(await page.evaluate(() => !document.querySelector('.tab-page[data-tab="theo"]').hidden && document.querySelector('.tab-page[data-tab="leg"]').hidden), 'the Theos leg page did not open');
+await page.screenshot({ path: `${OUT}/${tag}-06b-parent-theo.png` });
 await page.click('#tab-leg');
 // The Musik page: every song has a switch; a song can be switched off, and the speed changed.
 await page.click('#tab-musik');
