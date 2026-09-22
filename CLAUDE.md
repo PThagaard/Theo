@@ -133,6 +133,8 @@ src/
                           balloner/render.ts' dyr og bakker, figures.ts tegner ko, kat og bil, sounds.ts, index.ts)
     bobler/               Theos Badekar: badet (logic.ts uden DOM: bobler, vand, ænder, dråber, bølger; render.ts;
                           sounds.ts; index.ts). Samme kontingens-greb som Balloner
+    trommer/              Theos Trommer: store farveflader med pentatoniske toner (logic.ts uden DOM: flader, bølger,
+                          noder, hvirvel; render.ts; sounds.ts; index.ts)
     balloner/             Theos Balloner
       index.ts            createBalloner(): Game + Renderer + lyd-mapping bag Activity-interfacet
       game.ts             al spillogik (besøg, vind, sol/skyer, uvejr, gården, foto-balloner, søvn). Ingen DOM →

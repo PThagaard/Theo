@@ -3,6 +3,25 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Theos Trommer: spil nr. 4, det store slå-og-banke-legetøj
+
+- **Theos Trommer** er nyt på forsiden. Hele skærmen er store farveflader (tre for *8–12 mdr*, fire for *1–2 år*,
+  fem for *2+ år*), og hvert slag giver en tone fra en pentatonisk skala, så det altid lyder som musik, hvor hårdt
+  og hvor mange steder han end slår. Fladen dupper ned og springer tilbage, en bølge breder sig fra hånden, og små
+  noder flyver op. **Swipe** hen over fladerne: de synger én ad gangen (glissando). **Hold hånden stille** på en
+  flade: den laver en trommehvirvel og hviler efter tre sekunder, til hånden løftes og lægges igen. **Ryst
+  telefonen**: en hvirvel over alle flader, ned og op igen. Hvert sjette slag sender et familieansigt op på en
+  node, hvis I har billeder. At slå og banke er det store ved 8–12 måneder (`docs/ROADMAP.md`), og fladerne er
+  store nok til en hel hånd.
+- Ingen blink: en flade lyser højst op tre gange i sekundet, hvor hurtigt han end slår; bølgerne og noderne svarer
+  på hvert eneste slag. Lyden er en blød tromme med en varm marimba-tone; mange samtidige slag dæmpes af
+  lydmur-værnet. Tællere under *Theos leg*: trommeslag, swipes, hvirvler, ryst og familien på noderne.
+
+**Test på telefonen:** (1) Forsiden → *Theos Trommer*. Slå på fladerne med hele hånden, også hurtigt og flere
+steder: det skal lyde godt og ikke blinke. (2) Swipe op og ned over fladerne. (3) Læg hånden stille: hvirvel.
+(4) Ryst telefonen. (5) Alder *8–12 mdr*: tre store flader; *2+ år*: fem. Sig, om lyden passer i styrke med
+resten, og hvad Theo gør.
+
 ## 2026-09-22 – Jeres musik fra telefonen, og ingen lydmur ved mange fingre
 
 - **Jeres musik** (forældremenuen → *Musik* → *Vælg sang på telefonen*): vælg en lydfil på telefonen (fx jeres

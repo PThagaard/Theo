@@ -515,6 +515,39 @@ await page.evaluate(() => { window.__theo.game.guests = []; window.__theo.audio(
 const bathStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { popped: s.bubblesPopped ?? 0, splashes: s.splashes ?? 0, quacks: s.quacks ?? 0, blown: s.bubblesBlown ?? 0, swipes: s.bubbleSwipes ?? 0, shakes: s.bubbleShakes ?? 0, bubbles: window.__theo.game.bubbles.length }; });
 console.log('bobler:', JSON.stringify(bathStats), 'shook', bathShook);
 check(bathStats.popped >= 3 && bathStats.splashes >= 1 && bathStats.quacks >= 1 && bathStats.blown >= 1 && bathStats.swipes >= 1 && bathShook >= 1, 'Bobler did not answer tap, splash, duck, swipe, hold and shake');
+// Activity #4, "Trommer": big pads, every hit a note; slide, hold and shake.
+await page.evaluate(() => window.__theo.startActivity('trommer'));
+await page.waitForTimeout(600);
+check((await page.evaluate(() => window.__theo.activity.id)) === 'trommer', 'the Trommer activity did not start');
+const drums = await page.evaluate(() => { const g = window.__theo.game; g.setAge('2+'); return { pads: g.pads.map((p) => ({ x: (p.x0 + p.x1) / 2, y: (p.y0 + p.y1) / 2 })), age: g.currentAge }; });
+check(drums.pads.length === 5, `the 2+ profile should have five pads (got ${drums.pads.length}, age ${drums.age})`);
+await page.touchscreen.tap(drums.pads[0].x, drums.pads[0].y);
+await page.waitForTimeout(120);
+await page.screenshot({ path: `${OUT}/${tag}-40-trommer.png` });
+await page.touchscreen.tap(drums.pads[2].x, drums.pads[2].y);
+await page.waitForTimeout(100);
+// A glissando: one slide across every pad.
+await page.mouse.move(drums.pads[0].x, drums.pads[0].y);
+await page.mouse.down();
+await page.mouse.move(drums.pads[drums.pads.length - 1].x, drums.pads[drums.pads.length - 1].y, { steps: 20 });
+await page.mouse.up();
+await page.waitForTimeout(150);
+// A hand resting on a pad: a roll.
+await page.mouse.move(drums.pads[1].x, drums.pads[1].y);
+await page.mouse.down();
+await page.waitForTimeout(1300);
+await page.screenshot({ path: `${OUT}/${tag}-41-trommer-roll.png` });
+await page.mouse.up();
+const drumShook = await page.evaluate(() => {
+  const g = window.__theo.game; const before = g.shakes;
+  const fire = (x, y, z) => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z } }));
+  fire(0, 9.8, 0); fire(18, -12, 6);
+  return g.shakes - before;
+});
+await page.waitForTimeout(900);
+const drumStats = await page.evaluate(() => { const s = window.__theo.stats.snapshot.today; return { hits: s.drumHits ?? 0, sweeps: s.drumSweeps ?? 0, rolls: s.drumRolls ?? 0, shakes: s.drumShakes ?? 0 }; });
+console.log('trommer:', JSON.stringify(drumStats), 'shook', drumShook);
+check(drumStats.hits >= 4 && drumStats.sweeps >= 2 && drumStats.rolls >= 3 && drumShook >= 1 && drumStats.shakes >= 1, 'Trommer did not answer tap, slide, hold and shake');
 await page.evaluate(() => window.__theo.startActivity('balloner'));
 await page.waitForTimeout(500);
 check((await page.evaluate(() => window.__theo.activity.id)) === 'balloner', 'could not switch back to the balloons');
@@ -836,7 +869,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 32, sr);
+  const ctx = new OfflineAudioContext(1, sr * 33, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -875,6 +908,7 @@ const audio = await page.evaluate(async () => {
     ['bear', 30.6, () => engine.bearHello(30.6)],
     // Six pops within a tenth of a second (a whole hand): the crowd guard keeps them from piling up.
     ['burst', 31.4, () => { for (let i = 0; i < 6; i++) engine.pop(1, 31.4 + i * 0.02); }],
+    ['drum', 32.0, () => { engine.drum(60, 1, 32.0); engine.drum(67, 0.5, 32.3); engine.drum(72, 0.8, 32.55); }],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -890,7 +924,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 32;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 33;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -902,7 +936,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 32);
+  out.total = stats(0, 33);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

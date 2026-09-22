@@ -1389,6 +1389,19 @@ export class AudioEngine {
     }
   }
 
+  /** A drum pad hit: a soft skin thump, a short stick click and a warm marimba note on top. `strength` 0.2..1. */
+  drum(midi: number, strength = 1, when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    const f = midiToFreq(midi);
+    const s = clamp(strength, 0.2, 1);
+    this.synth.tone(out, 'sine', f * 0.5, when, 0.5 * s, 0.002, 0.16, { to: f * 0.25, glide: 0.12 });
+    this.synth.noiseBurst(out, when, 0.22 * s, 0.03, 'bandpass', 1800, 1.2);
+    this.synth.tone(out, 'sine', f, when, 0.45 * s, 0.003, 0.35 + 0.15 * s, { filter: 3000 });
+    this.synth.tone(out, 'sine', f * 4, when, 0.07 * s, 0.002, 0.12);
+    this.synth.tone(out, 'triangle', f * 2, when, 0.06 * s, 0.003, 0.2, { filter: 2500 });
+  }
+
   /** A single drop from the shower head: a short, high "plip". */
   drip(when = this.ctx.currentTime): void {
     if (!this.sfxOn) return;

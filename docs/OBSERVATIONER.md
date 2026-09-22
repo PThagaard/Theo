@@ -140,3 +140,5 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
 - 22.9.2026, "Fortsæt udviklingen" → *Jeres musik* bygget som forslaget til Baby Shark (egne lydfiler fra
   telefonen, bliver der, spiller først), og lydmur-værnet (resten af "to hænder på skærmen"). Forældrene har ikke
   svaret endnu på musik-løsningen; det står i testlisten.
+- 22.9.2026 → *Theos Trommer* bygget som spil nr. 4 fra roadmappen (at slå og banke er det store ved 8–12 mdr).
+  Forældrene: sig, hvad Theo gør med fladerne, og om lydstyrken passer.

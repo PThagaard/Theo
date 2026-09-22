@@ -121,6 +121,11 @@ titte-bøh, jeres ansigter og jeres ord.
   trækkes rundt med fingeren, og isbjørnen, der driver forbi på sin isflage og vinker hej hej. Ryst telefonen, når
   badet er tomt, og en gæst kommer. Samme greb som Balloner, fordi det er dem, der virker for de mindste; *Tempo* og
   *Alder* gælder her også (for de mindste én gæst ad gangen og sjældent).
+- **Theos Trommer** (spil nr. 4): hele skærmen er store farveflader (tre for de mindste, op til fem for de
+  ældste). Slå på dem: en tone fra en pentatonisk skala, så det altid lyder godt, en bølge fra hånden og noder,
+  der flyver op. Swipe over fladerne: de synger én ad gangen. Hold hånden stille: trommehvirvel. Ryst: hvirvel over
+  alle. Hvert sjette slag sender et familieansigt op på en node. Ingen blink: en flade lyser højst op tre gange i
+  sekundet.
 - **Theos Titte-bøh og Ord** (spil nr. 2) retter sig efter alderen i forældremenuen. *8–12 mdr*: titte-bøh. Jeres
   familiebilleder og fire dyr (hund, elefant, ko, kat) gemmer sig bag en busk tre ud af fire gange; rør busken, og
   tingen kommer frem med sin lyd og navnet i jeres stemme. Swipe: den næste. Intet sker af sig selv. Fra *1–2 år*:

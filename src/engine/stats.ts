@@ -193,6 +193,11 @@ export const STAT_LABELS: Array<[key: string, label: string]> = [
   ['guest:bear', '… isbjørnen'],
   ['fishRides', 'Fisken fløj væk i en boble'],
   ['fishFreed', '… og blev poppet fri igen'],
+  ['drumHits', 'Trommeslag'],
+  ['drumSweeps', '… heraf swipes over trommerne'],
+  ['drumRolls', 'Trommehvirvler (holdt)'],
+  ['drumShakes', 'Rystet (trommer)'],
+  ['drumPhotos', 'Familien på noderne'],
 ];
 
 export function formatMinutes(seconds: number): string {
