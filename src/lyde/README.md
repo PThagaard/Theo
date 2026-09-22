@@ -20,7 +20,10 @@ Ingen kode skal ændres: næste build samler filen op. Mangler filen, eller kan 
 | `traktor.mp3`         | traktoren dytter, når man rører den                                        |
 | `traktor-motor.mp3`   | motoren putter, når traktoren kører ud fra gården                          |
 | `ko.mp3`              | koen siger muh, når man rører den (Ord)                                    |
-| `kat.mp3`             | katten mjaver, når man rører den (Ord)                                     |
+| `kat.mp3`             | katten mjaver, når man rører den (Ord og Balloner)                         |
+| `kanin.mp3`           | kaninen dunker med bagbenene, når man rører den (Balloner)                 |
+| `froe.mp3`            | frøen kvækker, når man rører den (Balloner)                                |
+| `bi.mp3`              | bien summer, når man rører den (Balloner)                                  |
 | `bil.mp3`             | bilen dytter, når man rører den (Ord)                                      |
 | `and.mp3`             | gummianden rapper, når man rører den (Badekarret)                          |
 | `hval.mp3`            | hvalen kalder, når den dukker op (Badekarret)                              |

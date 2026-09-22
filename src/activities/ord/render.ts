@@ -184,6 +184,7 @@ export class OrdRenderer {
         helpTimer: 0,
         resumeState: 'idle',
         grabbedBy: null,
+        hopTimer: 0,
       clearing: 0,
       };
       base.drawVisitor(visitor);

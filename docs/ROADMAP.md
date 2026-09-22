@@ -24,9 +24,10 @@ lyd og ansigter. Han lærer, at *hans* handling får noget til at ske.
 - ✅ **Familie-balloner** – mor, far og Theo på balloner (klippet på telefonen, bliver på telefonen);
   billedet springer frem ved pop. Træner: ansigtsgenkendelse, glæde ved kendte ansigter, senere ord ("Mor!") med
   egen stemme.
-- ✅ **Besøg** – hund, elefant, fugl, sommerfugl, snegl og stjerneskud kommer forbi, reagerer på tryk og ryst og går
-  igen. Træner: opmærksomhed og forventning ("hvem kommer nu?"), dyrelyde til ordforråd, tracking af bevægelse.
-  Næste: flere dyr (kat, kanin, frø, bi), en stemme der siger dyrets navn.
+- ✅ **Besøg** – hund, elefant, fugl, sommerfugl, snegl, stjerneskud, traktoren og (fra 22.9.2026) kat, kanin,
+  frø og bi kommer forbi, reagerer på tryk og ryst og går igen. Træner: opmærksomhed og forventning ("hvem kommer
+  nu?"), dyrelyde til ordforråd, tracking af bevægelse. Næste: en stemme, der siger dyrets navn (forældrenes egne
+  ord, hvis de vil have det uden for Ord).
 - ✅ **Levende blomster** – tryk snurrer og farveskifter, swipe plukker (flyver, snurrer, vokser igen). Træner:
   årsag-virkning med to forskellige svar på to forskellige bevægelser (tryk vs. swipe).
 - ✅ **Uvejrssky** – sjældent besøg (eller fremkaldt ved at holde på en sky) med regn, lyn og torden, hvor alle

@@ -73,7 +73,21 @@ const VISITOR_WEIGHTS: Array<{ kind: VisitorKind; weight: number }> = [
   { kind: 'snail', weight: 12 },
   { kind: 'star', weight: 6 },
   { kind: 'tractor', weight: 16 },
+  { kind: 'cat', weight: 16 },
+  { kind: 'rabbit', weight: 16 },
+  { kind: 'frog', weight: 14 },
+  { kind: 'bee', weight: 14 },
 ];
+/** The cat trots in slowly and sits for a while; the rabbit moves in hops; the frog hops in, sits and hops now and
+ *  then by itself; the bee zigzags like the butterfly, only quicker. Speeds in px/s times unit, stays in seconds. */
+const CAT_SPEED = 30;
+const CAT_STAY = 22;
+const RABBIT_SPEED = 55;
+const RABBIT_STAY = 30;
+const FROG_SPEED = 70;
+const FROG_STAY = 26;
+const FROG_HOP_EVERY: [number, number] = [6, 11];
+const BEE_STAY = 24;
 /** The old tractor drives faster than the dog (px/s times unit) and idles this long before heading home. */
 const TRACTOR_SPEED = 75;
 const TRACTOR_PAUSE = 3.5;
@@ -349,13 +363,15 @@ export class Game {
     for (const b of this.balloons) b.heldBy = undefined;
     for (const v of this.visitors) {
       if (v.state === 'gone' || v.state === 'carried' || v.state === 'falling') continue;
-      if (v.kind === 'elephant' || v.kind === 'snail' || v.kind === 'storm' || v.kind === 'butterfly') {
+      if (v.kind === 'elephant' || v.kind === 'snail' || v.kind === 'storm' || v.kind === 'butterfly' || v.kind === 'bee') {
         v.state = 'leave';
         v.stateAge = 0;
-        if (v.kind === 'butterfly') {
+        if (v.kind === 'butterfly' || v.kind === 'bee') {
           v.targetX = v.x;
           v.targetY = -80 * this.unit;
         }
+      } else if (v.kind === 'cat' || v.kind === 'frog') {
+        this.sendHome(v);
       }
     }
     for (const pointer of this.pointers.values()) {
@@ -951,6 +967,14 @@ export class Game {
         return { x: v.x, y: v.y, r: s * 1.7 };
       case 'tractor':
         return { x: v.x, y: v.y - s * 0.75 - v.lift, r: s * 1.7 };
+      case 'cat':
+        return { x: v.x, y: v.y - s * 0.9 - v.lift, r: s * 1.5 };
+      case 'rabbit':
+        return { x: v.x, y: v.y - s * 0.9 - v.lift, r: s * 1.6 };
+      case 'frog':
+        return { x: v.x, y: v.y - s * 0.5 - v.lift, r: s * 1.7 };
+      case 'bee':
+        return { x: v.x, y: v.y, r: s * 2.6 };
     }
   }
 
@@ -1025,6 +1049,7 @@ export class Game {
       helpTimer: 0,
       resumeState: 'idle',
       grabbedBy: null,
+      hopTimer: 0,
     };
     switch (kind) {
       case 'storm':
@@ -1087,6 +1112,41 @@ export class Game {
         v.vy = 70 * u;
         v.state = 'idle';
         break;
+      case 'cat':
+        // Trots in from a side, sits down somewhere in the middle, and trots on after a while.
+        v.size = 28 * u;
+        v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
+        v.vx = dir * CAT_SPEED * u;
+        v.y = this.ground(v.x);
+        v.targetX = W * this.rng.range(0.3, 0.7);
+        v.state = 'enter';
+        break;
+      case 'rabbit':
+        // Hops all the way across.
+        v.size = 24 * u;
+        v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
+        v.vx = dir * RABBIT_SPEED * u;
+        v.y = this.ground(v.x);
+        v.state = 'idle';
+        v.hopTimer = 0.2;
+        break;
+      case 'frog':
+        // Hops in to a spot in the middle, sits there, and hops off again later.
+        v.size = 22 * u;
+        v.x = dir === 1 ? -v.size * 2 : W + v.size * 2;
+        v.vx = dir * FROG_SPEED * u;
+        v.y = this.ground(v.x);
+        v.targetX = W * this.rng.range(0.25, 0.75);
+        v.state = 'enter';
+        v.hopTimer = 0.2;
+        break;
+      case 'bee':
+        v.size = 11 * u;
+        v.x = dir === 1 ? -v.size * 3 : W + v.size * 3;
+        v.y = this.rng.range(H * 0.2, H * 0.5);
+        v.state = 'idle';
+        this.newButterflyTarget(v);
+        break;
     }
     this.visitors.push(v);
     this.emit({ type: 'visitor', kind, x: v.x, y: v.y, what: 'appear' });
@@ -1145,6 +1205,41 @@ export class Game {
         break;
       case 'storm':
         this.strike(v, x);
+        break;
+      case 'cat':
+        // Stops where it is, stretches with a mew and a little hop.
+        if (v.lift <= 0.01 && v.vy === 0) v.vy = -200 * u;
+        if (v.state !== 'leave') {
+          v.state = 'react';
+          v.stateAge = 0;
+          v.vx = 0;
+        }
+        break;
+      case 'rabbit':
+        // A big hop, and it turns around: touch it again and it comes back (until it is time to go).
+        if (v.lift <= 0.01 && v.vy === 0) {
+          v.vy = -380 * u;
+          if (v.age < RABBIT_STAY) {
+            v.dir = v.dir === 1 ? -1 : 1;
+            v.vx = v.dir * RABBIT_SPEED * u;
+          }
+        }
+        v.state = 'react';
+        v.stateAge = 0;
+        break;
+      case 'frog':
+        // Jumps straight up with a croak and its tongue out, then sits where it landed.
+        if (v.lift <= 0.01 && v.vy === 0) v.vy = -330 * u;
+        if (v.state !== 'leave') {
+          v.state = 'react';
+          v.stateAge = 0;
+          v.vx = 0;
+        }
+        break;
+      case 'bee':
+        v.state = 'react';
+        v.stateAge = 0;
+        this.newButterflyTarget(v);
         break;
     }
     this.sparkleBurst(x, y, 5);
@@ -1228,6 +1323,22 @@ export class Game {
             this.puffSmoke(v.x + v.dir * v.size * 0.37, v.y - v.size * 1.6, v.size * 0.8, this.rng.range(-30, 30) * u);
           }
           break;
+        case 'cat':
+        case 'rabbit':
+        case 'frog':
+          // A startled jump, nothing worse.
+          if (v.lift <= 0.01 && v.vy === 0) v.vy = -320 * u;
+          if (v.state !== 'leave') {
+            v.state = 'react';
+            v.stateAge = 0;
+            if (v.kind !== 'rabbit') v.vx = 0;
+          }
+          break;
+        case 'bee':
+          v.state = 'react';
+          v.stateAge = 0;
+          this.newButterflyTarget(v);
+          break;
         default:
           break;
       }
@@ -1240,6 +1351,28 @@ export class Game {
     const hit = this.visitorHit(v);
     this.sparkleBurst(hit.x, hit.y, 10, SUN_COLORS, hit.r * 0.6);
     this.emit({ type: 'transform', kind: v.kind, form, x: hit.x, y: hit.y });
+  }
+
+  /** A hop's flight: gravity brings the creature back to the ground, where the jump ends. */
+  private fall(v: Visitor, dt: number): void {
+    if (v.vy === 0 && v.lift <= 0) return;
+    v.vy += 900 * this.unit * dt;
+    v.lift = Math.max(0, v.lift - v.vy * dt);
+    if (v.lift === 0) v.vy = 0;
+  }
+
+  /** The cat trots on, the frog hops off towards the nearest edge. */
+  private sendHome(v: Visitor): void {
+    const u = this.unit;
+    v.state = 'leave';
+    v.stateAge = 0;
+    if (v.kind === 'cat') {
+      v.vx = v.dir * CAT_SPEED * 1.3 * u;
+    } else if (v.kind === 'frog') {
+      v.dir = v.x < this.width / 2 ? -1 : 1;
+      v.vx = v.dir * FROG_SPEED * u;
+      v.hopTimer = 0.2;
+    }
   }
 
   private updateStorm(storm: Visitor, dt: number): void {
@@ -1492,6 +1625,112 @@ export class Game {
           v.y += v.vy * dt;
           this.sparkleBurst(v.x - v.size, v.y, 1, SUN_COLORS);
           if (v.x > W + margin) v.state = 'gone';
+          break;
+        }
+        case 'cat': {
+          if (v.state === 'enter') {
+            v.x += v.vx * dt;
+            if ((v.dir === 1 && v.x >= v.targetX) || (v.dir === -1 && v.x <= v.targetX)) {
+              v.state = 'idle';
+              v.stateAge = 0;
+              v.vx = 0;
+            }
+          } else if (v.state === 'react' && v.stateAge > 1.1) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          } else if (v.state === 'idle' && (v.stateAge > CAT_STAY || (v.pokes >= 6 && v.stateAge > 2))) {
+            this.sendHome(v);
+          } else if (v.state === 'leave') {
+            v.x += v.vx * dt;
+          }
+          v.y = this.ground(v.x);
+          this.fall(v, dt);
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'rabbit': {
+          // Moves in hops: a short pause on the ground, then a spring; it only travels while in the air.
+          if (v.lift > 0 || v.vy !== 0) {
+            v.x += v.vx * dt;
+            this.fall(v, dt);
+            if (v.lift === 0 && v.vy === 0) v.hopTimer = v.state === 'react' ? 0.5 : 0.25;
+          } else {
+            v.hopTimer -= dt;
+            if (v.hopTimer <= 0) v.vy = -(200 + this.rng.range(0, 60)) * u;
+          }
+          if (v.state === 'react' && v.stateAge > 0.8) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          }
+          v.y = this.ground(v.x);
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'frog': {
+          if (v.state === 'enter' || v.state === 'leave') {
+            // Hopping along: in the air it travels, on the ground it gathers itself for the next hop.
+            if (v.lift > 0 || v.vy !== 0) {
+              v.x += v.vx * dt;
+              this.fall(v, dt);
+              if (v.lift === 0 && v.vy === 0) v.hopTimer = 0.35;
+            } else {
+              v.hopTimer -= dt;
+              if (v.hopTimer <= 0) {
+                const arrived = v.state === 'enter' && ((v.dir === 1 && v.x >= v.targetX) || (v.dir === -1 && v.x <= v.targetX));
+                if (arrived) {
+                  v.state = 'idle';
+                  v.stateAge = 0;
+                  v.vx = 0;
+                  v.hopTimer = this.rng.range(FROG_HOP_EVERY[0], FROG_HOP_EVERY[1]) * this.profile.visitInterval;
+                } else {
+                  v.vy = -260 * u;
+                }
+              }
+            }
+          } else {
+            // Sitting: a little hop by itself now and then (seldom for the youngest); a touch makes it jump.
+            this.fall(v, dt);
+            if (v.lift === 0 && v.vy === 0) {
+              v.hopTimer -= dt;
+              if (v.hopTimer <= 0) {
+                v.hopTimer = this.rng.range(FROG_HOP_EVERY[0], FROG_HOP_EVERY[1]) * this.profile.visitInterval;
+                v.vy = -180 * u;
+              }
+            }
+            if (v.state === 'react' && v.stateAge > 0.9) {
+              v.state = 'idle';
+              v.stateAge = 0;
+            }
+            if (v.state === 'idle' && v.age > FROG_STAY) this.sendHome(v);
+          }
+          v.y = this.ground(v.x);
+          if (offScreen) v.state = 'gone';
+          break;
+        }
+        case 'bee': {
+          // Zigzags between the flowers like the butterfly, only quicker and with a buzzing wobble.
+          const dx = v.targetX - v.x;
+          const dy = v.targetY - v.y;
+          const distance = Math.hypot(dx, dy);
+          const speed = (v.state === 'react' ? 220 : v.state === 'leave' ? 120 : 80) * u;
+          if (v.state !== 'leave' && (distance < 6 * u || (v.state === 'idle' && this.rng.chance(dt * 0.5)))) {
+            this.newButterflyTarget(v);
+          } else if (distance > 0.5) {
+            v.x += (dx / distance) * speed * dt + Math.sin(v.age * 14) * 40 * u * dt;
+            v.y += (dy / distance) * speed * dt + Math.cos(v.age * 11) * 30 * u * dt;
+            v.dir = dx >= 0 ? 1 : -1;
+          }
+          if (v.state === 'react' && v.stateAge > 1.0) {
+            v.state = 'idle';
+            v.stateAge = 0;
+          }
+          if (v.state !== 'leave' && v.age > BEE_STAY) {
+            v.state = 'leave';
+            v.stateAge = 0;
+            v.targetX = v.x < W / 2 ? -80 * u : W + 80 * u;
+            v.targetY = this.rng.range(this.height * 0.1, this.height * 0.4);
+          }
+          if (v.state === 'leave' && (v.x < -60 * u || v.x > W + 60 * u || v.y < -40 * u)) v.state = 'gone';
           break;
         }
         case 'storm': {

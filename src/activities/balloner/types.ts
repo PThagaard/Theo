@@ -73,7 +73,7 @@ export interface Cloud {
   holding: boolean;
 }
 
-export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm' | 'tractor';
+export type VisitorKind = 'dog' | 'elephant' | 'bird' | 'butterfly' | 'snail' | 'star' | 'storm' | 'tractor' | 'cat' | 'rabbit' | 'frog' | 'bee';
 
 /** What lightning can turn a visitor into for a little while. */
 export type VisitorForm = 'hotdog' | 'mouse' | 'puffed';
@@ -134,6 +134,8 @@ export interface Visitor {
   resumeState: VisitorState;
   /** The finger currently dragging it around (storm cloud), or null. */
   grabbedBy: number | null;
+  /** Seconds until the next hop by itself (rabbit, frog). */
+  hopTimer: number;
 }
 
 /** A flower on the hills: spins and cycles colours when tapped, flies off when swiped, grows back. */

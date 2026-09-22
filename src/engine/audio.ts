@@ -885,9 +885,57 @@ export class AudioEngine {
       case 'tractor':
         this.honk(when);
         break;
+      case 'cat':
+        this.meow(when);
+        break;
+      case 'rabbit':
+        this.thump(when);
+        break;
+      case 'frog':
+        this.croak(when);
+        break;
+      case 'bee':
+        this.buzz(when);
+        break;
       default:
         this.boing(when);
     }
+  }
+
+  /** The rabbit: two soft thumps of its hind feet and a tiny hop-squeak on top (a recording if there is one). */
+  thump(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    if (this.sample('kanin', when, {}, out)) return;
+    for (const offset of [0, 0.14]) {
+      this.synth.tone(out, 'sine', 150, when + offset, 0.45, 0.003, 0.11, { to: 70, glide: 0.09 });
+      this.synth.noiseBurst(out, when + offset, 0.16, 0.05, 'lowpass', 500, 0.7);
+    }
+    this.synth.tone(out, 'triangle', 1500, when + 0.3, 0.08, 0.005, 0.12, { to: 2200, glide: 0.08, filter: 4000 });
+  }
+
+  /** The frog: "kvæk kvæk", a low buzzy croak with a rising second syllable. */
+  croak(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    if (this.sample('froe', when, {}, out)) return;
+    for (const [offset, f] of [
+      [0, 160],
+      [0.22, 200],
+    ] as const) {
+      this.synth.tone(out, 'sawtooth', f, when + offset, 0.2, 0.02, 0.18, { to: f * 1.3, glide: 0.12, filter: 900 });
+      this.synth.tone(out, 'square', f * 2, when + offset, 0.04, 0.02, 0.15, { filter: 1200 });
+    }
+  }
+
+  /** The bee: a soft buzz that rises and falls, never harsh. */
+  buzz(when = this.ctx.currentTime): void {
+    if (!this.sfxOn) return;
+    const out = this.voice(when);
+    if (this.sample('bi', when, {}, out)) return;
+    this.synth.tone(out, 'sawtooth', 210, when, 0.12, 0.05, 0.55, { to: 290, glide: 0.25, filter: 1100 });
+    this.synth.tone(out, 'sawtooth', 213, when, 0.09, 0.05, 0.5, { to: 285, glide: 0.25, filter: 900 });
+    this.synth.tone(out, 'sine', 105, when, 0.08, 0.05, 0.5, { to: 145, glide: 0.25 });
   }
 
   /** Soft "flump" when a creature lands under its parachute. */

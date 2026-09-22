@@ -166,5 +166,17 @@ function visitorSound(audio: AudioEngine | null, kind: VisitorKind, what: 'appea
       if (what === 'appear') audio.sparkle();
       else audio.chime();
       break;
+    case 'cat':
+      if (what !== 'leave') audio.meow();
+      break;
+    case 'rabbit':
+      if (what !== 'leave') audio.thump();
+      break;
+    case 'frog':
+      if (what !== 'leave') audio.croak();
+      break;
+    case 'bee':
+      if (what !== 'leave') audio.buzz();
+      break;
   }
 }

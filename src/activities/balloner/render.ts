@@ -4,6 +4,7 @@ import { HILLS, RAINBOW, SKY } from './palette';
 import { TAU, clamp, easeOutBack } from '../../engine/rng';
 import { hillY } from './terrain';
 import type { Balloon, Cloud, Flower, Particle, Trail, Visitor } from './types';
+import { drawCat } from '../ord/figures';
 
 /** What the sun needs to know to spin, squint and glow (the balloon game, or a stand-in). */
 export interface SunView {
@@ -430,10 +431,261 @@ export class Renderer {
       case 'tractor':
         this.drawTractor(v);
         break;
+      case 'cat':
+        this.drawCatVisitor(v);
+        break;
+      case 'rabbit':
+        this.drawRabbit(v);
+        break;
+      case 'frog':
+        this.drawFrog(v);
+        break;
+      case 'bee':
+        this.drawBee(v);
+        break;
       case 'storm':
         break;
     }
     ctx.restore();
+  }
+
+  /** The cat from Ord, trotting in with a little bob, sitting down, stretching and mewing when touched. */
+  private drawCatVisitor(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const moving = v.state === 'enter' || v.state === 'leave';
+    const bob = moving ? Math.abs(Math.sin(v.age * 8)) * s * 0.1 : 0;
+    ctx.translate(v.x, v.y - v.lift - bob);
+    ctx.scale(v.dir, 1);
+    if (moving) ctx.rotate(Math.sin(v.age * 8) * 0.05);
+    const react = v.state === 'react' ? Math.sin(Math.min(1, v.stateAge / 1.1) * Math.PI) : 0;
+    drawCat(ctx, { s, t: v.age, react, moving });
+  }
+
+  /** Long ears, a big hind foot and a white tail; ears fly back when it hops. */
+  private drawRabbit(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const airborne = v.lift > 0;
+    const fur = '#d9c7b8';
+    const dark = '#b89f8c';
+    const pink = '#ffb3c6';
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    // Stretched in the air, a little squashed on the ground.
+    ctx.scale(airborne ? 0.95 : 1.04, airborne ? 1.08 : 0.96);
+    // Hind haunch and foot.
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.35, -s * 0.4, s * 0.45, s * 0.32, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(airborne ? -s * 0.6 : -s * 0.15, -s * 0.07, s * 0.42, s * 0.11, airborne ? 0.5 : 0, 0, TAU);
+    ctx.fill();
+    // Body and belly.
+    ctx.fillStyle = fur;
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.72, s * 0.78, s * 0.55, -0.15, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#f5eee8';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.2, -s * 0.55, s * 0.42, s * 0.3, -0.15, 0, TAU);
+    ctx.fill();
+    // Tail: a white puff.
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-s * 0.85, -s * 0.8, s * 0.2, 0, TAU);
+    ctx.fill();
+    // Front paws.
+    ctx.fillStyle = dark;
+    for (const dx of [0.35, 0.6]) {
+      ctx.beginPath();
+      ctx.ellipse(s * dx, -s * 0.08, s * 0.15, s * 0.09, 0, 0, TAU);
+      ctx.fill();
+    }
+    // Head, ears (back in the air, up on the ground, alert when touched), face.
+    const earAngle = airborne ? -1.0 : v.state === 'react' ? 0.15 : -0.3;
+    for (const [dx, tilt] of [
+      [0.5, earAngle - 0.25],
+      [0.72, earAngle],
+    ] as const) {
+      ctx.save();
+      ctx.translate(s * dx, -s * 1.55);
+      ctx.rotate(tilt);
+      ctx.fillStyle = fur;
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.5, s * 0.15, s * 0.52, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = pink;
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.5, s * 0.07, s * 0.36, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = fur;
+    ctx.beginPath();
+    ctx.arc(s * 0.7, -s * 1.25, s * 0.45, 0, TAU);
+    ctx.fill();
+    this.eye(s * 0.85, -s * 1.33, s * 0.08);
+    ctx.fillStyle = pink;
+    ctx.beginPath();
+    ctx.moveTo(s * 1.06, -s * 1.2);
+    ctx.lineTo(s * 1.2, -s * 1.2);
+    ctx.lineTo(s * 1.13, -s * 1.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.05;
+    ctx.beginPath();
+    ctx.arc(s * 1.05, -s * 1.05, s * 0.1, 0.1 * Math.PI, 0.9 * Math.PI);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(59, 42, 74, 0.5)';
+    ctx.lineWidth = s * 0.03;
+    for (const dy of [-0.05, 0.05]) {
+      ctx.beginPath();
+      ctx.moveTo(s * 1.1, -s * 1.13 + s * dy);
+      ctx.lineTo(s * 1.45, -s * 1.2 + s * dy * 3);
+      ctx.stroke();
+    }
+  }
+
+  /** Big eyes on top, a pulsing throat while it sits, legs stretched when it jumps, a tongue when touched. */
+  private drawFrog(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    const airborne = v.lift > 0;
+    const green = '#5ec46a';
+    const dark = '#3fa64f';
+    ctx.translate(v.x, v.y - v.lift);
+    ctx.scale(v.dir, 1);
+    // Back legs: folded beside the body when sitting, stretched out behind when jumping.
+    ctx.strokeStyle = dark;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.24;
+    ctx.beginPath();
+    if (airborne) {
+      ctx.moveTo(-s * 0.55, -s * 0.4);
+      ctx.lineTo(-s * 1.25, -s * 0.1);
+      ctx.lineTo(-s * 1.7, s * 0.05);
+    } else {
+      ctx.moveTo(-s * 0.55, -s * 0.4);
+      ctx.lineTo(-s * 1.0, -s * 0.15);
+      ctx.lineTo(-s * 0.6, 0);
+    }
+    ctx.stroke();
+    // Body and belly.
+    ctx.fillStyle = green;
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.55, s * 1.0, s * 0.55, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#e8f5b0';
+    ctx.beginPath();
+    ctx.ellipse(s * 0.15, -s * 0.4, s * 0.6, s * 0.3, 0, 0, TAU);
+    ctx.fill();
+    // Front legs.
+    ctx.strokeStyle = dark;
+    ctx.lineWidth = s * 0.18;
+    for (const dx of [0.45, 0.7]) {
+      ctx.beginPath();
+      ctx.moveTo(s * dx, -s * 0.4);
+      ctx.lineTo(s * (dx + 0.15), airborne ? -s * 0.15 : 0);
+      ctx.stroke();
+    }
+    // The throat swells and eases while it sits.
+    if (!airborne) {
+      const pulse = 1 + 0.25 * Math.sin(v.age * 3);
+      ctx.fillStyle = '#f7f3c0';
+      ctx.beginPath();
+      ctx.ellipse(s * 0.55, -s * 0.35, s * 0.3 * pulse, s * 0.22 * pulse, 0, 0, TAU);
+      ctx.fill();
+    }
+    // Eyes on top of the head.
+    for (const dx of [-0.3, 0.35]) {
+      ctx.fillStyle = green;
+      ctx.beginPath();
+      ctx.arc(s * dx, -s * 1.1, s * 0.34, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(s * dx, -s * 1.12, s * 0.26, 0, TAU);
+      ctx.fill();
+      this.eye(s * dx + s * 0.08, -s * 1.12, s * 0.12);
+    }
+    // A wide smile, and the tongue flicking out when touched.
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineWidth = s * 0.06;
+    ctx.beginPath();
+    ctx.arc(s * 0.3, -s * 0.75, s * 0.5, 0.15 * Math.PI, 0.75 * Math.PI);
+    ctx.stroke();
+    if (v.state === 'react') {
+      const out = Math.sin(Math.min(1, v.stateAge / 0.9) * Math.PI);
+      ctx.strokeStyle = '#ff7a9a';
+      ctx.lineWidth = s * 0.12;
+      ctx.beginPath();
+      ctx.moveTo(s * 0.8, -s * 0.5);
+      ctx.lineTo(s * (0.8 + 0.9 * out), -s * (0.5 + 0.35 * out));
+      ctx.stroke();
+    }
+  }
+
+  /** A round, smiling bee: yellow with dark stripes, whirring wings, no stinger. */
+  private drawBee(v: Visitor): void {
+    const ctx = this.ctx;
+    const s = v.size;
+    ctx.translate(v.x, v.y);
+    ctx.scale(v.dir, 1);
+    if (v.state === 'react') ctx.rotate(Math.sin(v.stateAge * 12) * 0.3);
+    // Wings: small and quick, a blur rather than a flash.
+    const flap = 0.4 + 0.6 * Math.abs(Math.sin(v.age * 30));
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    for (const dx of [-0.4, 0.15]) {
+      ctx.beginPath();
+      ctx.ellipse(s * dx, -s * 0.85, s * 0.55, s * 0.35 * flap, -0.35, 0, TAU);
+      ctx.fill();
+    }
+    // Striped body.
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 1.1, s * 0.75, 0, 0, TAU);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 1.1, s * 0.75, 0, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = EYE_COLOR;
+    for (const x0 of [-0.75, -0.2]) ctx.fillRect(s * x0, -s, s * 0.28, s * 2);
+    ctx.restore();
+    // Head with a big eye, a smile and two antennae.
+    ctx.fillStyle = EYE_COLOR;
+    ctx.beginPath();
+    ctx.arc(s * 1.05, -s * 0.1, s * 0.48, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(s * 1.15, -s * 0.2, s * 0.16, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = EYE_COLOR;
+    ctx.beginPath();
+    ctx.arc(s * 1.19, -s * 0.2, s * 0.08, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = s * 0.07;
+    ctx.beginPath();
+    ctx.arc(s * 1.1, -s * 0.05, s * 0.22, 0.2 * Math.PI, 0.8 * Math.PI);
+    ctx.stroke();
+    ctx.strokeStyle = EYE_COLOR;
+    ctx.lineWidth = s * 0.08;
+    for (const dx of [0.9, 1.2]) {
+      ctx.beginPath();
+      ctx.moveTo(s * dx, -s * 0.5);
+      ctx.quadraticCurveTo(s * (dx + 0.1), -s * 1.0, s * (dx + 0.3), -s * 1.1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(s * (dx + 0.3), -s * 1.1, s * 0.09, 0, TAU);
+      ctx.fill();
+    }
   }
 
   /** The little farm on the back hill: a fence and a red barn with a smoking chimney. */

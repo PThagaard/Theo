@@ -3,6 +3,25 @@
 Alle væsentlige ændringer i Theos Legeplads. Datoer er udgivelsesdatoer (push til GitHub). Det øverste afsnit bliver
 automatisk til release-noter og til "Hvad er nyt" i appens opdateringstjek.
 
+## 2026-09-22 – Fire nye besøg i ballonverdenen: kat, kanin, frø og bi
+
+- **Katten** trisser ind fra siden, sætter sig midt på græsset og mjaver, strækker sig og giver et lille hop, når
+  den røres (den samme kat som i Ord, med optagelsen `kat.mp3`). Trisser videre efter et stykke tid.
+- **Kaninen** kommer hoppende hen over græsset med ørerne bagud i luften. Rør den, og den tager et kæmpehop og
+  vender om, så den kommer tilbage; rør igen, og den vender igen. Lyden er to dunk med bagbenene og et lille pip.
+- **Frøen** hopper ind, sætter sig og pulserer med halsen; rør den, og den springer lige op med tungen ude og siger
+  kvæk kvæk. Den hopper også lidt af sig selv nu og da (sjældent for de mindste) og hopper hjem igen til sidst.
+- **Bien** flyver i zigzag mellem blomsterne med et blødt summen og et smil (ingen brod); rør den, og den snurrer
+  og summer af sted til et nyt sted.
+- Alle fire kan løftes af en ballon som de andre, hopper forskrækket ved lyn, og har egne tællere under *Theos leg*.
+  Forældrene kan lægge rigtige optagelser i `src/lyde/` som `kanin.mp3`, `froe.mp3` og `bi.mp3` (synthen er
+  reserve). Fire nye ord til at sætte ord på: kat, kanin, frø, bi.
+
+**Test på telefonen:** (1) Balloner: vent på besøg (eller hold ud, de kommer med tiden): kat, kanin, frø og bi
+skal alle dukke op på et tidspunkt. (2) Rør katten: mjav og et lille hop. Rør kaninen: kæmpehop og den vender om.
+Rør frøen: hop med tungen ude og kvæk. Rør bien: den summer og smutter. (3) Sig, om lydene passer til dyrene, og om
+kaninens hop føles rigtige.
+
 ## 2026-09-22 – Alt findes også for de mindste
 
 - **Ny regel (forældrene):** "Der skal også være ildfluer osv. funktioner til 8 md. Theo." Ingen funktion er

@@ -986,7 +986,122 @@ describe('Game', () => {
   });
 
   describe('visitors', () => {
-    const kinds = ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star'] as const;
+    const kinds = ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star', 'cat', 'rabbit', 'frog', 'bee'] as const;
+
+    it('the cat trots in, sits down in the middle, stretches with a mew when touched, and trots on later', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const cat = game.spawnVisitor('cat');
+      expect(cat.state).toBe('enter');
+      advanceUntil(game, () => cat.state === 'idle', 20);
+      expect(cat.vx).toBe(0);
+      expect(cat.x).toBeGreaterThan(W * 0.25);
+      expect(cat.x).toBeLessThan(W * 0.75);
+      expect(cat.y).toBe(game.ground(cat.x));
+      game.balloons = []; // a balloon drifting in front would take the touch instead
+      const hit = game.visitorHit(cat);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(cat.state).toBe('react');
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'cat' && e.what === 'poke')).toBe(true);
+      advance(game, 0.15);
+      expect(cat.lift).toBeGreaterThan(0);
+      advance(game, 1.5);
+      expect(cat.state).toBe('idle');
+      expect(cat.lift).toBe(0);
+      advanceUntil(game, () => cat.state === 'leave', 30);
+      advanceUntil(game, () => !game.visitors.includes(cat), 30);
+    });
+
+    it('the rabbit moves in hops and turns around with a big hop when touched', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      const rabbit = game.spawnVisitor('rabbit');
+      const startX = rabbit.x;
+      let airborne = 0;
+      let grounded = 0;
+      for (let t = 0; t < 3; t += 1 / 60) {
+        game.update(1 / 60);
+        if (rabbit.lift > 0) airborne++;
+        else grounded++;
+      }
+      expect(airborne).toBeGreaterThan(20);
+      expect(grounded).toBeGreaterThan(10);
+      expect((rabbit.x - startX) * rabbit.dir).toBeGreaterThan(20);
+      expect(rabbit.y).toBe(game.ground(rabbit.x));
+      advanceUntil(game, () => rabbit.lift === 0 && rabbit.vy === 0, 2);
+      const dir = rabbit.dir;
+      game.balloons = []; // a balloon drifting in front would take the touch instead
+      const hit = game.visitorHit(rabbit);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(rabbit.dir).toBe(-dir);
+      expect(rabbit.vy).toBeLessThan(-300 * game.unit);
+      expect(rabbit.state).toBe('react');
+    });
+
+    it('the frog hops in, sits, jumps with its tongue out when touched, hops by itself now and then, and hops off', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const frog = game.spawnVisitor('frog');
+      advanceUntil(game, () => frog.state === 'idle', 25);
+      expect(frog.vx).toBe(0);
+      expect(frog.x).toBeGreaterThan(W * 0.2);
+      expect(frog.x).toBeLessThan(W * 0.8);
+      game.balloons = []; // a balloon drifting in front would take the touch instead
+      const hit = game.visitorHit(frog);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(frog.state).toBe('react');
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'frog' && e.what === 'poke')).toBe(true);
+      advance(game, 0.15);
+      expect(frog.lift).toBeGreaterThan(0);
+      advanceUntil(game, () => frog.state === 'idle' && frog.lift === 0, 3);
+      // Left alone it hops a little by itself within a dozen seconds (the busiest profile).
+      let hopped = false;
+      for (let t = 0; t < 12 && !hopped; t += 1 / 60) {
+        game.update(1 / 60);
+        if (frog.lift > 0) hopped = true;
+      }
+      expect(hopped).toBe(true);
+      advanceUntil(game, () => frog.state === 'leave', 30);
+      advanceUntil(game, () => !game.visitors.includes(frog), 30);
+    });
+
+    it('the bee zigzags around the flowers, buzzes off when touched, and leaves after a while', () => {
+      const { game, events } = makeGame();
+      game.balloons = [];
+      const bee = game.spawnVisitor('bee');
+      const start = { x: bee.x, y: bee.y };
+      advance(game, 2);
+      expect(Math.hypot(bee.x - start.x, bee.y - start.y)).toBeGreaterThan(20);
+      game.balloons = []; // a balloon drifting in front would take the touch instead
+      const hit = game.visitorHit(bee);
+      game.press(1, hit.x, hit.y);
+      game.release(1);
+      expect(bee.state).toBe('react');
+      expect(events.some((e) => e.type === 'visitor' && e.kind === 'bee' && e.what === 'poke')).toBe(true);
+      advanceUntil(game, () => !game.visitors.includes(bee), 60);
+    });
+
+    it('lightning gives the cat a startled jump', () => {
+      const { game } = makeGame();
+      game.balloons = [];
+      game.visitors = [];
+      const storm = game.spawnVisitor('storm');
+      storm.x = W / 2;
+      storm.y = H * 0.25;
+      const cat = game.spawnVisitor('cat');
+      cat.x = W / 2;
+      cat.targetX = W / 2;
+      cat.state = 'idle';
+      cat.vx = 0;
+      advance(game, 0.5);
+      game.press(1, storm.x, storm.y);
+      game.release(1);
+      expect(cat.vy).toBeLessThan(0);
+      expect(cat.state).toBe('react');
+    });
 
     it('drops by on its own after a while, never more than two at a time', () => {
       const { game, events } = makeGame();

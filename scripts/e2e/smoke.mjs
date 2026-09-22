@@ -159,12 +159,17 @@ const visitors = await page.evaluate(() => {
   g.visitors = [];
   for (const b of g.balloons) { b.baseX = g.width / 2; b.y = -200; }
   const made = {};
-  for (const kind of ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star', 'tractor']) made[kind] = g.spawnVisitor(kind).id;
+  for (const kind of ['dog', 'elephant', 'bird', 'butterfly', 'snail', 'star', 'tractor', 'cat', 'rabbit', 'frog', 'bee']) made[kind] = g.spawnVisitor(kind).id;
   const dog = g.visitors.find((v) => v.kind === 'dog'); dog.x = g.width * 0.22; dog.dir = 1; dog.vx = Math.abs(dog.vx);
   const elephant = g.visitors.find((v) => v.kind === 'elephant'); elephant.x = g.width * 0.62; elephant.y = g.ground(elephant.x);
   const snail = g.visitors.find((v) => v.kind === 'snail'); snail.x = g.width * 0.75;
   const bird = g.visitors.find((v) => v.kind === 'bird'); bird.x = g.width * 0.5; bird.y = g.height * 0.3;
   const star = g.visitors.find((v) => v.kind === 'star'); star.x = g.width * 0.55; star.y = g.height * 0.12;
+  // The newcomers: the cat sits in the middle, the frog sits further right, the rabbit hops off to the left, the bee flies mid-air.
+  const cat = g.visitors.find((v) => v.kind === 'cat'); cat.x = g.width * 0.38; cat.targetX = cat.x; cat.state = 'idle'; cat.vx = 0; cat.dir = 1;
+  const frog = g.visitors.find((v) => v.kind === 'frog'); frog.x = g.width * 0.5; frog.targetX = frog.x; frog.state = 'idle'; frog.vx = 0; frog.dir = -1;
+  const rabbit = g.visitors.find((v) => v.kind === 'rabbit'); rabbit.x = g.width * 0.1; rabbit.dir = -1; rabbit.vx = -Math.abs(rabbit.vx);
+  const bee = g.visitors.find((v) => v.kind === 'bee'); bee.x = g.width * 0.3; bee.y = g.height * 0.42; bee.targetX = g.width * 0.32; bee.targetY = g.height * 0.45;
   return made;
 });
 await page.waitForTimeout(1600);
@@ -175,7 +180,7 @@ const poked = await page.evaluate(() => new Promise((resolve) => {
   g.balloons = [];
   g.spawnTimer = 5;
   const before = g.visitors.map((v) => `${v.kind}:${v.state}@${Math.round(v.x)},${Math.round(v.y)}`).join(' ');
-  for (const kind of ['dog', 'elephant', 'tractor']) {
+  for (const kind of ['dog', 'elephant', 'tractor', 'cat', 'frog']) {
     const v = g.visitors.find((v) => v.kind === kind);
     if (!v) { events.push(`${kind} missing`); continue; }
     const hit = g.visitorHit(v);
@@ -189,7 +194,7 @@ console.log('visitors before poke:', poked.before);
 console.log('visitors poked:', poked.events.join(', '));
 poked.splice?.(0);
 const pokedKinds = poked.events;
-check(pokedKinds.includes('dog') && pokedKinds.includes('elephant') && pokedKinds.includes('tractor'), 'dog, elephant or tractor did not react to a touch');
+check(pokedKinds.includes('dog') && pokedKinds.includes('elephant') && pokedKinds.includes('tractor') && pokedKinds.includes('cat') && pokedKinds.includes('frog'), 'dog, elephant, tractor, cat or frog did not react to a touch');
 await page.waitForTimeout(250);
 await page.screenshot({ path: `${OUT}/${tag}-12-visitors-poked.png` });
 await page.evaluate(() => { window.__theo.game.visitors = []; });
@@ -1026,7 +1031,7 @@ console.log('live audio:', audioState);
 const audio = await page.evaluate(async () => {
   const { AudioEngine } = window.__theo;
   const sr = 44100;
-  const ctx = new OfflineAudioContext(1, sr * 38, sr);
+  const ctx = new OfflineAudioContext(1, sr * 41, sr);
   const engine = new AudioEngine(ctx);
   await engine.ready;
   const marks = [
@@ -1072,6 +1077,9 @@ const audio = await page.evaluate(async () => {
     ['switch', 35.0, () => { engine.switchOn(35.0); engine.switchOff(35.4); }],
     ['hum', 35.8, () => engine.hum(35.8)],
     ['shooting star', 36.8, () => engine.shootingStar(36.8)],
+    ['thump', 38.0, () => engine.thump(38.0)],
+    ['croak', 38.7, () => engine.croak(38.7)],
+    ['buzz', 39.5, () => engine.buzz(39.5)],
   ];
   for (const [, , fn] of marks) fn();
   const buffer = await ctx.startRendering();
@@ -1087,7 +1095,7 @@ const audio = await page.evaluate(async () => {
   const out = {};
   for (let i = 0; i < marks.length; i++) {
     const [name, t] = marks[i];
-    const end = i + 1 < marks.length ? marks[i + 1][1] : 38;
+    const end = i + 1 < marks.length ? marks[i + 1][1] : 41;
     out[name] = stats(t, end);
     // How long the sound is audible (envelope above 10 % of its peak), in seconds.
     let first = -1, last = -1;
@@ -1099,7 +1107,7 @@ const audio = await page.evaluate(async () => {
     out[name].seconds = first < 0 ? 0 : +((last - first) / sr).toFixed(2);
   }
   out.silence_before = stats(0, 0.19);
-  out.total = stats(0, 38);
+  out.total = stats(0, 41);
   out.recordings = engine.loadedSamples;
   // WAV export for inspection
   const wav = new DataView(new ArrayBuffer(44 + data.length * 2));

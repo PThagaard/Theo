@@ -98,8 +98,10 @@ titte-bøh, jeres ansigter og jeres ord.
   blomsterne: de plukkes, flyver op i luften, snurrer og daler ned, og vokser op igen lidt efter.
 - **Besøg** – med jævne mellemrum kommer der nogen forbi: en hund, der går hen over græsset og hopper og gør, når
   man rører den; en elefant, der kigger op bag bakken og trumpeterer; en fugl, der slår en kolbøtte; en sommerfugl,
-  der flagrer mellem blomsterne; en snegl, der gemmer sig i sit hus; og af og til et stjerneskud, der eksploderer i
-  stjerner. Alle reagerer også, når telefonen rystes.
+  der flagrer mellem blomsterne; en snegl, der gemmer sig i sit hus; en kat, der sætter sig og mjaver; en kanin,
+  der hopper forbi og vender om, når den røres; en frø, der springer med tungen ude og siger kvæk; en bi, der
+  summer i zigzag; traktoren fra gården; og af og til et stjerneskud, der eksploderer i stjerner. Alle reagerer
+  også, når telefonen rystes.
 - **Familie-balloner** – tilføj billeder af mor, far og Theo i forældremenuen: vælg et billede fra galleriet (gerne
   et gruppebillede) eller tag et selfie, træk ansigtet ind i cirklen, zoom og gem; klip gerne flere ansigter fra
   samme billede. Så får nogle af ballonerne et ansigt fra familien, og når sådan en poppes, springer billedet stort

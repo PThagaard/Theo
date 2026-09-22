@@ -165,6 +165,9 @@ virkede/ikke virkede. Ingen vurderinger af Theo, kun af appen.
   Balloner (uvejr af sig selv), Badekar (fiskehop, bruser-spray), Bolde (boldehop) og Ord (næste ting efter et
   minut). Skærm-blinket ved lyn og "Hvor er …?"-runderne er bevidst stadig for de ældre (sikkerhed og
   forskningsregel); forældrene kan bede om at få dem åbnet.
+- 22.9.2026, "Fortsæt udviklingen" → fire nye besøg i Balloner (kat, kanin, frø, bi) fra roadmappens "Næste: flere
+  dyr": mere liv og flere dyrelyde til ordforrådet i den mest brugte verden. Forældrene: sig, hvilke dyr Theo
+  kigger efter, og om kaninens hop og frøens kvæk er sjove eller for meget.
 - 22.9.2026, "Fortsæt udviklingen" → *Theos Lys* bygget som spil nr. 6 fra roadmappens "Lys og mørke" (kontrast-
   syn og årsag-virkning for 6–9 mdr; et tænd/sluk-legetøj, som ingen af de andre spil har). Forældrene: sig, om
   Theo kigger længere på lysene end på de lyse spil, om han finder ud af at holde stille for lygten, og om han
